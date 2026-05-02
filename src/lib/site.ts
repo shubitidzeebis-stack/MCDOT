@@ -7,12 +7,12 @@ export const SITE = {
   legalName: "Veritor Group LLC",
   tagline: "We buy US logistics LLCs.",
 
-  // Contact — REPLACE before launch
+  // Contact — REPLACE phone + WhatsApp once you have them.
   phoneDisplay: "+1 (555) 010-2030",
   phoneTel: "+15550102030",
   whatsappTel: "15550102030",
-  email: "team@veritorgroup.com",
-  emailFrom: "Veritor Group <enquiries@veritorgroup.com>",
+  email: "info@groupveritor.com",
+  emailFrom: "Veritor Group <info@groupveritor.com>",
 
   // Address (US LLC) — REPLACE before launch.
   // Required by CAN-SPAM (in commercial emails) and CCPA (designated method of contact).
@@ -26,8 +26,8 @@ export const SITE = {
   },
 
   // Social — REPLACE / remove as needed
-  instagram: "https://www.instagram.com/veritorgroup",
-  linkedin: "https://www.linkedin.com/company/veritorgroup",
+  instagram: "https://www.instagram.com/groupveritor",
+  linkedin: "https://www.linkedin.com/company/groupveritor",
 
   // Trust numbers (kept conservative/defensible for ad copy)
   trust: {
@@ -46,7 +46,7 @@ export const SITE = {
     governingState: "Delaware",
     // Privacy contact — typically the same as `email` but can be a dedicated
     // privacy@ alias if preferred.
-    privacyEmail: "privacy@veritorgroup.com",
+    privacyEmail: "info@groupveritor.com",
   },
 } as const;
 
