@@ -40,7 +40,7 @@ export const SITE = {
   legal: {
     // Hard-coded so the "Last updated" date doesn't change on every deploy.
     // Bump this manually whenever you materially update the privacy or terms.
-    lastUpdated: "2026-05-02",
+    lastUpdated: "2026-05-03",
     // Governing state for Terms of Use. Must match the state where the LLC
     // is registered. Update once finalized.
     governingState: "Delaware",

@@ -44,13 +44,13 @@ async function ensureTable(sql: Sql) {
 export async function saveLead(
   payload: ContactPayload,
   meta: { ip: string; userAgent: string },
-): Promise<{ ok: boolean; reason?: string }> {
+): Promise<{ ok: boolean; reason?: string; id?: number }> {
   const sql = getSql();
   if (!sql) return { ok: false, reason: "no DATABASE_URL — skipped" };
 
   try {
     await ensureTable(sql);
-    await sql`
+    const result = await sql`
       INSERT INTO leads (
         name, email, phone, company, mc, has_relay, mc_age_days,
         insurance, state, notes, locale, ip, user_agent
@@ -69,8 +69,10 @@ export async function saveLead(
         ${meta.ip},
         ${meta.userAgent}
       )
+      RETURNING id
     `;
-    return { ok: true };
+    const id = (result as Array<{ id: number }>)[0]?.id;
+    return { ok: true, id };
   } catch (err) {
     console.error("[saveLead] error", err);
     return { ok: false, reason: "db error" };

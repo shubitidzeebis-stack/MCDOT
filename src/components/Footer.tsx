@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CookiePreferencesLink } from "@/components/CookieBanner";
 import { SITE } from "@/lib/site";
 import { DICT, type Locale } from "@/lib/i18n";
 import { listPosts } from "@/lib/posts";
@@ -113,9 +114,10 @@ export async function Footer({ locale = "en" as Locale }: { locale?: Locale }) {
           <p>
             © {year} {SITE.legalName}. {t.footer.rights}
           </p>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/privacy" className="hover:text-white/70">{t.footer.privacy}</Link>
             <Link href="/terms" className="hover:text-white/70">{t.footer.terms}</Link>
+            <CookiePreferencesLink className="hover:text-white/70" />
           </div>
         </div>
       </div>

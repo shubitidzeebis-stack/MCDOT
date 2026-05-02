@@ -8,7 +8,7 @@
 import { SITE } from "@/lib/site";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3100";
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100";
 
 function JsonLd({ data }: { data: Record<string, unknown> }) {
   return (

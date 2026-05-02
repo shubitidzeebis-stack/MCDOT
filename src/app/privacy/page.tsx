@@ -88,9 +88,26 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   <strong>Cookies and similar technologies</strong> — see{" "}
-                  <a href="#cookies">Section 9</a>.
+                  <a href="#cookies">Section 10</a>.
                 </li>
               </ul>
+
+              <h3>2.3 In-progress form data (partial submissions)</h3>
+              <p>
+                To help you resume a form you started but didn&rsquo;t finish, and to give us
+                a chance to follow up if you provided your email address but didn&rsquo;t
+                submit, we store the data you type into our enquiry form as you go &mdash;
+                but only after you enter a valid email address. Before that, nothing is
+                saved server-side. The data is keyed to a per-tab session identifier stored
+                in your browser&rsquo;s sessionStorage and is automatically discarded when
+                you close the tab or after 24 months of inactivity, whichever comes first.
+                If you submit the form, the partial record is linked to your completed
+                submission and treated under the same retention rules. If you don&rsquo;t,
+                we may use the email address to send a single, easy-to-unsubscribe
+                follow-up. You can opt out of partial-data storage by closing the tab
+                before completing the email field, or by using your browser&rsquo;s privacy
+                mode.
+              </p>
 
               <h3>2.3 Information from third parties</h3>
               <p>
@@ -148,10 +165,12 @@ export default function PrivacyPage() {
                 <li>
                   <strong>Service providers / processors</strong> — we share information with
                   vendors that help us operate the business under written contracts limiting
-                  their use to our instructions. These currently include: our hosting and
-                  database provider (Vercel and Neon), our transactional email provider
-                  (Resend), our analytics provider (Vercel Analytics), and from time to time
-                  legal, accounting, and tax advisors.
+                  their use to our instructions. These currently include: our hosting
+                  provider (Vercel), our database provider (Neon Postgres), our transactional
+                  email provider (Resend), our anti-bot provider (Cloudflare Turnstile), our
+                  analytics provider (Vercel Analytics — only when you&rsquo;ve consented to
+                  analytics cookies), and from time to time legal, accounting, and tax
+                  advisors.
                 </li>
                 <li>
                   <strong>Counterparties to a transaction</strong> — if you and we proceed
@@ -343,29 +362,49 @@ export default function PrivacyPage() {
 
               <h2 id="cookies">10. Cookies and similar technologies</h2>
               <p>
-                We use a small number of cookies and similar technologies for essential
-                Site functionality, security, and anonymous analytics. Specifically:
+                We use a small number of cookies and similar technologies, organized into
+                three categories. The first time you visit, you&rsquo;ll see a cookie
+                banner letting you accept all categories, reject non-essential categories,
+                or customize each one. You can change your decision at any time by clicking
+                <strong> &ldquo;Cookie preferences&rdquo;</strong> in the footer.
               </p>
               <ul>
                 <li>
-                  <strong>Strictly necessary</strong> — used by Vercel (our hosting provider)
-                  for security, fraud prevention, and load balancing.
+                  <strong>Strictly necessary</strong> &mdash; always on, used for the Site
+                  to function: load balancing, session management, security, and
+                  bot-protection (see below). These cannot be disabled.
                 </li>
                 <li>
-                  <strong>Analytics</strong> — Vercel Analytics counts page views and
-                  measures performance using a privacy-respecting approach that does not use
-                  third-party cookies and does not track individuals across other sites.
+                  <strong>Analytics (off by default)</strong> &mdash; Vercel Analytics
+                  counts page views and measures performance using a privacy-respecting
+                  approach that does not use third-party cookies and does not track
+                  individuals across other sites. Loaded only after you opt in.
                 </li>
                 <li>
-                  <strong>Advertising</strong> — if and when we run paid advertising, we may
-                  use Google Ads conversion tracking, Meta Pixel, or similar tags. When that
-                  happens we will update this section and provide an in-product cookie
-                  consent banner where required.
+                  <strong>Advertising (off by default)</strong> &mdash; if and when we run
+                  paid advertising, we may use Google Ads conversion tracking, Meta Pixel,
+                  or similar tags. These are loaded only after you opt in to the advertising
+                  category. While advertising consent is off, no third-party advertising
+                  pixels are loaded on the Site.
                 </li>
               </ul>
               <p>
-                You can control cookies through your browser settings. Disabling certain
-                cookies may degrade Site functionality.
+                <strong>Bot protection (Cloudflare Turnstile).</strong> We use Cloudflare
+                Turnstile to verify that visitors interacting with our enquiry form are not
+                automated bots. Turnstile uses passive signals from your browser to issue a
+                short-lived challenge token. It does not use tracking cookies and is not
+                used for analytics or advertising; it is treated as strictly necessary for
+                Site security. Turnstile&rsquo;s privacy practices are documented at
+                {" "}
+                <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">
+                  cloudflare.com/privacypolicy
+                </a>
+                .
+              </p>
+              <p>
+                You can also control cookies through your browser settings. Disabling
+                strictly necessary cookies will prevent the Site from working correctly
+                (you won&rsquo;t be able to submit the contact form, for instance).
               </p>
 
               <h2>11. Children&rsquo;s privacy</h2>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react";
+import { AnalyticsGate } from "@/components/AnalyticsGate";
+import { CookieBanner } from "@/components/CookieBanner";
 import { OrganizationSchema, WebSiteSchema } from "@/components/seo/Schema";
 import { SITE } from "@/lib/site";
 import "./globals.css";
@@ -11,7 +12,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3100";
+// Use `||` not `??` so an empty string env var (which `new URL("")` rejects)
+// also falls through to the localhost default during build.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100";
 
 const KEYWORDS = [
   "sell my trucking LLC",
@@ -104,7 +107,8 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
-        <Analytics />
+        <CookieBanner />
+        <AnalyticsGate />
       </body>
     </html>
   );

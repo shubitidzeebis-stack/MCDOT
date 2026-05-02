@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { MaskWords } from "@/components/MaskWords";
 import { HoneypotField } from "@/components/HoneypotField";
+import { Turnstile } from "@/components/Turnstile";
 import {
   ArrowIcon,
   ChevronIcon,
@@ -15,6 +16,22 @@ import {
 } from "@/components/Icons";
 import { DICT, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+// Stable per-tab session id used to upsert partial form state on the
+// server. Stored in sessionStorage so it survives reloads within the
+// tab but resets on tab close — no cross-session tracking.
+function getSessionId(): string {
+  if (typeof window === "undefined") return "";
+  const KEY = "veritor.session";
+  let id = window.sessionStorage.getItem(KEY);
+  if (!id) {
+    id = crypto.randomUUID();
+    window.sessionStorage.setItem(KEY, id);
+  }
+  return id;
+}
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -71,6 +88,7 @@ function DirectChannel({
 export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].contact;
   const router = useRouter();
+  const pathname = usePathname();
 
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -87,6 +105,25 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
   });
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  // Track whether we've started saving partials — gated on a valid
+  // email so we don't store half-typed garbage that won't be useful for
+  // re-engagement anyway.
+  const [partialActive, setPartialActive] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const sessionIdRef = useRef<string>("");
+  // Mirror of `form` state in a ref so blur handlers always see the
+  // latest values without re-binding on every keystroke.
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  // Latest partial-save fetch — used to coalesce blur events.
+  const lastSaveRef = useRef<Promise<unknown> | null>(null);
+
+  useEffect(() => {
+    sessionIdRef.current = getSessionId();
+  }, []);
 
   const update =
     <K extends keyof FormState>(key: K) =>
@@ -97,6 +134,52 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
     ) =>
       setForm((prev) => ({ ...prev, [key]: e.target.value as FormState[K] }));
 
+  function isEmailLikeValid(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
+  // Fires from any field's onBlur once we have a usable email. Best-effort:
+  // we don't await, we don't surface errors — the user shouldn't notice.
+  function flushPartial(snapshot: FormState) {
+    if (!partialActive && !isEmailLikeValid(snapshot.email)) return;
+    if (!partialActive && isEmailLikeValid(snapshot.email)) {
+      setPartialActive(true);
+    }
+    if (!isEmailLikeValid(snapshot.email)) return;
+    if (!sessionIdRef.current) return;
+
+    const body = {
+      sessionId: sessionIdRef.current,
+      name: snapshot.name,
+      email: snapshot.email,
+      phone: snapshot.phone,
+      company: snapshot.company,
+      mc: snapshot.mc,
+      hasRelay: snapshot.hasRelay,
+      mcAgeDays: snapshot.mcAgeDays,
+      insurance: snapshot.insurance,
+      state: snapshot.state,
+      notes: snapshot.notes,
+      locale,
+      page: pathname ?? "",
+      website: snapshot.website, // honeypot mirrored
+    };
+
+    lastSaveRef.current = fetch("/api/contact/partial", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => {
+      // Swallow — partial-save failures are intentional silent.
+    });
+  }
+
+  // Wraps the per-field onChange so we can also fire a blur-side save.
+  const onBlurAny = () => {
+    flushPartial(formRef.current);
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("loading");
@@ -106,7 +189,12 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, locale }),
+        body: JSON.stringify({
+          ...form,
+          locale,
+          sessionId: sessionIdRef.current,
+          turnstileToken,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -208,6 +296,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="name"
                     value={form.name}
                     onChange={update("name")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="Jane Smith"
                   />
@@ -220,6 +309,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="email"
                     value={form.email}
                     onChange={update("email")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="you@company.com"
                   />
@@ -235,6 +325,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="tel"
                     value={form.phone}
                     onChange={update("phone")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="(555) 555-1234"
                   />
@@ -245,6 +336,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="organization"
                     value={form.company}
                     onChange={update("company")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="—"
                   />
@@ -257,6 +349,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   <input
                     value={form.mc}
                     onChange={update("mc")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="MC-123456"
                   />
@@ -267,6 +360,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="address-level1"
                     value={form.state}
                     onChange={update("state")}
+                    onBlur={onBlurAny}
                     className={inputClass}
                     placeholder="CA, TX, NY…"
                   />
@@ -279,6 +373,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   <select
                     value={form.hasRelay}
                     onChange={update("hasRelay")}
+                    onBlur={onBlurAny}
                     className={`${inputClass} appearance-none pr-10`}
                   >
                     <option value="" className="bg-[#0a0a0b]">Select…</option>
@@ -298,6 +393,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     <select
                       value={form.insurance}
                       onChange={update("insurance")}
+                      onBlur={onBlurAny}
                       className={`${inputClass} appearance-none pr-10`}
                     >
                       <option value="" className="bg-[#0a0a0b]">Select…</option>
@@ -317,6 +413,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                       pattern="[0-9]*"
                       value={form.mcAgeDays}
                       onChange={update("mcAgeDays")}
+                      onBlur={onBlurAny}
                       className={inputClass}
                       placeholder="120"
                     />
@@ -330,10 +427,23 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   rows={4}
                   value={form.notes}
                   onChange={update("notes")}
+                  onBlur={onBlurAny}
                   className={`${inputClass} resize-none`}
                   placeholder=""
                 />
               </label>
+
+              {/* Cloudflare Turnstile — invisible to most users; only shows
+                  a challenge when CF's heuristics flag the visit as
+                  suspicious. Renders nothing visible here unless it fires. */}
+              {TURNSTILE_SITE_KEY && (
+                <Turnstile
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onToken={setTurnstileToken}
+                  onExpire={() => setTurnstileToken("")}
+                  onError={() => setTurnstileToken("")}
+                />
+              )}
 
               {status === "error" && (
                 <p className="text-sm text-red-400" role="alert">{errorMsg}</p>

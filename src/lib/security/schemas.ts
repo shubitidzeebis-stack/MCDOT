@@ -16,6 +16,14 @@ export const contactSchema = z.object({
   state: z.string().trim().max(60).optional().or(z.literal("")),
   notes: z.string().trim().max(4000).optional().or(z.literal("")),
   locale: z.enum(["en", "es", "ru"]).default("en"),
+  // Per-tab session id used to link this submission to any earlier
+  // partial captures so we can mark them converted post-insert.
+  sessionId: z.string().trim().max(64).optional(),
+  // Cloudflare Turnstile token — verified server-side before we accept
+  // the submission. Optional in the schema because pre-CAPTCHA-rollout
+  // submissions still work; verification logic enforces presence in
+  // production.
+  turnstileToken: z.string().trim().max(4096).optional(),
   // Honeypot: must be empty if present.
   website: z.string().max(0).optional().or(z.literal("")),
 });

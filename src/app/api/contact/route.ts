@@ -6,6 +6,8 @@ import { contactSchema } from "@/lib/security/schemas";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { contactAutoreply } from "@/lib/email/autoreply";
 import { saveLead } from "@/lib/db/leads";
+import { markPartialConverted } from "@/lib/db/partial-leads";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 import { SITE } from "@/lib/site";
 
 const LIMIT = 5;
@@ -42,13 +44,31 @@ export async function POST(req: Request) {
 
     const lead = parsed.data;
 
+    // Cloudflare Turnstile — bot check. Returns ok with reason
+    // "no-secret-configured" while keys aren't set, so existing
+    // deployments don't break the moment we ship this code.
+    const captcha = await verifyTurnstile(lead.turnstileToken, ip);
+    if (!captcha.ok) {
+      console.warn("[contact] turnstile failed", captcha);
+      return NextResponse.json(
+        { error: "Security check didn't pass. Please refresh and try again." },
+        { status: 400 },
+      );
+    }
+
     // Persist to Postgres if DATABASE_URL is set; no-op otherwise. We don't
     // fail the user on DB errors — the email still goes out and the team
     // captures the lead via inbox.
-    await saveLead(lead, {
+    const saveResult = await saveLead(lead, {
       ip,
       userAgent: req.headers.get("user-agent") ?? "",
     });
+
+    // Link the partial-capture row (if any) to this completed submission
+    // so reports can attribute conversion lift to partial-save catches.
+    if (saveResult.ok && saveResult.id && lead.sessionId) {
+      await markPartialConverted(lead.sessionId, saveResult.id);
+    }
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
