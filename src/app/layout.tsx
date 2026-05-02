@@ -48,6 +48,9 @@ export const metadata: Metadata = {
   generator: "Next.js",
   referrer: "origin-when-cross-origin",
   openGraph: {
+    // Image is auto-injected by `src/app/opengraph-image.tsx` (Next.js
+    // file convention) — don't set `images` here or it'll override the
+    // dynamic OG.
     type: "website",
     siteName: SITE.name,
     locale: "en_US",
@@ -56,16 +59,14 @@ export const metadata: Metadata = {
     title: `${SITE.name} — We buy US logistics LLCs & Amazon Relay carriers`,
     description:
       "Veritor Group acquires US logistics LLCs — written offers, closed in under two weeks. 40+ acquisitions completed.",
-    images: [
-      { url: "/hero/hero1.png", width: 1536, height: 1024, alt: SITE.name },
-    ],
   },
   twitter: {
+    // Same — Next.js falls back to opengraph-image when no twitter-image
+    // is defined.
     card: "summary_large_image",
     title: `${SITE.name} — We buy US logistics LLCs`,
     description:
       "Operator-led acquirer of US logistics LLCs and Amazon Relay carriers. Written offers, two-week close.",
-    images: ["/hero/hero1.png"],
   },
   alternates: {
     canonical: "/",
