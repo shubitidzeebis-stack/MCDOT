@@ -10,6 +10,12 @@
 // Consent is required before we load anything in the analytics or
 // advertising categories. Essential is implicit — by using the site
 // you accept it (consistent with EU/CCPA "strictly necessary" carve-out).
+//
+// IMPORTANT: readConsent() MUST be identity-stable for unchanged state.
+// useSyncExternalStore in CookieBanner subscribes to it; if the function
+// returns a new object every call, React detects "change," re-renders,
+// and we get an infinite loop. Cache the most-recent parsed result
+// keyed by the raw localStorage string.
 
 export type ConsentCategory = "essential" | "analytics" | "advertising";
 
@@ -34,14 +40,33 @@ export const DEFAULT_CONSENT: ConsentState = {
   version: CONSENT_VERSION,
 };
 
+// Memoization cache. We key on the raw localStorage string; if the
+// raw string hasn't changed since last call, return the same object
+// reference so React's useSyncExternalStore stays stable.
+let cachedRaw: string | null | undefined; // `undefined` means "never read"
+let cachedParsed: ConsentState = DEFAULT_CONSENT;
+
 export function readConsent(): ConsentState {
   if (typeof window === "undefined") return DEFAULT_CONSENT;
+  let raw: string | null;
   try {
-    const raw = window.localStorage.getItem(CONSENT_STORAGE_KEY);
-    if (!raw) return DEFAULT_CONSENT;
+    raw = window.localStorage.getItem(CONSENT_STORAGE_KEY);
+  } catch {
+    return DEFAULT_CONSENT;
+  }
+  if (raw === cachedRaw) return cachedParsed;
+  cachedRaw = raw;
+  if (!raw) {
+    cachedParsed = DEFAULT_CONSENT;
+    return cachedParsed;
+  }
+  try {
     const parsed = JSON.parse(raw) as Partial<ConsentState>;
-    if (parsed.version !== CONSENT_VERSION) return DEFAULT_CONSENT;
-    return {
+    if (parsed.version !== CONSENT_VERSION) {
+      cachedParsed = DEFAULT_CONSENT;
+      return cachedParsed;
+    }
+    cachedParsed = {
       essential: true,
       analytics: !!parsed.analytics,
       advertising: !!parsed.advertising,
@@ -49,8 +74,9 @@ export function readConsent(): ConsentState {
       version: CONSENT_VERSION,
     };
   } catch {
-    return DEFAULT_CONSENT;
+    cachedParsed = DEFAULT_CONSENT;
   }
+  return cachedParsed;
 }
 
 export function writeConsent(next: Omit<ConsentState, "essential" | "version" | "decidedAt">): ConsentState {
@@ -62,8 +88,13 @@ export function writeConsent(next: Omit<ConsentState, "essential" | "version" | 
     version: CONSENT_VERSION,
   };
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(final));
-    // Broadcast so the rest of the app can react without re-mounting.
+    const raw = JSON.stringify(final);
+    window.localStorage.setItem(CONSENT_STORAGE_KEY, raw);
+    // Update cache eagerly so the next readConsent() — fired by the
+    // dispatchEvent handler below — returns the same object reference
+    // on first read.
+    cachedRaw = raw;
+    cachedParsed = final;
     window.dispatchEvent(new CustomEvent("veritor:consent", { detail: final }));
   }
   return final;
@@ -72,6 +103,8 @@ export function writeConsent(next: Omit<ConsentState, "essential" | "version" | 
 export function clearConsent() {
   if (typeof window !== "undefined") {
     window.localStorage.removeItem(CONSENT_STORAGE_KEY);
+    cachedRaw = null;
+    cachedParsed = DEFAULT_CONSENT;
     window.dispatchEvent(new CustomEvent("veritor:consent", { detail: DEFAULT_CONSENT }));
   }
 }
