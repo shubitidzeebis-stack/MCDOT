@@ -104,6 +104,12 @@ export const metadata: Metadata = {
       "max-video-preview": -1,
     },
   },
+  // Webmaster verification — Next.js renders these as <meta name="..." />
+  // tags in the document <head>. Bing / Yandex / Pinterest can be added
+  // alongside `google` as their property values come in.
+  verification: {
+    google: "bQWOKwbXkSkIDHuV2KBtyYnXA6KsPmvGYrOoAdDkXJI",
+  },
 };
 
 export const viewport: Viewport = {
