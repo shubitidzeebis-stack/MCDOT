@@ -1,5 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["iad1"]
+  "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/process-followups",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/recover-partials",
+      "schedule": "0 * * * *"
+    }
+  ]
 }

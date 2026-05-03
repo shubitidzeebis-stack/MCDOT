@@ -5,6 +5,7 @@ import { isHoneypotFilled } from "@/lib/security/honeypot";
 import { contactSchema } from "@/lib/security/schemas";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { contactAutoreply } from "@/lib/email/autoreply";
+import { queueSequence, unsubscribeUrl } from "@/lib/email/queue";
 import { saveLead } from "@/lib/db/leads";
 import { markPartialConverted } from "@/lib/db/partial-leads";
 import { verifyTurnstile } from "@/lib/security/turnstile";
@@ -137,9 +138,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Auto-reply to the seller. Awaited so it completes before the
+    // Auto-reply to the seller (uses the same branded shell as the
+    // follow-up sequence). Awaited so it completes before the
     // serverless function terminates.
-    const autoreply = contactAutoreply({ name: lead.name, locale: lead.locale });
+    const autoreply = contactAutoreply({
+      name: lead.name,
+      locale: lead.locale,
+      unsubscribeUrl: unsubscribeUrl(lead.email),
+    });
     try {
       const { error: autoreplyErr } = await resend.emails.send({
         from: SITE.emailFrom,
@@ -148,10 +154,32 @@ export async function POST(req: Request) {
         subject: stripCrLf(autoreply.subject),
         text: autoreply.text,
         html: autoreply.html,
+        headers: {
+          "List-Unsubscribe": `<${unsubscribeUrl(lead.email)}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       });
       if (autoreplyErr) console.error("[contact] autoreply error", autoreplyErr);
     } catch (err) {
       console.error("[contact] autoreply unexpected", err);
+    }
+
+    // Queue the 4-step nurture sequence (D+1, D+4, D+10, D+21). Cancels
+    // automatically if the seller unsubscribes. We don't await the
+    // failure paths inside queueSequence — best-effort.
+    try {
+      await queueSequence({
+        sequenceId: "seller_nurture",
+        recipientEmail: lead.email,
+        recipientName: lead.name,
+        context: {
+          state: lead.state ?? null,
+          hasRelay: lead.hasRelay ?? null,
+          locale: lead.locale,
+        },
+      });
+    } catch (err) {
+      console.error("[contact] queueSequence failed", err);
     }
 
     return NextResponse.json({ ok: true });
