@@ -57,10 +57,19 @@ export const SITE = {
 export type Site = typeof SITE;
 
 // Single-line address for use in legal-doc footers, CAN-SPAM blocks, etc.
-// Returns "—" if the address is still placeholder, so missing data is loud
-// rather than silent.
+// Returns a placeholder string if the address is still empty, so missing
+// data is loud rather than silent. Cast to string because SITE is `as const`
+// — TS narrows literal types and refuses === comparisons against "—" once
+// the address is filled in.
 export function formatAddressOneLine(): string {
-  const a = SITE.address;
+  const a = SITE.address as {
+    line1: string;
+    line2: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  };
   if (a.line1 === "—") return "[Business address — to be filled in]";
   return [a.line1, a.line2 !== "—" ? a.line2 : null, `${a.city}, ${a.state} ${a.zip}`]
     .filter(Boolean)
