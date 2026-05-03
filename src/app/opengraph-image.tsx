@@ -13,7 +13,7 @@ export default function OgImage() {
     headlineLine1: "Sell your trucking LLC.",
     headlineLine2: "Closed in under two weeks.",
     trustRow: [
-      "40+ acquisitions completed",
+      "400+ LLCs closed",
       "Two-week close",
       "Operator-led, not brokers",
       "Nationwide US",

@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Veritor Group acquires US logistics LLCs — including carriers with active Amazon Relay contracts. Written offers, two-week close, 40+ acquisitions completed. Operator-led, not brokers.",
+    "Veritor Group acquires US logistics LLCs — including carriers with active Amazon Relay contracts. Written offers, two-week close, 400+ LLCs closed. Operator-led, not brokers.",
   keywords: KEYWORDS,
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: `${SITE.name} — We buy US logistics LLCs & Amazon Relay carriers`,
     description:
-      "Veritor Group acquires US logistics LLCs — written offers, closed in under two weeks. 40+ acquisitions completed.",
+      "Veritor Group acquires US logistics LLCs — written offers, closed in under two weeks. 400+ LLCs closed.",
   },
   twitter: {
     // Same — Next.js falls back to opengraph-image when no twitter-image

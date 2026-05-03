@@ -9,7 +9,7 @@ import { MobileCTA } from "@/components/MobileCTA";
 export const metadata: Metadata = {
   title: "Почему Veritor",
   description:
-    "Операторы покупают у операторов. Быстрое закрытие, письменные офферы, полный перевод документов, полная конфиденциальность. Более 40 завершённых сделок.",
+    "Операторы покупают у операторов. Быстрое закрытие, письменные офферы, полный перевод документов, полная конфиденциальность. Более 400 закрытых сделок.",
   alternates: { canonical: "/ru/why-veritor", languages: { en: "/why-veritor", es: "/es/why-veritor", ru: "/ru/why-veritor" } },
 };
 

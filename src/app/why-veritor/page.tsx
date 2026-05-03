@@ -9,7 +9,7 @@ import { MobileCTA } from "@/components/MobileCTA";
 export const metadata: Metadata = {
   title: "Why sellers choose Veritor Group",
   description:
-    "Veritor is operator-led, not brokers. We close fast on US logistics LLCs, pay legal fees on our side, write offers on paper, and keep seller identity confidential. 40+ acquisitions completed.",
+    "Veritor is operator-led, not brokers. We close fast on US logistics LLCs, pay legal fees on our side, write offers on paper, and keep seller identity confidential. 400+ LLCs closed.",
   keywords: [
     "Veritor Group reviews",
     "best trucking LLC buyer",

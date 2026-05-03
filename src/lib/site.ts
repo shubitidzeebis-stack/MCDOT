@@ -30,9 +30,11 @@ export const SITE = {
   instagram: "https://www.instagram.com/groupveritor",
   linkedin: "https://www.linkedin.com/company/groupveritor",
 
-  // Trust numbers (kept conservative/defensible for ad copy)
+  // Trust numbers — make sure these match what your team would quote on
+  // a due-diligence call. They flow into the homepage TrustBar, OG
+  // images, email signatures, and ad-network metadata.
   trust: {
-    acquisitionsCompleted: "40+",
+    acquisitionsCompleted: "400+",
     averageCloseDays: "Under 2 weeks",
     yearsActive: "5+",
   },

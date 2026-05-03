@@ -10,7 +10,7 @@ import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: `About ${SITE.name}`,
-  description: `${SITE.name} is an operator-led US acquirer of logistics LLCs and Amazon Relay carriers. Founded by drivers and owner-operators. 40+ acquisitions completed across the United States, average close in under two weeks.`,
+  description: `${SITE.name} is an operator-led US acquirer of logistics LLCs and Amazon Relay carriers. Founded by drivers and owner-operators. 400+ LLCs closed across the United States, average close in under two weeks.`,
   keywords: [
     "about Veritor Group",
     "operator-led LLC acquirer",

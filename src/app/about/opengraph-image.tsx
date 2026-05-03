@@ -14,7 +14,7 @@ export default function OgImage() {
     headlineLine2: "Acquirer-focused.",
     trustRow: [
       "Founded by drivers",
-      "40+ acquisitions",
+      "400+ LLCs closed",
       "Operate every LLC we buy",
       "Not brokers",
     ],

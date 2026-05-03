@@ -146,7 +146,7 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Track record",
-      acquisitionsLabel: "LLCs acquired",
+      acquisitionsLabel: "LLCs closed",
       closeLabel: "Average close",
       yearsLabel: "Years acquiring",
     },
@@ -214,7 +214,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "We close fast — and we close.",
-          body: "Average close under two weeks. We've done this 40+ times. Funds are ready before we make the offer.",
+          body: "Average close under two weeks. We've done this 400+ times. Funds are ready before we make the offer.",
         },
         {
           title: "Fair, written offers.",
@@ -516,7 +516,7 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Trayectoria",
-      acquisitionsLabel: "LLCs adquiridas",
+      acquisitionsLabel: "LLCs cerradas",
       closeLabel: "Cierre promedio",
       yearsLabel: "Años en el negocio",
     },
@@ -584,7 +584,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "Cerramos rápido — y cerramos de verdad.",
-          body: "Cierre promedio menor a dos semanas. Lo hemos hecho más de 40 veces. Los fondos están listos antes de hacer la oferta.",
+          body: "Cierre promedio menor a dos semanas. Lo hemos hecho más de 400 veces. Los fondos están listos antes de hacer la oferta.",
         },
         {
           title: "Ofertas justas y por escrito.",
@@ -886,7 +886,7 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Опыт",
-      acquisitionsLabel: "Купленных LLC",
+      acquisitionsLabel: "Закрытых сделок",
       closeLabel: "Среднее время закрытия",
       yearsLabel: "Лет в бизнесе",
     },
@@ -954,7 +954,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "Закрываем быстро — и реально закрываем.",
-          body: "Среднее закрытие — менее двух недель. Сделано более 40 раз. Деньги готовы ещё до оффера.",
+          body: "Среднее закрытие — менее двух недель. Сделано более 400 раз. Деньги готовы ещё до оффера.",
         },
         {
           title: "Честные офферы — на бумаге.",
