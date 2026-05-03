@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { LOCALES, type Locale } from "@/lib/i18n";
 
-// Minimal EN · ES · RU pills. Maps the current pathname to its locale
-// equivalent — for now, we only have per-locale homes (`/`, `/es`, `/ru`),
-// so any non-root path falls back to canonical EN routes.
+// Minimal EN · ES · RU pills. For now we only have per-locale homes
+// (`/`, `/es`, `/ru`); sub-pages are EN-only, so the switcher always
+// goes to the locale home.
 export function LangSwitcher({ current }: { current: Locale }) {
-  const pathname = usePathname() ?? "/";
-
   function hrefFor(locale: Locale): string {
     if (locale === "en") return "/";
     return `/${locale}`;

@@ -24,6 +24,12 @@ export const contactSchema = z.object({
   // submissions still work; verification logic enforces presence in
   // production.
   turnstileToken: z.string().trim().max(4096).optional(),
+  // First-touch attribution captured client-side. Free-form keys but
+  // every value is bounded so a malicious client can't bloat the row.
+  attribution: z
+    .record(z.string(), z.string().max(500))
+    .nullable()
+    .optional(),
   // Honeypot: must be empty if present.
   website: z.string().max(0).optional().or(z.literal("")),
 });

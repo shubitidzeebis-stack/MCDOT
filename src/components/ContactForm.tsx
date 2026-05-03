@@ -14,10 +14,23 @@ import {
   PhoneIcon,
   WhatsAppIcon,
 } from "@/components/Icons";
+import { AsYouType, isValidPhoneNumber } from "libphonenumber-js";
+import { attributionPayload } from "@/lib/attribution";
 import { DICT, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
+
+// Format a phone number as the user types. Defaults to US format because
+// our audience is US-based; if they paste a +country prefix we honor it.
+function formatPhone(input: string): string {
+  if (!input) return "";
+  // If user explicitly types +X, treat as international.
+  if (input.trim().startsWith("+")) {
+    return new AsYouType().input(input);
+  }
+  return new AsYouType("US").input(input);
+}
 
 // Stable per-tab session id used to upsert partial form state on the
 // server. Stored in sessionStorage so it survives reloads within the
@@ -110,6 +123,10 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
   // re-engagement anyway.
   const [partialActive, setPartialActive] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
+  // Inline validation — surface field-level errors only AFTER the field
+  // has been blurred at least once, so the user isn't yelled at while
+  // they're still typing.
+  const [touched, setTouched] = useState<Partial<Record<keyof FormState, boolean>>>({});
   const sessionIdRef = useRef<string>("");
   // Mirror of `form` state in a ref so blur handlers always see the
   // latest values without re-binding on every keystroke.
@@ -131,12 +148,43 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
       e: React.ChangeEvent<
         HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
       >,
-    ) =>
-      setForm((prev) => ({ ...prev, [key]: e.target.value as FormState[K] }));
+    ) => {
+      let value = e.target.value;
+      // Phone field: format as the user types so they see "(415) 555-1234"
+      // rather than raw "4155551234".
+      if (key === "phone") value = formatPhone(value);
+      setForm((prev) => ({ ...prev, [key]: value as FormState[K] }));
+    };
 
   function isEmailLikeValid(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   }
+
+  // Field-level validation — only surface the error if the user has
+  // already touched (blurred) the field. Returns null when valid.
+  function fieldError(key: keyof FormState): string | null {
+    if (!touched[key]) return null;
+    const v = form[key]?.trim() ?? "";
+    if (key === "name" && v.length < 1) return t.nameRequired;
+    if (key === "email") {
+      if (v.length < 1) return t.emailRequired;
+      if (!isEmailLikeValid(v)) return t.emailRequired;
+    }
+    if (key === "phone") {
+      if (v.length < 1) return t.phoneRequired;
+      // libphonenumber: defaults to US-format validation if no country code.
+      if (!isValidPhoneNumber(v, "US") && !isValidPhoneNumber(v)) {
+        return locale === "es"
+          ? "Número de teléfono no válido."
+          : locale === "ru"
+            ? "Неверный номер телефона."
+            : "Please enter a valid phone number.";
+      }
+    }
+    return null;
+  }
+  const markTouched = (key: keyof FormState) =>
+    setTouched((prev) => ({ ...prev, [key]: true }));
 
   // Fires from any field's onBlur once we have a usable email. Best-effort:
   // we don't await, we don't surface errors — the user shouldn't notice.
@@ -175,13 +223,35 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
     });
   }
 
-  // Wraps the per-field onChange so we can also fire a blur-side save.
-  const onBlurAny = () => {
+  // Wraps the per-field onChange so we can also fire a blur-side save
+  // AND mark the field touched (gates inline validation messages).
+  // The ref read happens inside the event handler closure, not during
+  // render — lint is being conservative about ref access.
+  const blurHandler = (key: keyof FormState) => () => {
+    markTouched(key);
+    // eslint-disable-next-line react-hooks/refs
     flushPartial(formRef.current);
   };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Mark required fields touched so validation messages surface even
+    // if the user hits submit without ever blurring them.
+    setTouched((prev) => ({ ...prev, name: true, email: true, phone: true }));
+    // Re-validate inline. Using `form` directly here (not `touched`) since
+    // we already forced touched=true for these.
+    const v = form;
+    if (
+      v.name.trim().length < 1 ||
+      !isEmailLikeValid(v.email) ||
+      v.phone.trim().length < 1 ||
+      (!isValidPhoneNumber(v.phone, "US") && !isValidPhoneNumber(v.phone))
+    ) {
+      // Stop — fieldError() will render under each invalid field.
+      return;
+    }
+
     setStatus("loading");
     setErrorMsg("");
 
@@ -194,6 +264,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
           locale,
           sessionId: sessionIdRef.current,
           turnstileToken,
+          attribution: attributionPayload(),
         }),
       });
       if (!res.ok) {
@@ -296,10 +367,13 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="name"
                     value={form.name}
                     onChange={update("name")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("name")}
                     className={inputClass}
                     placeholder="Jane Smith"
                   />
+                  {fieldError("name") && (
+                    <span className="text-[12px] text-red-400/90">{fieldError("name")}</span>
+                  )}
                 </label>
                 <label className="flex flex-col gap-2">
                   <span className={labelClass}>{t.email} *</span>
@@ -309,10 +383,13 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="email"
                     value={form.email}
                     onChange={update("email")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("email")}
                     className={inputClass}
                     placeholder="you@company.com"
                   />
+                  {fieldError("email") && (
+                    <span className="text-[12px] text-red-400/90">{fieldError("email")}</span>
+                  )}
                 </label>
               </div>
 
@@ -325,10 +402,13 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="tel"
                     value={form.phone}
                     onChange={update("phone")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("phone")}
                     className={inputClass}
                     placeholder="(555) 555-1234"
                   />
+                  {fieldError("phone") && (
+                    <span className="text-[12px] text-red-400/90">{fieldError("phone")}</span>
+                  )}
                 </label>
                 <label className="flex flex-col gap-2">
                   <span className={labelClass}>{t.company}</span>
@@ -336,7 +416,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="organization"
                     value={form.company}
                     onChange={update("company")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("company")}
                     className={inputClass}
                     placeholder="—"
                   />
@@ -349,7 +429,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   <input
                     value={form.mc}
                     onChange={update("mc")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("mc")}
                     className={inputClass}
                     placeholder="MC-123456"
                   />
@@ -360,7 +440,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     autoComplete="address-level1"
                     value={form.state}
                     onChange={update("state")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("state")}
                     className={inputClass}
                     placeholder="CA, TX, NY…"
                   />
@@ -373,7 +453,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   <select
                     value={form.hasRelay}
                     onChange={update("hasRelay")}
-                    onBlur={onBlurAny}
+                    onBlur={blurHandler("hasRelay")}
                     className={`${inputClass} appearance-none pr-10`}
                   >
                     <option value="" className="bg-[#0a0a0b]">Select…</option>
@@ -393,7 +473,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                     <select
                       value={form.insurance}
                       onChange={update("insurance")}
-                      onBlur={onBlurAny}
+                      onBlur={blurHandler("insurance")}
                       className={`${inputClass} appearance-none pr-10`}
                     >
                       <option value="" className="bg-[#0a0a0b]">Select…</option>
@@ -413,7 +493,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                       pattern="[0-9]*"
                       value={form.mcAgeDays}
                       onChange={update("mcAgeDays")}
-                      onBlur={onBlurAny}
+                      onBlur={blurHandler("mcAgeDays")}
                       className={inputClass}
                       placeholder="120"
                     />
@@ -427,7 +507,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                   rows={4}
                   value={form.notes}
                   onChange={update("notes")}
-                  onBlur={onBlurAny}
+                  onBlur={blurHandler("notes")}
                   className={`${inputClass} resize-none`}
                   placeholder=""
                 />

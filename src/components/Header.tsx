@@ -10,13 +10,20 @@ import { SITE } from "@/lib/site";
 
 export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale];
-  const NAV = [
-    { label: t.nav.howItWorks, href: "/how-it-works" },
-    { label: t.nav.requirements, href: "/requirements" },
-    { label: t.nav.whyUs, href: "/why-veritor" },
-    { label: t.nav.about, href: "/about" },
-    { label: t.nav.faq, href: "/faq" },
-  ];
+  // Sub-pages are EN-only for now. We hide the desktop nav for non-EN
+  // locales so Spanish / Russian visitors stay on the localized
+  // homepage rather than landing on English content. Can be relaxed
+  // once we translate the sub-pages.
+  const NAV =
+    locale === "en"
+      ? [
+          { label: t.nav.howItWorks, href: "/how-it-works" },
+          { label: t.nav.requirements, href: "/requirements" },
+          { label: t.nav.whyUs, href: "/why-veritor" },
+          { label: t.nav.about, href: "/about" },
+          { label: t.nav.faq, href: "/faq" },
+        ]
+      : [];
 
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);

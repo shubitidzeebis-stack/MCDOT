@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowIcon, PhoneIcon } from "@/components/Icons";
 import { SITE } from "@/lib/site";
@@ -10,8 +11,12 @@ import { DICT, type Locale } from "@/lib/i18n";
 const EASE = [0.16, 1, 0.3, 1] as const;
 const SHOW_AFTER = 400;
 
+// Pages where the sticky CTA is redundant or distracting.
+const HIDDEN_PATHS = ["/contact", "/thanks", "/unsubscribe", "/privacy", "/terms"];
+
 export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale];
+  const pathname = usePathname() ?? "/";
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -20,6 +25,10 @@ export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  if (HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+    return null;
+  }
 
   return (
     <AnimatePresence>

@@ -1,10 +1,23 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import { AnalyticsGate } from "@/components/AnalyticsGate";
+import { AttributionCapture } from "@/components/AttributionCapture";
 import { CookieBanner } from "@/components/CookieBanner";
 import { OrganizationSchema, WebSiteSchema } from "@/components/seo/Schema";
 import { SITE } from "@/lib/site";
 import "./globals.css";
+
+// Read pathname (forwarded by middleware as x-pathname) and derive the
+// right <html lang> attribute per locale. SSR-correct, no JS handoff,
+// proper SEO + a11y for Spanish + Russian roots.
+async function getLang(): Promise<string> {
+  const h = await headers();
+  const path = h.get("x-pathname") ?? "/";
+  if (path === "/es" || path.startsWith("/es/")) return "es";
+  if (path === "/ru" || path.startsWith("/ru/")) return "ru";
+  return "en";
+}
 
 const inter = Inter({
   variable: "--font-inter",
@@ -96,17 +109,19 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const lang = await getLang();
   return (
-    <html lang="en" className={`${inter.variable} h-full antialiased`}>
+    <html lang={lang} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#0a0a0b] text-white">
         <OrganizationSchema />
         <WebSiteSchema />
         <a href="#main" className="skip-link">
           Skip to content
         </a>
+        <AttributionCapture />
         {children}
         <CookieBanner />
         <AnalyticsGate />

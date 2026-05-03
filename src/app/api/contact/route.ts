@@ -8,6 +8,7 @@ import { contactAutoreply } from "@/lib/email/autoreply";
 import { queueSequence, unsubscribeUrl } from "@/lib/email/queue";
 import { saveLead } from "@/lib/db/leads";
 import { markPartialConverted } from "@/lib/db/partial-leads";
+import { notifySlackNewLead } from "@/lib/notifications/slack";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { SITE } from "@/lib/site";
 
@@ -71,6 +72,13 @@ export async function POST(req: Request) {
       await markPartialConverted(lead.sessionId, saveResult.id);
     }
 
+    // Real-time Slack ping for new leads. Silently no-ops if the
+    // webhook URL isn't configured.
+    await notifySlackNewLead(lead, {
+      id: saveResult.id,
+      priority: saveResult.priority,
+    });
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.warn("[contact] RESEND_API_KEY not set — email step skipped");
@@ -79,12 +87,34 @@ export async function POST(req: Request) {
 
     const resend = new Resend(apiKey);
 
+    const priorityFlag =
+      saveResult.priority === "high"
+        ? "🔥 HIGH"
+        : saveResult.priority === "medium"
+          ? "⚡ MEDIUM"
+          : "💬";
     const subject = stripCrLf(
-      `New seller enquiry — ${lead.company || lead.name} (${lead.locale.toUpperCase()})`,
+      `${priorityFlag} New seller enquiry — ${lead.company || lead.name} (${lead.locale.toUpperCase()})`,
     );
+
+    // Attribution summary line for the email, when present.
+    const attr = lead.attribution as Record<string, string> | null | undefined;
+    const attrLines: string[] = [];
+    if (attr) {
+      if (attr.attr_utm_source) attrLines.push(`utm_source: ${attr.attr_utm_source}`);
+      if (attr.attr_utm_medium) attrLines.push(`utm_medium: ${attr.attr_utm_medium}`);
+      if (attr.attr_utm_campaign) attrLines.push(`utm_campaign: ${attr.attr_utm_campaign}`);
+      if (attr.attr_utm_term) attrLines.push(`utm_term: ${attr.attr_utm_term}`);
+      if (attr.attr_utm_content) attrLines.push(`utm_content: ${attr.attr_utm_content}`);
+      if (attr.attr_fbclid) attrLines.push(`fbclid: ${attr.attr_fbclid}`);
+      if (attr.attr_gclid) attrLines.push(`gclid: ${attr.attr_gclid}`);
+      if (attr.attr_referrer) attrLines.push(`referrer: ${attr.attr_referrer.slice(0, 100)}`);
+      if (attr.attr_landing) attrLines.push(`landing: ${attr.attr_landing}`);
+    }
 
     const adminText = [
       `New seller enquiry from the ${SITE.name} website`,
+      `Priority: ${saveResult.priority ?? "?"}`,
       ``,
       `Name: ${lead.name}`,
       `Email: ${lead.email}`,
@@ -96,6 +126,7 @@ export async function POST(req: Request) {
       `Insurance: ${lead.insurance || "—"}`,
       `State: ${lead.state || "—"}`,
       `Locale: ${lead.locale}`,
+      ...(attrLines.length ? ["", "Attribution:", ...attrLines] : []),
       ``,
       `Notes:`,
       lead.notes || "—",

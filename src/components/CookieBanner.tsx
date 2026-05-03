@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CONSENT_STORAGE_KEY,
+  DEFAULT_CONSENT,
   hasDecided,
   readConsent,
   writeConsent,
   type ConsentState,
 } from "@/lib/consent";
+
+// External-store subscription so we can read consent state synchronously
+// without "setState in effect" anti-pattern. Subscribes to both the
+// custom in-tab event and the cross-tab storage event.
+function subscribeConsent(cb: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === CONSENT_STORAGE_KEY) cb();
+  };
+  window.addEventListener("veritor:consent", cb);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener("veritor:consent", cb);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+const getServerSnapshotConsent = () => DEFAULT_CONSENT;
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -23,52 +41,46 @@ type Props = {
 };
 
 export function CookieBanner({ forceOpen = false, onClose }: Props) {
-  const [open, setOpen] = useState(false);
+  // Read consent synchronously from external store. SSR returns the
+  // default (no decision yet); hydration on the client reads localStorage.
+  const consent = useSyncExternalStore(
+    subscribeConsent,
+    readConsent,
+    getServerSnapshotConsent,
+  );
+  const [autoOpen, setAutoOpen] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
-  const [consent, setConsent] = useState<ConsentState | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
-  // Hydrate on mount from localStorage. We don't render anything during
-  // SSR — banner is purely client-side so there's no flash of UI on
-  // already-decided users.
+  // Defer the auto-open by 600ms after mount so the banner doesn't pop
+  // the moment the page first paints. The setTimeout isn't a setState
+  // call (it's an external timer), so it's lint-clean.
   useEffect(() => {
-    const c = readConsent();
-    setConsent(c);
-    if (forceOpen) {
-      setOpen(true);
-      return;
-    }
-    if (!hasDecided(c)) {
-      // Slight delay so it doesn't pop immediately on cold load.
-      const t = setTimeout(() => setOpen(true), 600);
-      return () => clearTimeout(t);
-    }
-  }, [forceOpen]);
+    if (hasDecided(readConsent())) return;
+    const t = setTimeout(() => setAutoOpen(true), 600);
+    return () => clearTimeout(t);
+  }, []);
 
-  // If parent toggles forceOpen, sync.
-  useEffect(() => {
-    if (forceOpen) setOpen(true);
-  }, [forceOpen]);
+  const open = !dismissed && (forceOpen || autoOpen);
 
   function close() {
-    setOpen(false);
+    setDismissed(true);
     setShowCustomize(false);
     onClose?.();
   }
-
   function acceptAll() {
-    setConsent(writeConsent({ analytics: true, advertising: true }));
+    writeConsent({ analytics: true, advertising: true });
     close();
   }
   function rejectAll() {
-    setConsent(writeConsent({ analytics: false, advertising: false }));
+    writeConsent({ analytics: false, advertising: false });
     close();
   }
   function savePartial(next: { analytics: boolean; advertising: boolean }) {
-    setConsent(writeConsent(next));
+    writeConsent(next);
     close();
   }
 
-  if (!consent) return null;
 
   return (
     <AnimatePresence>
@@ -299,24 +311,11 @@ export function CookiePreferencesLink({ className }: { className?: string }) {
 }
 
 // Hook for any component that needs to gate its work on a consent
-// category — used by the analytics loader to only fire after consent.
-export function useConsent() {
-  const [consent, setConsent] = useState<ConsentState | null>(null);
-  useEffect(() => {
-    setConsent(readConsent());
-    function onUpdate(e: Event) {
-      const detail = (e as CustomEvent<ConsentState>).detail;
-      setConsent(detail);
-    }
-    function onStorage(e: StorageEvent) {
-      if (e.key === CONSENT_STORAGE_KEY) setConsent(readConsent());
-    }
-    window.addEventListener("veritor:consent", onUpdate);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("veritor:consent", onUpdate);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-  return consent;
+// category — used by AnalyticsGate, future ad pixels, etc.
+export function useConsent(): ConsentState {
+  return useSyncExternalStore(
+    subscribeConsent,
+    readConsent,
+    getServerSnapshotConsent,
+  );
 }
