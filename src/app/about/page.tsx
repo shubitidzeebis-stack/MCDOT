@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Header } from "@/components/Header";
 import { PageHero } from "@/components/PageHero";
 import { TrustBar } from "@/components/TrustBar";
@@ -78,6 +79,89 @@ export default function AboutPage() {
             <li>If you don&rsquo;t qualify, we&rsquo;ll tell you why</li>
           </ul>
         </EditorialBlock>
+
+        <section className="relative bg-[#0a0a0b] pb-20 md:pb-28">
+          <div className="mx-auto max-w-[1300px] px-5 md:px-6">
+            <div className="rounded-2xl bg-white/[0.025] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-12 lg:p-16">
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#ff8a1a] md:mb-5 md:text-[11px]">
+                Leadership
+              </p>
+              <h2 className="mb-10 max-w-[40rem] text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:mb-14 md:text-[2rem] lg:text-[2.25rem]">
+                The team behind every{" "}
+                <span className="italic font-light text-white/85">written offer.</span>
+              </h2>
+              <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+                <div className="flex flex-col">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
+                    <Image
+                      src="/about/team-luka.png"
+                      alt="Luka S., Founder of Veritor Group"
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+                    Founder
+                  </p>
+                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
+                    Luka S.
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
+                    Drives every acquisition personally — from the first seller
+                    call through the final wire transfer. Decade in
+                    owner-operator and small-fleet operations.
+                  </p>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
+                    <Image
+                      src="/about/team-lisa.jpg"
+                      alt="Lisa K., Senior Manager at Veritor Group"
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+                    Senior Manager
+                  </p>
+                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
+                    Lisa K.
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
+                    Oversees deal flow and diligence. Owns the relationship
+                    from accepted offer through wire transfer and FMCSA
+                    filings.
+                  </p>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
+                    <Image
+                      src="/about/team-keira.png"
+                      alt="Keira T., Assistant Manager at Veritor Group"
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+                    Assistant Manager
+                  </p>
+                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
+                    Keira T.
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
+                    First point of contact for sellers — handles intake calls,
+                    NDA paperwork, and scheduling.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <TrustBar locale="en" />
         <ContactForm locale="en" />
