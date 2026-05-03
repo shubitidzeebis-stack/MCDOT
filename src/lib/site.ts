@@ -7,21 +7,22 @@ export const SITE = {
   legalName: "Veritor Group LLC",
   tagline: "We buy US logistics LLCs.",
 
-  // Contact — REPLACE phone + WhatsApp once you have them.
-  phoneDisplay: "+1 (555) 010-2030",
-  phoneTel: "+15550102030",
-  whatsappTel: "15550102030",
+  // Contact
+  phoneDisplay: "+1 (213) 789-6878",
+  phoneTel: "+12137896878",
+  whatsappTel: "12137896878",
   email: "info@groupveritor.com",
   emailFrom: "Veritor Group <info@groupveritor.com>",
 
-  // Address (US LLC) — REPLACE before launch.
-  // Required by CAN-SPAM (in commercial emails) and CCPA (designated method of contact).
+  // Registered business address — used by CAN-SPAM (in commercial emails)
+  // and CCPA (designated method of contact). Also feeds the LocalBusiness
+  // schema so the site appears in Google's local results.
   address: {
-    line1: "—",
+    line1: "1918 Brownell Rd",
     line2: "—",
-    city: "—",
-    state: "—",
-    zip: "—",
+    city: "Dayton",
+    state: "OH",
+    zip: "45403",
     country: "USA",
   },
 
@@ -41,6 +42,9 @@ export const SITE = {
     // Hard-coded so the "Last updated" date doesn't change on every deploy.
     // Bump this manually whenever you materially update the privacy or terms.
     lastUpdated: "2026-05-03",
+    // ^ bump this whenever you materially change SITE.address or
+    //   anything in /privacy or /terms — the date is shown to users
+    //   under "Effective date" on those pages.
     // Governing state for Terms of Use. Must match the state where the LLC
     // is registered. Update once finalized.
     governingState: "Delaware",
