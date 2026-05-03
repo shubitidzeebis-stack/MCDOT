@@ -89,6 +89,9 @@ export const metadata: Metadata = {
       ru: "/ru",
       "x-default": "/",
     },
+    types: {
+      "application/rss+xml": "/blog/feed.xml",
+    },
   },
   robots: {
     index: true,

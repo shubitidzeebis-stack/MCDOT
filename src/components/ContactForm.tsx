@@ -118,6 +118,13 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
   });
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  // Pre-form qualifier — 2 quick yes/no questions to set expectations
+  // and pre-fill hasRelay / mcAgeDays. Only shown on first visit per
+  // tab + only in English; ES/RU skip straight to the form. Skip link
+  // available for users who just want the form.
+  const [step, setStep] = useState<"qualifier" | "form">(
+    locale === "en" ? "qualifier" : "form",
+  );
   // Track whether we've started saving partials — gated on a valid
   // email so we don't store half-typed garbage that won't be useful for
   // re-engagement anyway.
@@ -356,6 +363,22 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
             transition={{ duration: 1, ease: EASE }}
             className="relative rounded-2xl bg-white/[0.03] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-10"
           >
+            {step === "qualifier" && (
+              <Qualifier
+                onAnswer={(answers) => {
+                  // Pre-fill the corresponding fields on the full form
+                  // so the seller doesn't re-answer.
+                  setForm((prev) => ({
+                    ...prev,
+                    hasRelay: answers.hasRelay,
+                    mcAgeDays: answers.mcAgeDays ?? prev.mcAgeDays,
+                  }));
+                  setStep("form");
+                }}
+                onSkip={() => setStep("form")}
+              />
+            )}
+            {step === "form" && (
             <form onSubmit={handleSubmit} className="relative flex flex-col gap-4">
               <HoneypotField value={form.website} onChange={update("website")} />
 
@@ -567,9 +590,144 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                 </button>
               </div>
             </form>
+            )}
           </motion.div>
         </div>
       </div>
     </section>
+  );
+}
+
+// Pre-form qualifier — two quick yes/no questions that set expectations
+// and pre-fill hasRelay / mcAgeDays on the full form. Improves lead
+// quality (sellers self-select) and feels less like a wall of fields.
+function Qualifier({
+  onAnswer,
+  onSkip,
+}: {
+  onAnswer: (answers: { hasRelay: "yes" | "no"; mcAgeDays?: string }) => void;
+  onSkip: () => void;
+}) {
+  const [phase, setPhase] = useState<"relay" | "mc-age">("relay");
+  const [hasRelay, setHasRelay] = useState<"yes" | "no" | null>(null);
+
+  function pickRelay(value: "yes" | "no") {
+    setHasRelay(value);
+    if (value === "yes") {
+      // Active Relay = qualifies regardless of MC age. Skip the second
+      // question and proceed straight to the form.
+      onAnswer({ hasRelay: "yes" });
+      return;
+    }
+    // No Relay → ask MC age.
+    setPhase("mc-age");
+  }
+
+  function pickMcAge(answer: "fresh" | "old" | "unknown") {
+    onAnswer({
+      hasRelay: "no",
+      mcAgeDays:
+        answer === "fresh" ? "120" : answer === "old" ? "365" : "",
+    });
+  }
+
+  return (
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+          Quick check — 2 questions
+        </p>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-[12px] text-white/45 underline-offset-2 hover:text-white/75 hover:underline"
+        >
+          Skip, just show the form
+        </button>
+      </div>
+
+      {phase === "relay" && (
+        <>
+          <h3 className="mt-5 text-[1.5rem] font-semibold leading-tight tracking-[-0.015em] text-white md:text-[1.875rem]">
+            Does your LLC have an active Amazon Relay contract?
+          </h3>
+          <p className="mt-3 text-[14px] leading-relaxed text-white/55">
+            Active Amazon Relay carriers are our highest priority — fastest close, best
+            terms, insurance flexibility.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => pickRelay("yes")}
+              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-[#ff8a1a]/50 hover:bg-[#ff8a1a]/[0.06]"
+            >
+              <span className="text-[16px] font-semibold text-white">Yes, active Relay</span>
+              <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
+                You&rsquo;re in our highest-priority bucket.
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => pickRelay("no")}
+              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-white/30 hover:bg-white/[0.08]"
+            >
+              <span className="text-[16px] font-semibold text-white">No Relay</span>
+              <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
+                One more question about your MC authority.
+              </span>
+            </button>
+          </div>
+        </>
+      )}
+
+      {phase === "mc-age" && (
+        <>
+          <h3 className="mt-5 text-[1.5rem] font-semibold leading-tight tracking-[-0.015em] text-white md:text-[1.875rem]">
+            How old is your MC authority?
+          </h3>
+          <p className="mt-3 text-[14px] leading-relaxed text-white/55">
+            Fresh MC authority (under 180 days) is what we look for in non-Relay LLCs.
+            Older authorities can still work depending on history.
+          </p>
+          <div className="mt-6 grid gap-3">
+            <button
+              type="button"
+              onClick={() => pickMcAge("fresh")}
+              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-[#ff8a1a]/50 hover:bg-[#ff8a1a]/[0.06]"
+            >
+              <span className="text-[16px] font-semibold text-white">
+                Less than 180 days
+              </span>
+              <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
+                You&rsquo;re a fit. Tell us a little more on the next step.
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => pickMcAge("old")}
+              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-white/30 hover:bg-white/[0.08]"
+            >
+              <span className="text-[16px] font-semibold text-white">
+                More than 180 days
+              </span>
+              <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
+                We&rsquo;ll still answer questions — submit and we&rsquo;ll be honest about
+                whether it works.
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => pickMcAge("unknown")}
+              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-white/30 hover:bg-white/[0.08]"
+            >
+              <span className="text-[16px] font-semibold text-white">I&rsquo;m not sure</span>
+              <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
+                Submit anyway — we pull FMCSA records ourselves to check.
+              </span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

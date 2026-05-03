@@ -1,0 +1,39 @@
+# Lighthouse CI — runs on every pull request and on pushes to main.
+# Tests https://groupveritor.com directly so we measure real production
+# Core Web Vitals, not the dev-build variants. Reports are uploaded to
+# the temporary public storage; thresholds below fail the run if a PR
+# regresses meaningfully.
+
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Sunday 03:00 UTC — weekly health check even when no PRs land.
+    - cron: "0 3 * * 0"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lighthouse — production
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            https://groupveritor.com/
+            https://groupveritor.com/contact
+            https://groupveritor.com/requirements
+            https://groupveritor.com/how-it-works
+            https://groupveritor.com/blog
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          configPath: ./.github/workflows/lighthouse-config.json

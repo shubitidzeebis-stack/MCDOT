@@ -52,7 +52,7 @@ export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
                 <span>{t.contact.callLabel}</span>
               </a>
               <Link
-                href="/contact"
+                href={locale === "en" ? "/contact" : `/${locale}/contact`}
                 className="group flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#ff8a1a] px-4 text-sm font-semibold text-[#0a0a0b] transition-colors active:bg-[#ffb371]"
               >
                 <span>{t.hero.ctaPrimary}</span>

@@ -10,20 +10,19 @@ import { SITE } from "@/lib/site";
 
 export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale];
-  // Sub-pages are EN-only for now. We hide the desktop nav for non-EN
-  // locales so Spanish / Russian visitors stay on the localized
-  // homepage rather than landing on English content. Can be relaxed
-  // once we translate the sub-pages.
-  const NAV =
-    locale === "en"
-      ? [
-          { label: t.nav.howItWorks, href: "/how-it-works" },
-          { label: t.nav.requirements, href: "/requirements" },
-          { label: t.nav.whyUs, href: "/why-veritor" },
-          { label: t.nav.about, href: "/about" },
-          { label: t.nav.faq, href: "/faq" },
-        ]
-      : [];
+  // Locale-aware sub-page URLs. /about is EN-only (custom long-form
+  // copy, not yet translated) — we drop it from the non-EN nav so we
+  // don't link Spanish / Russian visitors to English-only pages.
+  const prefix = locale === "en" ? "" : `/${locale}`;
+  const NAV = [
+    { label: t.nav.howItWorks, href: `${prefix}/how-it-works` },
+    { label: t.nav.requirements, href: `${prefix}/requirements` },
+    { label: t.nav.whyUs, href: `${prefix}/why-veritor` },
+    ...(locale === "en"
+      ? [{ label: t.nav.about, href: "/about" }]
+      : []),
+    { label: t.nav.faq, href: `${prefix}/faq` },
+  ];
 
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -101,7 +100,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
       >
         <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 md:px-6">
           <Link
-            href="/"
+            href={prefix || "/"}
             className="group flex items-center"
             aria-label={`${SITE.name} — home`}
           >
@@ -133,7 +132,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
               <LangSwitcher current={locale} />
             </div>
             <Link
-              href="/contact"
+              href={`${prefix}/contact`}
               className="relative hidden overflow-hidden rounded-full border border-[#ff8a1a]/40 bg-[#ff8a1a]/10 px-5 py-2 text-[14px] font-medium text-[#ffb371] backdrop-blur-md transition-all duration-300 hover:border-[#ff8a1a]/70 hover:bg-[#ff8a1a]/20 md:inline-flex"
             >
               <span className="relative z-10">{t.nav.cta}</span>
@@ -218,7 +217,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
                 className="mt-6 flex flex-col gap-3"
               >
                 <Link
-                  href="/contact"
+                  href={`${prefix}/contact`}
                   onClick={() => setOpen(false)}
                   className="inline-flex w-fit rounded-full border border-[#ff8a1a]/50 bg-[#ff8a1a]/10 px-5 py-2.5 text-sm font-medium text-[#ffb371] transition-colors hover:bg-[#ff8a1a]/20"
                 >

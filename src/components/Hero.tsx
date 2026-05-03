@@ -15,6 +15,7 @@ const HERO_IMAGE = "/hero/hero1.png";
 
 export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].hero;
+  const prefix = locale === "en" ? "" : `/${locale}`;
 
   return (
     <section className="relative isolate flex min-h-[88svh] w-full items-end overflow-hidden md:min-h-[80vh]">
@@ -75,7 +76,7 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
           className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center md:mt-10"
         >
           <Link
-            href="/contact"
+            href={`${prefix}/contact`}
             className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#ff8a1a] py-3 pl-6 pr-3 text-sm font-semibold text-[#0a0a0b] transition-colors duration-300 hover:bg-[#ffb371]"
           >
             <span>{t.ctaPrimary}</span>
@@ -84,7 +85,7 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
             </span>
           </Link>
           <Link
-            href="/how-it-works"
+            href={`${prefix}/how-it-works`}
             className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white/85 backdrop-blur-md transition-colors hover:border-white/30 hover:bg-white/10"
           >
             {t.ctaSecondary}
