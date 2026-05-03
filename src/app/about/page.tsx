@@ -90,14 +90,14 @@ export default function AboutPage() {
                 The team behind every{" "}
                 <span className="italic font-light text-white/85">written offer.</span>
               </h2>
-              <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 md:gap-10">
                 <div className="flex flex-col">
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
                     <Image
                       src="/about/team-luka.png"
                       alt="Luka S., Founder of Veritor Group"
                       fill
-                      sizes="(min-width: 768px) 33vw, 100vw"
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
                   </div>
@@ -120,7 +120,7 @@ export default function AboutPage() {
                       src="/about/team-lisa.jpg"
                       alt="Lisa K., Senior Manager at Veritor Group"
                       fill
-                      sizes="(min-width: 768px) 33vw, 100vw"
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
                   </div>
@@ -140,10 +140,33 @@ export default function AboutPage() {
                 <div className="flex flex-col">
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
                     <Image
+                      src="/about/team-giorgi.jpg"
+                      alt="Giorgi S., Customer Relations at Veritor Group"
+                      fill
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+                    Customer Relations
+                  </p>
+                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
+                    Giorgi S.
+                  </h3>
+                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
+                    Owns post-close seller satisfaction — checks in after the
+                    wire transfer, resolves anything that surfaces, and keeps
+                    every relationship clean.
+                  </p>
+                </div>
+
+                <div className="flex flex-col">
+                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
+                    <Image
                       src="/about/team-keira.png"
                       alt="Keira T., Assistant Manager at Veritor Group"
                       fill
-                      sizes="(min-width: 768px) 33vw, 100vw"
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
                   </div>
