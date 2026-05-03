@@ -163,6 +163,73 @@ export async function processQueue(): Promise<{
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Partial-lead recovery — queues a single partial_recovery email for
+// every partial_leads row that has a usable email, hasn't converted,
+// and was created between 30 minutes and 24 hours ago. Idempotent via
+// recovery_queued_at column.
+//
+// Vercel Hobby plan limits crons to once per day, so this runs inside
+// the same /api/cron/process-followups endpoint as the queue processor.
+// Rows queued here use anchorTime in the past so scheduled_for ~= now,
+// and they're picked up in the same cron run by processQueue().
+// ─────────────────────────────────────────────────────────────────────
+
+import { neon } from "@neondatabase/serverless";
+
+export async function recoverPartials(): Promise<{
+  candidates: number;
+  queued: number;
+}> {
+  const url = process.env.DATABASE_URL;
+  if (!url) return { candidates: 0, queued: 0 };
+  const sql = neon(url);
+
+  // Idempotent migration — adds the column on first run if missing.
+  try {
+    await sql`ALTER TABLE partial_leads ADD COLUMN IF NOT EXISTS recovery_queued_at TIMESTAMPTZ`;
+  } catch {
+    // Table doesn't exist yet (no partials submitted in this env). OK.
+    return { candidates: 0, queued: 0 };
+  }
+
+  const candidates = (await sql`
+    SELECT session_id, email, name
+      FROM partial_leads
+     WHERE converted = false
+       AND email IS NOT NULL
+       AND email LIKE '%@%.%'
+       AND recovery_queued_at IS NULL
+       AND created_at <= now() - interval '30 minutes'
+       AND created_at >= now() - interval '24 hours'
+     ORDER BY created_at
+     LIMIT 50
+  `) as Array<{ session_id: string; email: string; name: string | null }>;
+
+  let queued = 0;
+  for (const row of candidates) {
+    try {
+      const ids = await queueSequence({
+        sequenceId: "partial_recovery",
+        recipientEmail: row.email,
+        recipientName: row.name,
+        // Anchor in the past so the +30m delay puts scheduled_for ~now.
+        anchorTime: new Date(Date.now() - 30 * 60 * 1000),
+      });
+      if (ids.length > 0) queued += 1;
+      await sql`
+        UPDATE partial_leads
+           SET recovery_queued_at = now()
+         WHERE session_id = ${row.session_id}
+      `;
+    } catch (err) {
+      console.error("[recoverPartials]", row.session_id, err);
+    }
+  }
+
+  return { candidates: candidates.length, queued };
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Cron auth — Vercel injects Authorization: Bearer ${CRON_SECRET}
 // on scheduled runs. Public hits without that header get 401 so
 // nobody can drain the Resend budget by triggering manual cron runs.
