@@ -105,10 +105,13 @@ export const metadata: Metadata = {
     },
   },
   // Webmaster verification — Next.js renders these as <meta name="..." />
-  // tags in the document <head>. Bing / Yandex / Pinterest can be added
-  // alongside `google` as their property values come in.
+  // tags in the document <head>. Yandex / Pinterest can be added
+  // alongside as their property values come in.
   verification: {
     google: "bQWOKwbXkSkIDHuV2KBtyYnXA6KsPmvGYrOoAdDkXJI",
+    other: {
+      "msvalidate.01": "EC004A9D9176E1CB6ECF98E9FC295C4E",
+    },
   },
 };
 
