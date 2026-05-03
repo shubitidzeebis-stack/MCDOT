@@ -3,9 +3,11 @@
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Clarity } from "@/components/Clarity";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { useConsent } from "@/components/CookieBanner";
 
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "";
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
 // All analytics scripts are loaded only after the visitor accepts the
 // analytics consent category — gated here so adding a new tool is one
@@ -20,6 +22,7 @@ export function AnalyticsGate() {
       <Analytics />
       <SpeedInsights />
       {CLARITY_PROJECT_ID && <Clarity projectId={CLARITY_PROJECT_ID} />}
+      {GA_MEASUREMENT_ID && <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />}
     </>
   );
 }

@@ -278,6 +278,16 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || t.error);
       }
+      // Fire GA4 lead conversion. Guarded — gtag is undefined when the
+      // visitor declined analytics consent or the GA env var isn't set.
+      // Best-effort: don't block redirect on this.
+      if (typeof window !== "undefined" && typeof window.gtag === "function") {
+        window.gtag("event", "generate_lead", {
+          locale,
+          has_relay: form.hasRelay || "unknown",
+          mc_present: Boolean(form.mc.trim()),
+        });
+      }
       // Redirect to thanks page (so we can fire ad conversion pixels later).
       router.push("/thanks");
     } catch (err) {
