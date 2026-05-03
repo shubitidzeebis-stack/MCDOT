@@ -28,11 +28,11 @@ const SECURITY_HEADERS = [
       // post-consent). Without blob: in worker-src specifically, the
       // Vercel Analytics worker fails to load and Chrome aborts the
       // page render with "This page couldn't load."
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com https://www.clarity.ms https://*.clarity.ms",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live",
+      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms",
       "frame-src https://challenges.cloudflare.com https://vercel.live",
       // worker-src + child-src don't fall back cleanly to script-src
       // in all browsers — declare them explicitly so blob workers and

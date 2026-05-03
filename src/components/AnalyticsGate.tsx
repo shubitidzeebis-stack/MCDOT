@@ -2,13 +2,16 @@
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Clarity } from "@/components/Clarity";
 import { useConsent } from "@/components/CookieBanner";
 
-// Vercel Analytics + Speed Insights — both privacy-respecting (no
-// third-party cookies, no cross-site tracking) but consent-mode rules
-// in some jurisdictions still require user opt-in for any analytics.
-// Both are loaded together once the user accepts the analytics
-// category.
+const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "";
+
+// All analytics scripts are loaded only after the visitor accepts the
+// analytics consent category — gated here so adding a new tool is one
+// line below, not a hunt across the codebase. Each tool's own privacy
+// posture varies, but consent gating keeps us clean across CCPA / VCDPA
+// / CPA / CTDPA / UCPA.
 export function AnalyticsGate() {
   const consent = useConsent();
   if (!consent.analytics) return null;
@@ -16,6 +19,7 @@ export function AnalyticsGate() {
     <>
       <Analytics />
       <SpeedInsights />
+      {CLARITY_PROJECT_ID && <Clarity projectId={CLARITY_PROJECT_ID} />}
     </>
   );
 }
