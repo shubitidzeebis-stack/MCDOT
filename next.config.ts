@@ -22,12 +22,24 @@ const SECURITY_HEADERS = [
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com",
+      // 'unsafe-inline' + 'unsafe-eval' required for Next.js hydration.
+      // blob: in script-src lets analytics scripts spin up Web Workers
+      // from Blob URLs (Vercel Analytics + Speed Insights both do this
+      // post-consent). Without blob: in worker-src specifically, the
+      // Vercel Analytics worker fails to load and Chrome aborts the
+      // page render with "This page couldn't load."
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
-      "frame-src https://challenges.cloudflare.com",
+      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live",
+      "frame-src https://challenges.cloudflare.com https://vercel.live",
+      // worker-src + child-src don't fall back cleanly to script-src
+      // in all browsers — declare them explicitly so blob workers and
+      // Vercel preview iframes work without breaking the page.
+      "worker-src 'self' blob:",
+      "child-src 'self' blob: https://challenges.cloudflare.com",
+      "manifest-src 'self'",
       "frame-ancestors 'none'",
       "form-action 'self'",
       "base-uri 'self'",
