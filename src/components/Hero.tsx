@@ -54,9 +54,9 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-[1400px] flex-col px-5 pb-20 pt-32 md:px-6 md:pb-28 md:pt-36">
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.05, ease: EASE }}
+          transition={{ duration: 0.4, delay: 0.05, ease: EASE }}
           className="mb-4 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#ff8a1a] md:mb-5 md:text-[11px] md:tracking-[0.42em]"
         >
           {t.eyebrow}
@@ -67,14 +67,14 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
             <MaskWords text={t.headlineLine1} delay={0.15} />
           </span>
           <span className="mt-1 block italic font-light text-white/85">
-            <MaskWords text={t.headlineLine2} delay={0.4} />
+            <MaskWords text={t.headlineLine2} delay={0.32} />
           </span>
         </h1>
 
         <motion.p
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7, ease: EASE }}
+          transition={{ duration: 0.4, delay: 0.55, ease: EASE }}
           className="mt-6 max-w-[640px] text-[15px] leading-relaxed text-white/75 md:mt-8 md:text-lg"
         >
           {t.subhead}
@@ -85,9 +85,9 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
             FMCSA lookup, landing the seller directly on step 2. */}
         <motion.form
           onSubmit={submit}
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.85, ease: EASE }}
+          transition={{ duration: 0.4, delay: 0.65, ease: EASE }}
           className="mt-8 flex w-full max-w-2xl flex-col gap-3 md:mt-10"
         >
           <div className="flex flex-col gap-2 rounded-2xl bg-white/[0.05] p-2 ring-1 ring-white/15 backdrop-blur-md sm:flex-row sm:items-center sm:gap-1 sm:rounded-full">
