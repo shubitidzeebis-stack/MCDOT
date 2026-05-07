@@ -152,3 +152,55 @@ export async function changePassword(
   `;
   return { ok: true };
 }
+
+export async function createUser(
+  email: string,
+  password: string,
+  name: string | null,
+): Promise<{ ok: boolean; reason?: string; user?: AdminUser }> {
+  if (password.length < 8) {
+    return { ok: false, reason: "Password must be at least 8 characters." };
+  }
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    return { ok: false, reason: "Email is not valid." };
+  }
+  const sql = getSql();
+  if (!sql) return { ok: false, reason: "DB unavailable" };
+  await ensureTable(sql);
+  const hash = await hashPassword(password);
+  try {
+    const rows = (await sql`
+      INSERT INTO admin_users (email, password_hash, name, role)
+      VALUES (${trimmedEmail}, ${hash}, ${name}, 'admin')
+      RETURNING id, email, name, role,
+                created_at::text AS created_at,
+                last_login_at::text AS last_login_at
+    `) as AdminUser[];
+    return { ok: true, user: rows[0] };
+  } catch (err) {
+    if (err && (err as { code?: string }).code === "23505") {
+      return { ok: false, reason: "A user with that email already exists." };
+    }
+    console.error("[admin-users.createUser] error", err);
+    return { ok: false, reason: "Could not create user." };
+  }
+}
+
+export async function deleteUser(
+  userId: number,
+): Promise<{ ok: boolean; reason?: string }> {
+  const sql = getSql();
+  if (!sql) return { ok: false, reason: "DB unavailable" };
+  await ensureTable(sql);
+  // Don't allow deleting the very last admin — guard against locking
+  // everyone out.
+  const count = (await sql`SELECT COUNT(*) AS c FROM admin_users`) as Array<{
+    c: string;
+  }>;
+  if (Number(count[0]?.c ?? 0) <= 1) {
+    return { ok: false, reason: "Can't remove the last admin." };
+  }
+  await sql`DELETE FROM admin_users WHERE id = ${userId}`;
+  return { ok: true };
+}

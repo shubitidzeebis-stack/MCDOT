@@ -47,6 +47,7 @@ type Carrier = {
   flags: {
     hasActiveAuthority: boolean;
     hasInsuranceOnFile: boolean;
+    insuranceStatus: "active" | "lapsed" | "not_required" | "unknown";
     isAllowedToOperate: boolean;
     driverOosBetterThanAvg: boolean;
     vehicleOosBetterThanAvg: boolean;
@@ -488,6 +489,25 @@ function Step2({
           label={t.authority}
           value={carrier.flags.hasActiveAuthority ? t.authorityActive : t.authorityInactive}
           tone={carrier.flags.hasActiveAuthority ? "good" : "warn"}
+        />
+        <Row
+          label={t.insurance}
+          value={
+            carrier.flags.insuranceStatus === "active"
+              ? t.insuranceActive
+              : carrier.flags.insuranceStatus === "lapsed"
+                ? t.insuranceLapsed
+                : carrier.flags.insuranceStatus === "not_required"
+                  ? t.insuranceNotRequired
+                  : "—"
+          }
+          tone={
+            carrier.flags.insuranceStatus === "active"
+              ? "good"
+              : carrier.flags.insuranceStatus === "lapsed"
+                ? "warn"
+                : "neutral"
+          }
         />
         <Row label={t.fleetSize} value={`${carrier.powerUnits} · ${carrier.drivers}`} />
         <Row label={t.crashes} value={String(carrier.crashes24mo)} />

@@ -46,6 +46,10 @@ export function AdminHeader({
           <div className="text-[11px] text-white/40">{currentUser.email}</div>
         </div>
         <div className="flex items-center gap-3 text-[12px]">
+          <Link href="/admin/account" className="text-white/55 hover:text-white">
+            Account
+          </Link>
+          <span className="text-white/20">·</span>
           <Link href="/" className="text-white/55 hover:text-white">
             Back to site
           </Link>

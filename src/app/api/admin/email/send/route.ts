@@ -5,6 +5,7 @@ import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { emailShell } from "@/lib/email/shell";
 import { unsubscribeUrl } from "@/lib/email/queue";
+import { logSentEmail } from "@/lib/db/email-history";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { SITE } from "@/lib/site";
 
@@ -129,6 +130,23 @@ export async function POST(req: Request) {
         { error: "Send failed. Check Resend dashboard." },
         { status: 502 },
       );
+    }
+
+    // Log to admin_email_log so we have history per valuation. Best-
+    // effort — don't fail the user-facing send if logging fails.
+    try {
+      await logSentEmail({
+        valuationId: typeof raw.valuationId === "number" ? raw.valuationId : null,
+        sentByUserId: session.uid,
+        sentByEmail: session.email,
+        sentByName: session.name,
+        toEmail: recipientEmail,
+        subject,
+        body: raw.body,
+        resendId: result.data?.id ?? null,
+      });
+    } catch {
+      // ignore
     }
 
     return NextResponse.json({ ok: true, id: result.data?.id ?? null });

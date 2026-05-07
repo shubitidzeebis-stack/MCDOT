@@ -76,6 +76,8 @@ export async function POST(req: Request) {
         carrier,
         mcNumbers,
         authorityAgeDays: raw.authorityAgeDays ?? authorityAgeDays,
+        telephone,
+        mcs150FormDate,
         attribution: raw.attribution ?? null,
       },
       { ip, userAgent },

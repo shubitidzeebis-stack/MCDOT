@@ -257,12 +257,23 @@ export async function lookupCarrier(
   }
 }
 
-// Convenience flags used by the pricing algorithm.
+// Convenience flags used by the pricing algorithm + UI displays.
+export type InsuranceStatus = "active" | "lapsed" | "not_required" | "unknown";
+
+export function deriveInsuranceStatus(c: FmcsaCarrier): InsuranceStatus {
+  const required = c.bipdInsuranceRequired === "Y";
+  const onFile = Number(c.bipdInsuranceOnFile) > 0;
+  if (!required) return "not_required";
+  if (onFile) return "active";
+  return "lapsed";
+}
+
 export function deriveCarrierFlags(c: FmcsaCarrier) {
   const hasActiveAuthority =
     c.commonAuthorityStatus === "A" || c.commonAuthorityStatus === "Y";
+  const insuranceStatus = deriveInsuranceStatus(c);
   const hasInsuranceOnFile =
-    Number(c.bipdInsuranceOnFile) > 0 || c.bipdInsuranceRequired !== "Y";
+    insuranceStatus === "active" || insuranceStatus === "not_required";
   const isAllowedToOperate = c.allowedToOperate === "Y";
   const driverNatAvg = Number(c.driverOosRateNationalAverage) || 5.51;
   const vehicleNatAvg = Number(c.vehicleOosRateNationalAverage) || 20.72;
@@ -273,6 +284,7 @@ export function deriveCarrierFlags(c: FmcsaCarrier) {
   return {
     hasActiveAuthority,
     hasInsuranceOnFile,
+    insuranceStatus,
     isAllowedToOperate,
     driverOosBetterThanAvg,
     vehicleOosBetterThanAvg,

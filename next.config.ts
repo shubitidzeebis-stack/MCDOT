@@ -33,7 +33,7 @@ const SECURITY_HEADERS = [
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
-      "frame-src https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
+      "frame-src https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com https://www.cal.eu https://www.cal.com",
       // worker-src + child-src don't fall back cleanly to script-src
       // in all browsers — declare them explicitly so blob workers and
       // Vercel preview iframes work without breaking the page.

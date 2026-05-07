@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // Interactive admin panel for the valuations table. Reads initial rows
 // from the server, then supports filtering, status updates, and notes
@@ -30,6 +30,8 @@ export type AdminValuationRow = {
   crashes_24mo: number | null;
   safety_rating: string | null;
   notes_internal: string | null;
+  insurance_status: string | null;
+  telephone: string | null;
 };
 
 const STATUSES = [
@@ -128,6 +130,32 @@ export function AdminValuationsPanel({
     ).length;
     return { total, relay, withEmail, won, wonValue, pipelineValue, last7 };
   }, [rows]);
+
+  async function deleteRow(id: number) {
+    if (
+      !confirm(
+        "Delete this valuation permanently? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    const prev = rows;
+    setRows((rs) => rs.filter((r) => r.id !== id));
+    try {
+      const body: Record<string, unknown> = { id };
+      if (adminKey) body.key = adminKey;
+      const res = await fetch("/api/admin/valuations/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("delete failed");
+    } catch (err) {
+      console.error(err);
+      setRows(prev);
+      alert("Delete failed — the row was restored.");
+    }
+  }
 
   async function updateRow(
     id: number,
@@ -274,6 +302,7 @@ export function AdminValuationsPanel({
                 expanded={expandedId === v.id}
                 onToggle={() => setExpandedId(expandedId === v.id ? null : v.id)}
                 onUpdate={(patch) => updateRow(v.id, patch)}
+                onDelete={() => deleteRow(v.id)}
               />
             ))}
           </tbody>
@@ -387,11 +416,13 @@ function Row({
   expanded,
   onToggle,
   onUpdate,
+  onDelete,
 }: {
   v: AdminValuationRow;
   expanded: boolean;
   onToggle: () => void;
   onUpdate: (patch: { status?: StatusValue; notesInternal?: string }) => void;
+  onDelete: () => void;
 }) {
   const [notesDraft, setNotesDraft] = useState(v.notes_internal ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
@@ -406,6 +437,31 @@ function Row({
     kind: "ok" | "err";
     msg: string;
   } | null>(null);
+
+  // Email history — loaded lazily when the drawer expands.
+  const [history, setHistory] = useState<
+    | Array<{
+        id: number;
+        created_at: string;
+        sent_by_email: string | null;
+        sent_by_name: string | null;
+        to_email: string;
+        subject: string;
+        body: string;
+      }>
+    | null
+  >(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  useEffect(() => {
+    if (!expanded || history !== null) return;
+    setHistoryLoading(true);
+    fetch(`/api/admin/email/history?valuationId=${v.id}`)
+      .then((r) => (r.ok ? r.json() : { entries: [] }))
+      .then((data) => setHistory(data.entries ?? []))
+      .catch(() => setHistory([]))
+      .finally(() => setHistoryLoading(false));
+  }, [expanded, history, v.id]);
 
   function pickTemplate(id: string) {
     const tpl = EMAIL_TEMPLATES.find((t) => t.id === id);
@@ -446,6 +502,16 @@ function Row({
       setEmailFlash({ kind: "ok", msg: `Sent to ${v.contact_email}.` });
       setEmailSubject("");
       setEmailBody("");
+      // Refresh history so the just-sent email appears immediately.
+      try {
+        const hres = await fetch(`/api/admin/email/history?valuationId=${v.id}`);
+        if (hres.ok) {
+          const hdata = await hres.json();
+          setHistory(hdata.entries ?? []);
+        }
+      } catch {
+        // ignore
+      }
     } catch (err) {
       setEmailFlash({
         kind: "err",
@@ -548,13 +614,23 @@ function Row({
           </select>
         </td>
         <td className="px-3 py-3 text-right">
-          <button
-            type="button"
-            onClick={onToggle}
-            className="rounded-md px-2 py-1 text-[11px] text-white/60 hover:bg-white/[0.06] hover:text-white"
-          >
-            {expanded ? "Close" : "Detail"}
-          </button>
+          <div className="inline-flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onToggle}
+              className="rounded-md px-2 py-1 text-[11px] text-white/60 hover:bg-white/[0.06] hover:text-white"
+            >
+              {expanded ? "Close" : "Detail"}
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              title="Delete this valuation"
+              className="rounded-md px-2 py-1 text-[11px] text-red-400/70 hover:bg-red-500/[0.08] hover:text-red-300"
+            >
+              Del
+            </button>
+          </div>
         </td>
       </tr>
       {expanded && (
@@ -568,6 +644,19 @@ function Row({
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-white/70">
                   <Detail label="Power units" value={String(v.power_units ?? "—")} />
                   <Detail label="Drivers" value={String(v.drivers_count ?? "—")} />
+                  <Detail
+                    label="Insurance"
+                    value={
+                      v.insurance_status === "active"
+                        ? "Active"
+                        : v.insurance_status === "lapsed"
+                          ? "Lapsed (red flag)"
+                          : v.insurance_status === "not_required"
+                            ? "Not required"
+                            : "—"
+                    }
+                  />
+                  <Detail label="Phone (FMCSA)" value={v.telephone ?? "—"} />
                   <Detail label="Vehicle OOS %" value={v.vehicle_oos_pct ?? "—"} />
                   <Detail label="Driver OOS %" value={v.driver_oos_pct ?? "—"} />
                   <Detail label="Crashes 24mo" value={String(v.crashes_24mo ?? "—")} />
@@ -618,7 +707,51 @@ function Row({
               </div>
 
               <div>
-                <div className="flex items-center justify-between">
+                {/* Email history — loads lazily on drawer expand. */}
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
+                  Email history
+                </p>
+                {historyLoading ? (
+                  <p className="mt-2 text-[12px] text-white/40">Loading…</p>
+                ) : history && history.length > 0 ? (
+                  <ul className="mt-3 space-y-3">
+                    {history.map((h) => (
+                      <li
+                        key={h.id}
+                        className="rounded-lg bg-white/[0.025] p-3 ring-1 ring-white/8"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate text-[12px] font-medium text-white/85">
+                            {h.subject}
+                          </p>
+                          <span className="text-[10px] text-white/40">
+                            {new Date(h.created_at).toLocaleString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[10px] text-white/45">
+                          From {h.sent_by_name || h.sent_by_email || "—"} → {h.to_email}
+                        </p>
+                        <details className="mt-2 text-[12px] text-white/55">
+                          <summary className="cursor-pointer text-[11px] text-white/45 hover:text-white/75">
+                            View body
+                          </summary>
+                          <pre className="mt-2 whitespace-pre-wrap font-sans text-[12px] text-white/65">
+                            {h.body}
+                          </pre>
+                        </details>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-[12px] text-white/40">No emails sent yet.</p>
+                )}
+
+                <div className="mt-6 flex items-center justify-between">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
                     Send email
                   </p>

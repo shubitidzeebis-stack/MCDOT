@@ -13,7 +13,7 @@
 //    Sets has_amazon_relay + valuation_low/high.
 
 import { neon } from "@neondatabase/serverless";
-import type { FmcsaCarrier } from "@/lib/fmcsa";
+import { deriveInsuranceStatus, type FmcsaCarrier } from "@/lib/fmcsa";
 import type { ValuationResult } from "@/lib/valuation";
 
 type Sql = ReturnType<typeof neon>;
@@ -70,6 +70,9 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new'`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMPTZ`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS notes_internal TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS telephone TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS mcs150_form_date TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_status TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
@@ -95,6 +98,21 @@ export const VALUATION_STATUSES: ValuationStatus[] = [
   "closed_won",
   "closed_lost",
 ];
+
+// Admin-side hard delete. Caller is responsible for verifying auth
+// upstream. Used to clear test rows from the admin panel.
+export async function adminDeleteValuation(id: number): Promise<{ ok: boolean }> {
+  const sql = getSql();
+  if (!sql) return { ok: false };
+  try {
+    await ensureTable(sql);
+    await sql`DELETE FROM valuations WHERE id = ${id}`;
+    return { ok: true };
+  } catch (err) {
+    console.error("[adminDeleteValuation] error", err);
+    return { ok: false };
+  }
+}
 
 // Admin-side mutation. Updates status and/or notes by id. No session-id
 // auth here — caller is responsible for verifying ADMIN_KEY upstream.
@@ -143,6 +161,8 @@ export type CreateValuationInput = {
   carrier: FmcsaCarrier;
   mcNumbers: string[];
   authorityAgeDays: number | null;
+  telephone: string | null;
+  mcs150FormDate: string | null;
   attribution: unknown;
 };
 
@@ -165,6 +185,7 @@ export async function createValuation(
       country: c.phyCountry,
     };
 
+    const insuranceStatus = deriveInsuranceStatus(c);
     const result = await sql`
       INSERT INTO valuations (
         session_id, mc_number, dot_number, legal_name, dba_name,
@@ -172,6 +193,7 @@ export async function createValuation(
         phy_address, vehicle_oos_pct, vehicle_oos_national_avg,
         driver_oos_pct, driver_oos_national_avg, crashes_24mo,
         safety_rating, bipd_insurance_on_file, mcs150_outdated,
+        telephone, mcs150_form_date, insurance_status,
         fmcsa_raw, attribution, ip, user_agent
       ) VALUES (
         ${input.sessionId},
@@ -192,6 +214,9 @@ export async function createValuation(
         ${c.safetyRating},
         ${Number(c.bipdInsuranceOnFile) || 0},
         ${c.mcs150Outdated},
+        ${input.telephone},
+        ${input.mcs150FormDate},
+        ${insuranceStatus},
         ${JSON.stringify(c)}::jsonb,
         ${input.attribution ? JSON.stringify(input.attribution) : null}::jsonb,
         ${meta.ip},

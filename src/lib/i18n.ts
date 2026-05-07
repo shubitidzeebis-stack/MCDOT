@@ -145,6 +145,10 @@ type Dict = {
     authority: string;
     authorityActive: string;
     authorityInactive: string;
+    insurance: string;
+    insuranceActive: string;
+    insuranceLapsed: string;
+    insuranceNotRequired: string;
     fleetSize: string;
     crashes: string;
     safety: string;
@@ -589,6 +593,10 @@ export const DICT: Record<Locale, Dict> = {
       authority: "Authority",
       authorityActive: "Active for-hire",
       authorityInactive: "Inactive / not for-hire",
+      insurance: "Insurance",
+      insuranceActive: "Active on file",
+      insuranceLapsed: "Lapsed / required",
+      insuranceNotRequired: "Not required",
       fleetSize: "Power units · drivers",
       crashes: "Crashes (24 mo)",
       safety: "Safety rating",
@@ -1031,6 +1039,10 @@ export const DICT: Record<Locale, Dict> = {
       authority: "Autoridad",
       authorityActive: "Activa para alquiler",
       authorityInactive: "Inactiva / no para alquiler",
+      insurance: "Seguro",
+      insuranceActive: "Activo en archivo",
+      insuranceLapsed: "Vencido / requerido",
+      insuranceNotRequired: "No requerido",
       fleetSize: "Unidades · conductores",
       crashes: "Choques (24 meses)",
       safety: "Calificación de seguridad",
@@ -1474,6 +1486,10 @@ export const DICT: Record<Locale, Dict> = {
       authority: "Полномочия",
       authorityActive: "Активный for-hire",
       authorityInactive: "Неактивный / не for-hire",
+      insurance: "Страховка",
+      insuranceActive: "Активна",
+      insuranceLapsed: "Просрочена / требуется",
+      insuranceNotRequired: "Не требуется",
       fleetSize: "Тягачи · водители",
       crashes: "Аварии (24 мес.)",
       safety: "Рейтинг безопасности",

@@ -122,13 +122,56 @@ go to `/contact` (wizard not yet localized).
   needs a Cal.com API key from `https://cal.com/settings/developer/api-keys`.
   Add it as `CAL_API_KEY` env var when ready and ping me to wire it up.
 
-### Phase 5 backlog
+### Phase 5 — shipped 2026-05-07
 
-- **Self-service password change** — UI in admin to change own password.
-- **User management UI** — Luka can add / remove / suspend users.
-- **Email send history** per valuation — log to a new table, surface in
-  the drawer.
-- **Realtime calendar slot** (above) once Cal.com API key is provided.
+- ✅ **Cal.com embed switched to iframe** (was rendering empty —
+  cal.eu's 307 redirect to www.cal.eu was breaking the JS SDK origin
+  handshake). Iframe handles the redirect transparently. CSP extended
+  to `www.cal.eu` + `www.cal.com`.
+- ✅ **Insurance status display** — `bipdInsuranceOnFile` +
+  `bipdInsuranceRequired` derive an `insurance_status` value
+  ("active" / "lapsed" / "not_required" / "unknown") shown on wizard
+  step 2 and admin detail drawer. Stored on valuations table.
+- ✅ **Delete row from admin** — POST `/api/admin/valuations/delete`
+  + Del button per row + confirm dialog. Used to clear test rows.
+- ✅ **Self-service password change** at `/admin/account` — verifies
+  current password before update, rate-limited 5 attempts/30min.
+- ✅ **Team member management** at `/admin/account` — add new admin
+  (email + name + initial password), reset other users' passwords,
+  remove other users (can't remove yourself, can't remove the last
+  admin).
+- ✅ **Email send history per valuation** — every send via
+  `/api/admin/email/send` now logs to `admin_email_log` table.
+  History surfaces in the detail drawer with sender, subject, body
+  (collapsible).
+
+### Email scraping — confirmed not possible from FMCSA
+
+Re-verified twice: the QCMobile JSON does not include `email` despite
+the documentation listing `telephone`. SAFER's public HTML snapshot
+also has no email field. FMCSA explicitly marks MCS-150 email as
+**confidential**. Phone is public; email is not.
+
+Available paths for email enrichment, if Veritor wants to invest:
+- **Hunter.io** — domain → emails ($49+/month)
+- **Apollo / Snov.io / Lusha** — same idea, varies on price
+- These look up emails via their own datasets. We'd plug whichever the
+  user picks into the wizard's contact step as a "did you mean…?"
+  pre-fill suggestion.
+
+For now the wizard collects email directly from the seller — no
+reliable way around this.
+
+### Phase 6 backlog
+
+- **Realtime calendar slot preview** on wizard reveal — needs Cal.com
+  API key from `https://cal.eu/settings/developer/api-keys`.
+- **Email enrichment service** integration (Hunter / Apollo) once a
+  budget is approved.
+- **Bulk admin actions** — "mark all selected as Contacted", "delete
+  selected".
+- **Audit log** — track who changed what status / notes / deleted
+  what row.
 
 ## Agreed scope
 
