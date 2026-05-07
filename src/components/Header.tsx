@@ -132,7 +132,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
               <LangSwitcher current={locale} />
             </div>
             <Link
-              href={`${prefix}/contact`}
+              href={locale === "en" ? "/get-offer" : `${prefix}/contact`}
               className="relative hidden overflow-hidden rounded-full border border-[#ff8a1a]/40 bg-[#ff8a1a]/10 px-5 py-2 text-[14px] font-medium text-[#ffb371] backdrop-blur-md transition-all duration-300 hover:border-[#ff8a1a]/70 hover:bg-[#ff8a1a]/20 md:inline-flex"
             >
               <span className="relative z-10">{t.nav.cta}</span>
@@ -217,7 +217,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
                 className="mt-6 flex flex-col gap-3"
               >
                 <Link
-                  href={`${prefix}/contact`}
+                  href={locale === "en" ? "/get-offer" : `${prefix}/contact`}
                   onClick={() => setOpen(false)}
                   className="inline-flex w-fit rounded-full border border-[#ff8a1a]/50 bg-[#ff8a1a]/10 px-5 py-2.5 text-sm font-medium text-[#ffb371] transition-colors hover:bg-[#ff8a1a]/20"
                 >

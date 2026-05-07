@@ -71,13 +71,24 @@ export default function TermsPage() {
                 any decision regarding the sale of your LLC or any other business.
               </p>
 
-              <h2>3. No offer; no securities</h2>
+              <h2>3. No offer; no securities; valuation wizard is indicative</h2>
               <p>
                 Nothing on the Site is, or should be construed as, an offer to buy or sell any
                 LLC, security, asset, or interest. Any actual purchase or sale will be governed
                 solely by a separate written purchase agreement signed by both parties.
                 Pricing examples, valuation discussions, and timeline references on the Site
                 are illustrative and non-binding.
+              </p>
+              <p>
+                <strong>Valuation wizard.</strong> Our free valuation wizard at
+                {" "}<a href="/get-offer">/get-offer</a> returns an indicative price range
+                computed from FMCSA public records and the limited inputs you provide.
+                The wizard&rsquo;s output is for informational purposes only, is not an
+                offer, is not binding on {SITE.legalName}, and may differ materially from
+                any final offer following document review and a phone discussion. We do not
+                guarantee the accuracy, completeness, or timeliness of FMCSA data or any
+                derived valuation, and we reserve the right to decline to make any offer
+                regardless of the wizard&rsquo;s output.
               </p>
 
               <h2>4. Submissions you make</h2>

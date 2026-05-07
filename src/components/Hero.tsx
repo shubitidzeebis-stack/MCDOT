@@ -76,7 +76,7 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
           className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center md:mt-10"
         >
           <Link
-            href={`${prefix}/contact`}
+            href={locale === "en" ? "/get-offer" : `${prefix}/contact`}
             className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#ff8a1a] py-3 pl-6 pr-3 text-sm font-semibold text-[#0a0a0b] transition-colors duration-300 hover:bg-[#ffb371]"
           >
             <span>{t.ctaPrimary}</span>

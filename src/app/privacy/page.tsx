@@ -112,12 +112,30 @@ export default function PrivacyPage() {
               <h3>2.3 Information from third parties</h3>
               <p>
                 We may receive information about your LLC from publicly available government
-                sources (for example FMCSA SAFER for MC / DOT records). When you click on our
-                ads on third-party platforms (such as Google or Meta), those platforms may share
-                aggregated or hashed identifiers with us subject to their own privacy practices.
+                sources (for example FMCSA SAFER and the FMCSA QCMobile API for MC / DOT
+                records). When you click on our ads on third-party platforms (such as Google or
+                Meta), those platforms may share aggregated or hashed identifiers with us
+                subject to their own privacy practices.
               </p>
 
-              <h3>2.4 Sensitive personal information</h3>
+              <h3>2.4 Free valuation wizard</h3>
+              <p>
+                When you use our free valuation wizard at <a href="/get-offer">/get-offer</a>
+                {" "}and submit your MC or DOT number, we automatically query the FMCSA
+                QCMobile public records API using the number you provide. We store the
+                returned FMCSA snapshot (legal name, address, authority status, safety
+                metrics, inspection rates, crash counts, insurance status) along with the
+                indicative valuation range we compute, your session identifier, your IP
+                address, your user-agent, and any contact information you choose to provide
+                (name, email, phone). This record is created at the moment you submit the
+                lookup, before any contact details are entered, so that we can complete the
+                valuation calculation. If you do not complete the wizard or provide contact
+                information, we retain the FMCSA snapshot tied to your session for up to
+                24 months for product analytics and to detect duplicate lookups. The FMCSA
+                data itself is public-record information.
+              </p>
+
+              <h3>2.5 Sensitive personal information</h3>
               <p>
                 We do not intentionally collect sensitive personal information (Social Security
                 numbers, government IDs, financial-account credentials, precise geolocation,
