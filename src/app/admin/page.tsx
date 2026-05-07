@@ -13,6 +13,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { neon } from "@neondatabase/serverless";
+import { AdminValuationsPanel } from "@/components/AdminValuationsPanel";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -50,6 +51,7 @@ type Partial = {
 type Valuation = {
   id: number;
   created_at: string;
+  status: string | null;
   legal_name: string | null;
   dba_name: string | null;
   mc_number: string | null;
@@ -70,6 +72,7 @@ type Valuation = {
   driver_oos_pct: string | null;
   crashes_24mo: number | null;
   safety_rating: string | null;
+  notes_internal: string | null;
 };
 
 async function loadLeads(): Promise<{
@@ -101,16 +104,16 @@ async function loadLeads(): Promise<{
       // Wrapped because the table doesn't exist until first wizard
       // submission. Don't break /admin if no one's used the wizard yet.
       valuations = (await sql`
-        SELECT id, created_at::text AS created_at, legal_name, dba_name,
+        SELECT id, created_at::text AS created_at, status, legal_name, dba_name,
                mc_number, dot_number, authority_status, authority_age_days,
                has_amazon_relay, valuation_low, valuation_high,
                valuation_floored_reason, contact_name, contact_email,
                contact_phone, contact_provided_at::text AS contact_provided_at,
                power_units, drivers_count, vehicle_oos_pct, driver_oos_pct,
-               crashes_24mo, safety_rating
+               crashes_24mo, safety_rating, notes_internal
           FROM valuations
          ORDER BY created_at DESC
-         LIMIT 200
+         LIMIT 500
       `) as Valuation[];
     } catch {
       valuations = [];
@@ -122,16 +125,6 @@ async function loadLeads(): Promise<{
   }
 }
 
-function fmtMoney(n: number | null): string {
-  if (n === null) return "—";
-  return `$${n.toLocaleString("en-US")}`;
-}
-
-function fmtRange(low: number | null, high: number | null): string {
-  if (low === null || high === null) return "—";
-  if (low === high) return fmtMoney(low);
-  return `${fmtMoney(low)} – ${fmtMoney(high)}`;
-}
 
 function priorityBadge(p: Lead["priority"]) {
   if (p === "high")
@@ -271,132 +264,7 @@ export default async function AdminPage({
         </div>
       </section>
 
-      <section className="mt-12">
-        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-          Wizard valuations
-        </h2>
-        <div className="overflow-x-auto rounded-xl bg-white/[0.025] ring-1 ring-white/10">
-          <table className="min-w-full divide-y divide-white/8 text-[13px]">
-            <thead className="bg-white/[0.03] text-left text-[11px] uppercase tracking-[0.18em] text-white/55">
-              <tr>
-                <th className="px-3 py-3">When</th>
-                <th className="px-3 py-3">Company</th>
-                <th className="px-3 py-3">DOT / MC</th>
-                <th className="px-3 py-3">Authority</th>
-                <th className="px-3 py-3">Auth age</th>
-                <th className="px-3 py-3">Relay</th>
-                <th className="px-3 py-3">Range</th>
-                <th className="px-3 py-3">Contact</th>
-                <th className="px-3 py-3">Fleet</th>
-                <th className="px-3 py-3">OOS V/D</th>
-                <th className="px-3 py-3">Crashes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/8">
-              {valuations.length === 0 && (
-                <tr>
-                  <td colSpan={11} className="px-3 py-12 text-center text-white/45">
-                    No wizard valuations yet.
-                  </td>
-                </tr>
-              )}
-              {valuations.map((v) => (
-                <tr key={v.id} className="hover:bg-white/[0.02]">
-                  <td className="whitespace-nowrap px-3 py-3 text-white/65">
-                    {new Date(v.created_at).toLocaleString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="px-3 py-3 font-medium text-white">
-                    {v.legal_name || "—"}
-                    {v.dba_name && (
-                      <span className="block text-[11px] text-white/45">
-                        DBA {v.dba_name}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[12px] text-white/65">
-                    {v.dot_number ? `USDOT ${v.dot_number}` : "—"}
-                    {v.mc_number && (
-                      <span className="block text-[11px] text-white/45">
-                        MC-{v.mc_number}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[12px]">
-                    {v.authority_status === "A" ? (
-                      <span className="text-emerald-300">Active</span>
-                    ) : v.authority_status === "I" ? (
-                      <span className="text-amber-300">Inactive</span>
-                    ) : (
-                      <span className="text-white/45">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[12px] text-white/65">
-                    {v.authority_age_days !== null
-                      ? `${Math.round(v.authority_age_days / 30)} mo`
-                      : "—"}
-                  </td>
-                  <td className="px-3 py-3 text-[12px]">
-                    {v.has_amazon_relay === true ? (
-                      <span className="inline-flex rounded-full bg-[#ff8a1a]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#ff8a1a]">
-                        Yes
-                      </span>
-                    ) : v.has_amazon_relay === false ? (
-                      <span className="text-white/45">No</span>
-                    ) : (
-                      <span className="text-white/35">—</span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 font-medium text-white">
-                    {fmtRange(v.valuation_low, v.valuation_high)}
-                    {v.valuation_floored_reason && (
-                      <span
-                        className="block text-[10px] italic text-amber-300/80"
-                        title={v.valuation_floored_reason}
-                      >
-                        floored
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[12px]">
-                    {v.contact_email ? (
-                      <a
-                        href={`mailto:${v.contact_email}`}
-                        className="text-[#ffb371] hover:underline"
-                      >
-                        {v.contact_email}
-                      </a>
-                    ) : (
-                      <span className="text-white/35">—</span>
-                    )}
-                    {v.contact_phone && (
-                      <a
-                        href={`tel:${v.contact_phone}`}
-                        className="block text-[11px] text-white/45 hover:text-white/70"
-                      >
-                        {v.contact_phone}
-                      </a>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-[12px] text-white/65">
-                    {v.power_units ?? 0} · {v.drivers_count ?? 0}
-                  </td>
-                  <td className="px-3 py-3 text-[12px] text-white/65">
-                    {v.vehicle_oos_pct ?? "—"} / {v.driver_oos_pct ?? "—"}
-                  </td>
-                  <td className="px-3 py-3 text-[12px] text-white/65">
-                    {v.crashes_24mo ?? 0}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminValuationsPanel initial={valuations} adminKey={key ?? ""} />
 
       {partials.length > 0 && (
         <section className="mt-12">

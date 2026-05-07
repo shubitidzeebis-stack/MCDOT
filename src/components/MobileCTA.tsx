@@ -12,7 +12,14 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const SHOW_AFTER = 400;
 
 // Pages where the sticky CTA is redundant or distracting.
-const HIDDEN_PATHS = ["/contact", "/thanks", "/unsubscribe", "/privacy", "/terms"];
+const HIDDEN_PATHS = [
+  "/contact",
+  "/get-offer",
+  "/thanks",
+  "/unsubscribe",
+  "/privacy",
+  "/terms",
+];
 
 export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale];
@@ -52,7 +59,7 @@ export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
                 <span>{t.contact.callLabel}</span>
               </a>
               <Link
-                href={locale === "en" ? "/contact" : `/${locale}/contact`}
+                href={locale === "en" ? "/get-offer" : `/${locale}/get-offer`}
                 className="group flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#ff8a1a] px-4 text-sm font-semibold text-[#0a0a0b] transition-colors active:bg-[#ffb371]"
               >
                 <span>{t.hero.ctaPrimary}</span>

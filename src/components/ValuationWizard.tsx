@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowIcon, ChevronIcon, CheckIcon } from "@/components/Icons";
+import { ArrowIcon, CheckIcon } from "@/components/Icons";
+import { CalEmbed } from "@/components/CalEmbed";
 import { attributionPayload } from "@/lib/attribution";
 import { SITE } from "@/lib/site";
 import { DICT, type Locale } from "@/lib/i18n";
@@ -283,7 +284,14 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
             )}
             {step === 5 && carrier && (
               <StepShell key="5">
-                <Step5 t={t} range={range} floorReason={floorReason} carrier={carrier} />
+                <Step5
+                  t={t}
+                  range={range}
+                  floorReason={floorReason}
+                  carrier={carrier}
+                  contact={{ name, email, phone }}
+                  hasRelay={hasRelay === "yes" ? "yes" : "no"}
+                />
               </StepShell>
             )}
           </AnimatePresence>
@@ -773,12 +781,27 @@ function Step5({
   range,
   floorReason,
   carrier,
+  contact,
+  hasRelay,
 }: {
   t: Strings;
   range: string;
   floorReason: string | null;
   carrier: Carrier;
+  contact: { name: string; email: string; phone: string };
+  hasRelay: "yes" | "no";
 }) {
+  // Pre-fill the Cal.com booking form with the seller's info + carrier
+  // context. Cal.com supports name/email as URL params, plus a generic
+  // `notes` field that lands in the booking confirmation. The seller
+  // can still edit anything in Cal's form before confirming.
+  const notes = [
+    `Veritor valuation request:`,
+    `${carrier.legalName} (USDOT ${carrier.dotNumber}${carrier.mcNumbers[0] ? `, MC-${carrier.mcNumbers[0]}` : ""})`,
+    `Indicative range: ${range}`,
+    `Active Amazon Relay: ${hasRelay === "yes" ? "yes" : "no"}`,
+  ].join("\n");
+
   return (
     <>
       <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#ff8a1a]">
@@ -804,22 +827,31 @@ function Step5({
         <p className="text-[13px] leading-relaxed text-white/65">{t.indicativeBlock}</p>
       </div>
 
-      <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Inline Cal.com calendar — booking happens on this same page,
+          no extra click, no new tab. The user's name + email + carrier
+          context are pre-filled but editable. */}
+      <div className="mt-7">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+          {t.scheduleCall}
+        </p>
+        <CalEmbed
+          calLink="lukaveritor/15min"
+          origin="https://cal.eu"
+          prefill={{
+            name: contact.name || undefined,
+            email: contact.email || undefined,
+            notes,
+          }}
+        />
+      </div>
+
+      <div className="mt-7 text-center">
         <Link
           href="/contact"
           className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
         >
           {t.haveQuestions}
         </Link>
-        <a
-          href={`mailto:${SITE.email}?subject=Schedule a call about my LLC&body=My USDOT ${carrier.dotNumber} valuation came back as ${encodeURIComponent(range)}.`}
-          className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371]"
-        >
-          <span>{t.scheduleCall}</span>
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
-            <ChevronIcon />
-          </span>
-        </a>
       </div>
     </>
   );

@@ -8,6 +8,7 @@ import {
   updateValuationContact,
 } from "@/lib/db/valuations";
 import { queueSequence } from "@/lib/email/queue";
+import { notifySlackNewValuation } from "@/lib/notifications/slack";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { SITE } from "@/lib/site";
 
@@ -113,15 +114,42 @@ export async function POST(req: Request) {
       }
     }
 
-    // ── Email side effects ──────────────────────────────────────────
-    // Three things happen post-valuation, all best-effort:
-    //   1) Team gets a notification with the carrier + range
-    //   2) Seller gets queued into the nurture sequence (step 1 of the
-    //      sequence is an immediate autoreply)
-    //   3) On any of these failing, the user-facing flow still succeeds
+    // ── Notification side effects ───────────────────────────────────
+    // Four things happen post-valuation, all best-effort:
+    //   1) Team gets a notification email with the carrier + range
+    //   2) Slack ping with the same data (richer than email for triage)
+    //   3) Seller gets queued into the nurture sequence (step 1 = autoreply)
+    //   4) Any of these failing, the user-facing flow still succeeds
     const sellerEmail = raw.contact?.email?.trim().toLowerCase();
     const sellerName = raw.contact?.name?.trim();
     const range = formatRange(valuation);
+
+    // Slack ping — independent of email; runs even if no contact info.
+    try {
+      await notifySlackNewValuation({
+        legalName: lookup.carrier.legalName,
+        dotNumber: String(lookup.carrier.dotNumber),
+        mcNumber: lookup.mcNumbers[0] ?? null,
+        range,
+        hasAmazonRelay: raw.hasAmazonRelay,
+        flooredReason: valuation.flooredReason,
+        contact: {
+          name: sellerName,
+          email: sellerEmail,
+          phone: raw.contact?.phone,
+        },
+        authorityStatus: lookup.carrier.commonAuthorityStatus,
+        authorityAgeDays: lookup.authorityAgeDays,
+        powerUnits: lookup.carrier.totalPowerUnits,
+        drivers: lookup.carrier.totalDrivers,
+        crashes24mo: lookup.carrier.crashTotal,
+        safetyRating: lookup.carrier.safetyRating,
+        vehicleOosRate: lookup.carrier.vehicleOosRate,
+        driverOosRate: lookup.carrier.driverOosRate,
+      });
+    } catch (err) {
+      console.error("[valuation/finalize] slack notify failed", err);
+    }
     if (sellerEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sellerEmail)) {
       const apiKey = process.env.RESEND_API_KEY;
       if (apiKey) {

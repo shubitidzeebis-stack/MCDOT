@@ -62,23 +62,46 @@ go to `/contact` (wizard not yet localized).
   contact, fleet size, OOS rates, crashes. Header KPIs include
   Relay-flagged + email-captured counts.
 
-### Phase 3 backlog
+### Phase 3 — shipped 2026-05-07
 
-- **Calendar tool wiring** — "Schedule a call" CTA currently opens
-  a `mailto:`. Replace with Cal.com embed once user picks the tool +
-  registers (recommendation: Cal.com on info@groupveritor.com).
-- **MobileCTA wiring** — bottom mobile CTA still points to `/contact`.
-  Update to `/get-offer` for EN, locale-matched for ES/RU.
-- **Slack notification on wizard completion** — currently only
-  contact-form leads ping Slack. Add valuation completion ping with
-  range + Relay flag.
-- **Status workflow per valuation** — New → Contacted → Diligence →
-  Offer Sent → Closed Won/Lost. Stored on the valuations table.
-- **Notes per valuation** — internal notes column + admin UI.
-- **Admin multi-user auth** — replace ADMIN_KEY with per-user logins
-  (Vercel Auth / Sign in with Vercel) once team size warrants it.
-- **Wizard A/B copy tests** — try shorter step 1 intro, different
-  step 4 phrasing.
+- ✅ **Cal.com inline embed** wired into wizard step 5
+  (`https://cal.eu/lukaveritor/15min`). Pre-fills name + email + a
+  notes block with carrier name / DOT / MC / range / Relay flag.
+  User can still edit anything in Cal's form before confirming.
+- ✅ **CSP updated** — script-src + connect-src + frame-src now allow
+  app.cal.eu, app.cal.com, cal.eu, cal.com.
+- ✅ **MobileCTA** routes to `/get-offer` (EN) /
+  `/[locale]/get-offer` (ES/RU). Wizard URLs added to HIDDEN_PATHS so
+  the bottom CTA hides when already on the wizard.
+- ✅ **Slack notification** on wizard completion with full carrier
+  snapshot + range + Relay flag. Set SLACK_WEBHOOK_URL env to enable.
+- ✅ **Status workflow** — `status` column on valuations
+  (`new` → `contacted` → `diligence` → `offer_sent` → `closed_won` /
+  `closed_lost`). Defaults to `new` on insert.
+- ✅ **Internal notes** — `notes_internal` column for admin-side notes.
+- ✅ **Admin panel rebuilt** — `/admin?key=Luka20Gio22` loads. New
+  features:
+  - KPI cards (total / Relay / email-captured / closed-won + value)
+  - Filter bar (status / Relay / email / search)
+  - Inline status dropdowns with optimistic update
+  - Detail drawer per row with FMCSA snapshot + notes editor
+  - CSV export of all valuations
+  - Pipeline-value calc across contacted/diligence/offer-sent
+
+### Admin login
+- URL: `https://groupveritor.com/admin?key=Luka20Gio22`
+- Password is `Luka20Gio22` — set as `ADMIN_KEY` on Vercel (production
+  + development envs) and in local `.env.local`.
+
+### Phase 4 backlog
+
+- **Multi-user auth** — replace single ADMIN_KEY with per-user logins
+  (Vercel Auth / Sign in with Vercel) once team needs separate logins.
+- **Email-from-admin** — compose + send from admin panel using Resend.
+- **Wizard A/B copy tests** — shorter step 1 intro, different step 4
+  phrasing.
+- **Realtime calendar conflict check** — show "next available slot" on
+  the wizard's reveal screen (Cal.com supports a SDK call for this).
 
 ## Agreed scope
 

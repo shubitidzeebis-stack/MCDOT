@@ -28,12 +28,12 @@ const SECURITY_HEADERS = [
       // post-consent). Without blob: in worker-src specifically, the
       // Vercel Analytics worker fails to load and Chrome aborts the
       // page render with "This page couldn't load."
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com https://www.clarity.ms https://*.clarity.ms https://www.googletagmanager.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com https://www.clarity.ms https://*.clarity.ms https://www.googletagmanager.com https://app.cal.eu https://app.cal.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
-      "frame-src https://challenges.cloudflare.com https://vercel.live",
+      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
+      "frame-src https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
       // worker-src + child-src don't fall back cleanly to script-src
       // in all browsers — declare them explicitly so blob workers and
       // Vercel preview iframes work without breaking the page.

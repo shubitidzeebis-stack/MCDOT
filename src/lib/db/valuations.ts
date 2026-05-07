@@ -65,12 +65,77 @@ async function ensureTable(sql: Sql) {
       user_agent TEXT
     )
   `;
+  // Status workflow + internal notes — additive columns so this works
+  // on existing tables that pre-date the workflow feature.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new'`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS notes_internal TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_email_idx ON valuations (contact_email)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_created_at_idx ON valuations (created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS valuations_status_idx ON valuations (status)`;
   initialized = true;
+}
+
+export type ValuationStatus =
+  | "new"
+  | "contacted"
+  | "diligence"
+  | "offer_sent"
+  | "closed_won"
+  | "closed_lost";
+
+export const VALUATION_STATUSES: ValuationStatus[] = [
+  "new",
+  "contacted",
+  "diligence",
+  "offer_sent",
+  "closed_won",
+  "closed_lost",
+];
+
+// Admin-side mutation. Updates status and/or notes by id. No session-id
+// auth here — caller is responsible for verifying ADMIN_KEY upstream.
+export async function adminUpdateValuation(
+  id: number,
+  patch: { status?: ValuationStatus; notesInternal?: string },
+): Promise<{ ok: boolean }> {
+  const sql = getSql();
+  if (!sql) return { ok: false };
+  try {
+    await ensureTable(sql);
+    if (patch.status !== undefined && patch.notesInternal !== undefined) {
+      await sql`
+        UPDATE valuations
+           SET status = ${patch.status},
+               status_updated_at = now(),
+               notes_internal = ${patch.notesInternal},
+               updated_at = now()
+         WHERE id = ${id}
+      `;
+    } else if (patch.status !== undefined) {
+      await sql`
+        UPDATE valuations
+           SET status = ${patch.status},
+               status_updated_at = now(),
+               updated_at = now()
+         WHERE id = ${id}
+      `;
+    } else if (patch.notesInternal !== undefined) {
+      await sql`
+        UPDATE valuations
+           SET notes_internal = ${patch.notesInternal},
+               updated_at = now()
+         WHERE id = ${id}
+      `;
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("[adminUpdateValuation] error", err);
+    return { ok: false };
+  }
 }
 
 export type CreateValuationInput = {

@@ -109,3 +109,130 @@ export async function notifySlackNewLead(
     console.warn("[slack] webhook failed", err);
   }
 }
+
+// Wizard valuation completion ping — separate from the contact-form
+// shape because we have richer FMCSA data and a computed range.
+export async function notifySlackNewValuation(payload: {
+  legalName: string;
+  dotNumber: string;
+  mcNumber: string | null;
+  range: string;
+  hasAmazonRelay: boolean;
+  flooredReason: string | null;
+  contact: { name?: string; email?: string; phone?: string };
+  authorityStatus: string;
+  authorityAgeDays: number | null;
+  powerUnits: number;
+  drivers: number;
+  crashes24mo: number;
+  safetyRating: string | null;
+  vehicleOosRate: number;
+  driverOosRate: number;
+}): Promise<void> {
+  const url = process.env.SLACK_WEBHOOK_URL;
+  if (!url) return;
+
+  const emoji = payload.hasAmazonRelay ? "🔥" : "💬";
+  const color = payload.hasAmazonRelay
+    ? "#ff8a1a"
+    : payload.flooredReason
+      ? "#7a7a7a"
+      : "#ffb371";
+
+  const fields: Array<{ title: string; value: string; short: boolean }> = [];
+  fields.push({ title: "Range", value: payload.range, short: true });
+  fields.push({
+    title: "Active Relay",
+    value: payload.hasAmazonRelay ? "Yes" : "No",
+    short: true,
+  });
+  fields.push({
+    title: "Authority",
+    value:
+      payload.authorityStatus === "A"
+        ? "Active for-hire"
+        : payload.authorityStatus === "I"
+          ? "Inactive"
+          : "—",
+    short: true,
+  });
+  if (payload.authorityAgeDays !== null) {
+    fields.push({
+      title: "Auth age",
+      value: `${Math.round(payload.authorityAgeDays / 30)} mo`,
+      short: true,
+    });
+  }
+  fields.push({
+    title: "Fleet",
+    value: `${payload.powerUnits} units · ${payload.drivers} drivers`,
+    short: true,
+  });
+  fields.push({
+    title: "OOS V/D",
+    value: `${payload.vehicleOosRate}% / ${payload.driverOosRate}%`,
+    short: true,
+  });
+  fields.push({
+    title: "Crashes 24mo",
+    value: String(payload.crashes24mo),
+    short: true,
+  });
+  if (payload.safetyRating) {
+    fields.push({
+      title: "Safety",
+      value:
+        payload.safetyRating === "S"
+          ? "Satisfactory"
+          : payload.safetyRating === "C"
+            ? "Conditional"
+            : payload.safetyRating === "U"
+              ? "Unsatisfactory"
+              : payload.safetyRating,
+      short: true,
+    });
+  }
+  if (payload.contact.email) {
+    fields.push({ title: "Email", value: payload.contact.email, short: true });
+  }
+  if (payload.contact.phone) {
+    fields.push({ title: "Phone", value: payload.contact.phone, short: true });
+  }
+  if (payload.flooredReason) {
+    fields.push({
+      title: "Floored",
+      value: payload.flooredReason,
+      short: false,
+    });
+  }
+
+  const titleSuffix = payload.mcNumber ? ` · MC-${payload.mcNumber}` : "";
+  const body = {
+    attachments: [
+      {
+        color,
+        pretext: `${emoji} *Wizard valuation* — <${SITE_URL}/admin|admin panel>`,
+        title: `${payload.legalName} · USDOT ${payload.dotNumber}${titleSuffix}`,
+        fields,
+        footer: payload.contact.name
+          ? `Submitted by ${payload.contact.name}`
+          : "Wizard submission",
+        ts: Math.floor(Date.now() / 1000),
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) {
+      console.warn("[slack valuation] webhook returned", res.status);
+    }
+  } catch (err) {
+    console.warn("[slack valuation] webhook failed", err);
+  }
+}
