@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function GetOfferPage() {
   return (
     <main id="main">
-      <ValuationWizard />
+      <ValuationWizard locale="en" />
     </main>
   );
 }

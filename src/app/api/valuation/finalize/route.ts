@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { lookupCarrier } from "@/lib/fmcsa";
 import { computeValuation, formatRange } from "@/lib/valuation";
@@ -6,6 +7,9 @@ import {
   finalizeValuation,
   updateValuationContact,
 } from "@/lib/db/valuations";
+import { queueSequence } from "@/lib/email/queue";
+import { stripCrLf } from "@/lib/security/sanitize";
+import { SITE } from "@/lib/site";
 
 // Step 2 of the wizard. Takes:
 // - The valuationId returned from /lookup
@@ -109,9 +113,84 @@ export async function POST(req: Request) {
       }
     }
 
+    // ── Email side effects ──────────────────────────────────────────
+    // Three things happen post-valuation, all best-effort:
+    //   1) Team gets a notification with the carrier + range
+    //   2) Seller gets queued into the nurture sequence (step 1 of the
+    //      sequence is an immediate autoreply)
+    //   3) On any of these failing, the user-facing flow still succeeds
+    const sellerEmail = raw.contact?.email?.trim().toLowerCase();
+    const sellerName = raw.contact?.name?.trim();
+    const range = formatRange(valuation);
+    if (sellerEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sellerEmail)) {
+      const apiKey = process.env.RESEND_API_KEY;
+      if (apiKey) {
+        try {
+          const resend = new Resend(apiKey);
+          const carrier = lookup.carrier;
+          const priorityFlag = raw.hasAmazonRelay ? "🔥 RELAY" : "💬";
+          const subject = stripCrLf(
+            `${priorityFlag} Wizard valuation — ${carrier.legalName} (${range})`,
+          );
+          const adminText = [
+            `New wizard valuation — ${SITE.name}`,
+            ``,
+            `Range: ${range}${valuation.flooredReason ? " (FLOORED — " + valuation.flooredReason + ")" : ""}`,
+            `Active Amazon Relay: ${raw.hasAmazonRelay ? "yes" : "no"}`,
+            ``,
+            `Carrier: ${carrier.legalName}`,
+            `USDOT: ${carrier.dotNumber}`,
+            `MC: ${lookup.mcNumbers[0] ?? "—"}`,
+            `Address: ${[carrier.phyStreet, carrier.phyCity, carrier.phyState, carrier.phyZipcode].filter(Boolean).join(", ")}`,
+            `Authority: ${carrier.commonAuthorityStatus === "A" ? "Active for-hire" : "Inactive"}`,
+            `Power units / drivers: ${carrier.totalPowerUnits} / ${carrier.totalDrivers}`,
+            `Vehicle OOS: ${carrier.vehicleOosRate}% (national avg ${carrier.vehicleOosRateNationalAverage})`,
+            `Driver OOS: ${carrier.driverOosRate}% (national avg ${carrier.driverOosRateNationalAverage})`,
+            `Crashes (24mo): ${carrier.crashTotal}`,
+            `Safety rating: ${carrier.safetyRating ?? "(none on file)"}`,
+            `MCS-150 Form Date: ${lookup.mcs150FormDate ?? "—"} (~${lookup.authorityAgeDays ?? "?"} days old)`,
+            ``,
+            `Contact:`,
+            `Name: ${sellerName || "—"}`,
+            `Email: ${sellerEmail}`,
+            `Phone: ${raw.contact?.phone || carrier.phyStreet ? "(see DB)" : "—"}`,
+          ].join("\n");
+          await resend.emails.send({
+            from: SITE.emailFrom,
+            to: SITE.email,
+            replyTo: sellerEmail,
+            subject,
+            text: adminText,
+          });
+        } catch (err) {
+          console.error("[valuation/finalize] team notify failed", err);
+        }
+      }
+
+      // Queue the seller into the nurture sequence (step 1 is the
+      // immediate autoreply). queueSequence respects unsubscribe state
+      // and is idempotent on duplicate emails.
+      try {
+        await queueSequence({
+          sequenceId: "seller_nurture",
+          recipientEmail: sellerEmail,
+          recipientName: sellerName || null,
+          context: {
+            valuationRange: range,
+            hasAmazonRelay: raw.hasAmazonRelay,
+            legalName: lookup.carrier.legalName,
+            mcNumber: lookup.mcNumbers[0] ?? null,
+            dotNumber: String(lookup.carrier.dotNumber),
+          },
+        });
+      } catch (err) {
+        console.error("[valuation/finalize] queueSequence failed", err);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
-      range: formatRange(valuation),
+      range,
       low: valuation.low,
       high: valuation.high,
       flooredReason: valuation.flooredReason,

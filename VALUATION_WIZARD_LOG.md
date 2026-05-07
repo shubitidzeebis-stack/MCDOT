@@ -40,24 +40,45 @@ go to `/contact` (wizard not yet localized).
 - [ ] Test floor case: try a carrier with inactive authority — should
       return $8,000 flat.
 
-### Pending Phase 2
+### Phase 2 — shipped 2026-05-07
+
+- ✅ **SAFER HTML scrape** added to `lib/fmcsa.ts`. Pulls `telephone`
+  and `MCS-150 Form Date` from SAFER's public snapshot HTML — neither
+  is in the QCMobile JSON despite being in the API docs.
+- ✅ **Authority age auto-computed** from MCS-150 date and used in
+  pricing automatically. No longer asked from user.
+- ✅ **Phone pre-filled** in step 3 from SAFER scrape (user can edit).
+- ✅ **Wizard redesigned** — one step visible at a time, thin top
+  progress bar (% + "Step N of 5"), custom dark TCPA checkbox, logo
+  on white pill (cream-on-dark contrast).
+- ✅ **i18n localized** — wizard strings in `i18n.ts` for en/es/ru.
+  `/es/get-offer` + `/ru/get-offer` pages live. Hero + Header CTAs
+  route to locale-matched wizard.
+- ✅ **Email autoreply wired** — wizard finalize triggers
+  `seller_nurture` sequence (step 1 = immediate autoreply, then 4-step
+  nurture) and sends a team notification with the carrier + range.
+- ✅ **Admin valuations view** at `/admin?key=…` — third table after
+  Leads. Shows company, DOT/MC, authority, age, Relay flag, range,
+  contact, fleet size, OOS rates, crashes. Header KPIs include
+  Relay-flagged + email-captured counts.
+
+### Phase 3 backlog
 
 - **Calendar tool wiring** — "Schedule a call" CTA currently opens
-  a `mailto:` to `info@groupveritor.com` with valuation context
-  pre-filled. Replace with Cal.com / Calendly embed once user picks one.
-- **ES/RU localized wizards** — copy strings still hardcoded English
-  in `ValuationWizard.tsx`. Move to `i18n.ts` dict and create
-  `/es/get-offer` + `/ru/get-offer` routes.
+  a `mailto:`. Replace with Cal.com embed once user picks the tool +
+  registers (recommendation: Cal.com on info@groupveritor.com).
 - **MobileCTA wiring** — bottom mobile CTA still points to `/contact`.
-  Update to `/get-offer` for EN.
-- **Email follow-up sequence** — wizard completions don't yet trigger
-  the autoreply / nurture sequence. Either fold into existing
-  `email/queue.ts` or build a new sequence specific to valuation
-  completers.
-- **Slack notification on completion** — currently nothing fires.
-  Follow `notifications/slack.ts` pattern.
-- **Admin view** — `/admin` shows leads but not valuations. Add a
-  Valuations table view.
+  Update to `/get-offer` for EN, locale-matched for ES/RU.
+- **Slack notification on wizard completion** — currently only
+  contact-form leads ping Slack. Add valuation completion ping with
+  range + Relay flag.
+- **Status workflow per valuation** — New → Contacted → Diligence →
+  Offer Sent → Closed Won/Lost. Stored on the valuations table.
+- **Notes per valuation** — internal notes column + admin UI.
+- **Admin multi-user auth** — replace ADMIN_KEY with per-user logins
+  (Vercel Auth / Sign in with Vercel) once team size warrants it.
+- **Wizard A/B copy tests** — try shorter step 1 intro, different
+  step 4 phrasing.
 
 ## Agreed scope
 

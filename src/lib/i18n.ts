@@ -121,6 +121,78 @@ type Dict = {
     terms: string;
     description: string;
   };
+  wizard: {
+    brandTag: string;
+    stepOf: string;
+    indicativeNote: string;
+    // Step 1
+    step1Headline1: string;
+    step1Headline2: string;
+    step1Intro: string;
+    mcLabel: string;
+    dotLabel: string;
+    yourMc: string;
+    yourDot: string;
+    noMcLink: string;
+    lookupCta: string;
+    lookingUp: string;
+    // Step 2
+    step2Headline: string;
+    step2Intro: string;
+    legalName: string;
+    dba: string;
+    address: string;
+    authority: string;
+    authorityActive: string;
+    authorityInactive: string;
+    fleetSize: string;
+    crashes: string;
+    safety: string;
+    safetySatisfactory: string;
+    safetyConditional: string;
+    safetyUnsatisfactory: string;
+    confirmCta: string;
+    // Step 3
+    step3Headline: string;
+    step3Intro: string;
+    name: string;
+    email: string;
+    phone: string;
+    fromFmcsa: string;
+    continue: string;
+    // Step 4
+    step4Headline: string;
+    step4Intro: string;
+    relayQuestion: string;
+    relayYes: string;
+    relayYesNote: string;
+    relayNo: string;
+    relayNoNote: string;
+    tcpaConsent: string;
+    privacy: string;
+    terms: string;
+    and: string;
+    showValuation: string;
+    computing: string;
+    // Step 5
+    yourValuation: string;
+    forCompany: string;
+    note: string;
+    floorNote: string;
+    indicativeBlock: string;
+    haveQuestions: string;
+    scheduleCall: string;
+    // Common
+    back: string;
+    // Errors
+    errorNumber: string;
+    errorName: string;
+    errorEmail: string;
+    errorRelay: string;
+    errorConsent: string;
+    errorNetwork: string;
+    errorGeneric: string;
+  };
 };
 
 export const DICT: Record<Locale, Dict> = {
@@ -492,6 +564,78 @@ export const DICT: Record<Locale, Dict> = {
       description:
         "Veritor Group acquires US logistics LLCs — Amazon Relay specialists.",
     },
+    wizard: {
+      brandTag: "Free Valuation",
+      stepOf: "Step {n} of {total}",
+      indicativeNote:
+        "Indicative valuation based on FMCSA public data. Final offer confirmed after a short call and document review. No obligation, no listing fees, no commissions.",
+      step1Headline1: "Get a written valuation in",
+      step1Headline2: "90 seconds.",
+      step1Intro:
+        "Enter your MC or DOT number. We’ll pull your FMCSA record, confirm the company, and return a value range — no calls required to find out.",
+      mcLabel: "MC Number",
+      dotLabel: "DOT Number",
+      yourMc: "Your MC number",
+      yourDot: "Your DOT number",
+      noMcLink: "Don’t have an MC yet?",
+      lookupCta: "Look up FMCSA",
+      lookingUp: "Looking up…",
+      step2Headline: "Confirm your company.",
+      step2Intro:
+        "Pulled from FMCSA. If anything below looks wrong, go back and check the number.",
+      legalName: "Legal name",
+      dba: "DBA",
+      address: "Address",
+      authority: "Authority",
+      authorityActive: "Active for-hire",
+      authorityInactive: "Inactive / not for-hire",
+      fleetSize: "Power units · drivers",
+      crashes: "Crashes (24 mo)",
+      safety: "Safety rating",
+      safetySatisfactory: "Satisfactory",
+      safetyConditional: "Conditional",
+      safetyUnsatisfactory: "Unsatisfactory",
+      confirmCta: "That’s us — continue",
+      step3Headline: "Where should we send the written offer?",
+      step3Intro:
+        "We’ll email the offer + a calendar link to schedule a quick call. We pre-filled your phone from FMCSA — feel free to update it.",
+      name: "Your name",
+      email: "Email",
+      phone: "Phone",
+      fromFmcsa: "From FMCSA",
+      continue: "Continue",
+      step4Headline: "Two final details.",
+      step4Intro: "These shape the valuation. Honest answers — no wrong choice.",
+      relayQuestion: "Active Amazon Relay contract? *",
+      relayYes: "Yes, active Relay",
+      relayYesNote: "Highest-priority bucket.",
+      relayNo: "No Relay",
+      relayNoNote: "Still welcome.",
+      tcpaConsent:
+        "I agree to receive emails, calls, texts, and WhatsApp messages from {site} about my valuation, including via automated technology. Consent is not a condition of any purchase. Message and data rates may apply. Reply STOP to opt out of texts. See",
+      privacy: "Privacy",
+      terms: "Terms",
+      and: "and",
+      showValuation: "Show my valuation",
+      computing: "Computing…",
+      yourValuation: "Your valuation",
+      forCompany: "For",
+      note: "Note:",
+      floorNote:
+        "this caps the indicative valuation at our floor. We can still buy, but final terms will be confirmed on a call.",
+      indicativeBlock:
+        "This is an indicative range based on your FMCSA snapshot. Final offer is confirmed on a 15-minute call after we review your insurance, MC age, and contract status — then in writing within 48 hours.",
+      haveQuestions: "Have questions? Contact us →",
+      scheduleCall: "Schedule a call",
+      back: "← Back",
+      errorNumber: "Please enter your MC or DOT number.",
+      errorName: "Please enter your name.",
+      errorEmail: "Please enter a valid email so we can send your written offer.",
+      errorRelay: "Please pick yes or no for the Amazon Relay question.",
+      errorConsent: "Please agree to the contact terms to continue.",
+      errorNetwork: "Network error. Please try again.",
+      errorGeneric: "Something went wrong. Please try again.",
+    },
   },
 
   es: {
@@ -862,6 +1006,79 @@ export const DICT: Record<Locale, Dict> = {
       description:
         "Veritor Group adquiere LLCs de logística en EE. UU. — especialistas en Amazon Relay.",
     },
+    wizard: {
+      brandTag: "Valuación gratis",
+      stepOf: "Paso {n} de {total}",
+      indicativeNote:
+        "Valuación indicativa basada en datos públicos de FMCSA. Oferta final confirmada tras una llamada breve y revisión de documentos. Sin compromiso, sin honorarios, sin comisiones.",
+      step1Headline1: "Obtenga una valuación escrita en",
+      step1Headline2: "90 segundos.",
+      step1Intro:
+        "Ingrese su número MC o DOT. Consultaremos su registro FMCSA, confirmaremos la empresa y devolveremos un rango de valor — sin necesidad de llamada.",
+      mcLabel: "Número MC",
+      dotLabel: "Número DOT",
+      yourMc: "Su número MC",
+      yourDot: "Su número DOT",
+      noMcLink: "¿Aún no tiene MC?",
+      lookupCta: "Consultar FMCSA",
+      lookingUp: "Consultando…",
+      step2Headline: "Confirme su empresa.",
+      step2Intro:
+        "Datos obtenidos de FMCSA. Si algo se ve incorrecto, vuelva y revise el número.",
+      legalName: "Nombre legal",
+      dba: "DBA",
+      address: "Dirección",
+      authority: "Autoridad",
+      authorityActive: "Activa para alquiler",
+      authorityInactive: "Inactiva / no para alquiler",
+      fleetSize: "Unidades · conductores",
+      crashes: "Choques (24 meses)",
+      safety: "Calificación de seguridad",
+      safetySatisfactory: "Satisfactoria",
+      safetyConditional: "Condicional",
+      safetyUnsatisfactory: "Insatisfactoria",
+      confirmCta: "Sí, somos nosotros — continuar",
+      step3Headline: "¿A dónde enviamos la oferta escrita?",
+      step3Intro:
+        "Le enviaremos la oferta + un enlace de calendario para una llamada breve. Pre-llenamos su teléfono desde FMCSA — puede modificarlo.",
+      name: "Su nombre",
+      email: "Email",
+      phone: "Teléfono",
+      fromFmcsa: "De FMCSA",
+      continue: "Continuar",
+      step4Headline: "Dos detalles finales.",
+      step4Intro:
+        "Estos definen la valuación. Respuestas honestas — no hay opción incorrecta.",
+      relayQuestion: "¿Contrato activo de Amazon Relay? *",
+      relayYes: "Sí, Relay activo",
+      relayYesNote: "Categoría de máxima prioridad.",
+      relayNo: "Sin Relay",
+      relayNoNote: "Igualmente bienvenidos.",
+      tcpaConsent:
+        "Acepto recibir emails, llamadas, mensajes de texto y WhatsApp de {site} sobre mi valuación, incluyendo mediante tecnología automatizada. El consentimiento no es condición de compra. Pueden aplicarse tarifas de mensajes y datos. Responda STOP para optar por no recibir SMS. Consulte",
+      privacy: "Privacidad",
+      terms: "Términos",
+      and: "y",
+      showValuation: "Mostrar mi valuación",
+      computing: "Calculando…",
+      yourValuation: "Su valuación",
+      forCompany: "Para",
+      note: "Nota:",
+      floorNote:
+        "esto limita la valuación indicativa al mínimo. Podemos comprar igualmente, pero los términos finales se confirman en llamada.",
+      indicativeBlock:
+        "Este es un rango indicativo basado en su registro FMCSA. La oferta final se confirma en una llamada de 15 minutos tras revisar seguro, antigüedad de MC y estado del contrato — luego por escrito en 48 horas.",
+      haveQuestions: "¿Tiene preguntas? Contáctenos →",
+      scheduleCall: "Agendar llamada",
+      back: "← Atrás",
+      errorNumber: "Por favor ingrese su número MC o DOT.",
+      errorName: "Por favor ingrese su nombre.",
+      errorEmail: "Por favor ingrese un email válido para enviarle la oferta.",
+      errorRelay: "Por favor seleccione sí o no en la pregunta de Amazon Relay.",
+      errorConsent: "Por favor acepte los términos de contacto para continuar.",
+      errorNetwork: "Error de red. Inténtelo de nuevo.",
+      errorGeneric: "Algo salió mal. Inténtelo de nuevo.",
+    },
   },
 
   ru: {
@@ -1231,6 +1448,78 @@ export const DICT: Record<Locale, Dict> = {
       terms: "Условия",
       description:
         "Veritor Group выкупает логистические LLC в США — специалисты по Amazon Relay.",
+    },
+    wizard: {
+      brandTag: "Бесплатная оценка",
+      stepOf: "Шаг {n} из {total}",
+      indicativeNote:
+        "Ориентировочная оценка на основе публичных данных FMCSA. Окончательное предложение — после короткого звонка и проверки документов. Без обязательств, без листинговых сборов, без комиссий.",
+      step1Headline1: "Получите письменную оценку за",
+      step1Headline2: "90 секунд.",
+      step1Intro:
+        "Введите номер MC или DOT. Мы запросим вашу запись FMCSA, подтвердим компанию и вернём диапазон стоимости — без звонка.",
+      mcLabel: "Номер MC",
+      dotLabel: "Номер DOT",
+      yourMc: "Ваш номер MC",
+      yourDot: "Ваш номер DOT",
+      noMcLink: "Ещё нет MC?",
+      lookupCta: "Запросить FMCSA",
+      lookingUp: "Запрашиваем…",
+      step2Headline: "Подтвердите компанию.",
+      step2Intro:
+        "Данные из FMCSA. Если что-то выглядит неверно, вернитесь и проверьте номер.",
+      legalName: "Юридическое название",
+      dba: "DBA",
+      address: "Адрес",
+      authority: "Полномочия",
+      authorityActive: "Активный for-hire",
+      authorityInactive: "Неактивный / не for-hire",
+      fleetSize: "Тягачи · водители",
+      crashes: "Аварии (24 мес.)",
+      safety: "Рейтинг безопасности",
+      safetySatisfactory: "Удовлетворительно",
+      safetyConditional: "Условный",
+      safetyUnsatisfactory: "Неудовлетворительно",
+      confirmCta: "Это мы — продолжить",
+      step3Headline: "Куда отправить письменное предложение?",
+      step3Intro:
+        "Мы отправим оферту + ссылку на календарь для короткого звонка. Телефон уже подставлен из FMCSA — можете изменить.",
+      name: "Ваше имя",
+      email: "Email",
+      phone: "Телефон",
+      fromFmcsa: "Из FMCSA",
+      continue: "Продолжить",
+      step4Headline: "Две финальные детали.",
+      step4Intro: "Это влияет на оценку. Честные ответы — нет неправильного выбора.",
+      relayQuestion: "Активный контракт Amazon Relay? *",
+      relayYes: "Да, активный Relay",
+      relayYesNote: "Высший приоритет.",
+      relayNo: "Без Relay",
+      relayNoNote: "Тоже подходит.",
+      tcpaConsent:
+        "Я согласен получать email, звонки, SMS и сообщения WhatsApp от {site} о моей оценке, в том числе с использованием автоматизации. Согласие не является условием покупки. Могут применяться тарифы на сообщения и данные. Ответьте STOP, чтобы отписаться от SMS. См.",
+      privacy: "Конфиденциальность",
+      terms: "Условия",
+      and: "и",
+      showValuation: "Показать оценку",
+      computing: "Вычисляем…",
+      yourValuation: "Ваша оценка",
+      forCompany: "Для",
+      note: "Примечание:",
+      floorNote:
+        "это ограничивает ориентировочную оценку нашим минимумом. Мы всё равно можем купить, но условия — на звонке.",
+      indicativeBlock:
+        "Это ориентировочный диапазон на основе записи FMCSA. Финальное предложение — после 15-минутного звонка с проверкой страховки, возраста MC и контракта — затем письменно в течение 48 часов.",
+      haveQuestions: "Есть вопросы? Свяжитесь с нами →",
+      scheduleCall: "Назначить звонок",
+      back: "← Назад",
+      errorNumber: "Пожалуйста, введите номер MC или DOT.",
+      errorName: "Пожалуйста, введите имя.",
+      errorEmail: "Пожалуйста, введите корректный email для отправки оферты.",
+      errorRelay: "Пожалуйста, выберите да или нет по вопросу об Amazon Relay.",
+      errorConsent: "Пожалуйста, согласитесь с условиями связи, чтобы продолжить.",
+      errorNetwork: "Ошибка сети. Попробуйте ещё раз.",
+      errorGeneric: "Что-то пошло не так. Попробуйте ещё раз.",
     },
   },
 };

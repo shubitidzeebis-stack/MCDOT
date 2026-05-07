@@ -1,18 +1,24 @@
-// FMCSA QCMobile API client.
+// FMCSA data client. Combines two sources:
 //
-// We hit two endpoints per lookup:
-// 1. /carriers/docket-number/{MC}      — by MC number
-//    OR /carriers/{DOT}                 — by DOT number
-// 2. /carriers/{DOT}/docket-numbers     — to confirm MC list
+// 1. QCMobile API (https://mobile.fmcsa.dot.gov/qc/services/) — JSON,
+//    requires API key. Gives us legal name, DOT, MC, address, authority
+//    status, OOS rates, crashes, insurance, safety rating.
 //
-// The carrier endpoint returns everything we need for valuation
-// EXCEPT email, phone, and the date the authority was granted. Email
-// and phone are collected separately in the wizard. Authority date is
-// asked of the seller (optional — defaults to neutral pricing).
+// 2. SAFER snapshot HTML scrape — public, no key. Gives us telephone
+//    and MCS-150 Form Date. The QCMobile API documentation lists a
+//    `telephone` field but the actual API JSON does not return it, even
+//    for fully active for-hire carriers. SAFER's public HTML page does.
+//
+// We use MCS-150 Form Date as a proxy for "authority age" — for newly
+// registered carriers it's the registration date; for existing carriers
+// it's the last refile (every 24 months). It's the best public proxy
+// for "how long has this carrier been operating with this MC".
 //
 // Reference: https://mobile.fmcsa.dot.gov/QCDevsite/
 
 const BASE_URL = "https://mobile.fmcsa.dot.gov/qc/services";
+const SAFER_URL =
+  "https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=";
 
 // FMCSA's response shape. Fields are stringly-typed because their API
 // returns "Y"/"N", numeric strings, or null in inconsistent ways.
@@ -65,7 +71,15 @@ export type FmcsaCarrier = {
 };
 
 export type FmcsaLookupResult =
-  | { ok: true; carrier: FmcsaCarrier; mcNumbers: string[] }
+  | {
+      ok: true;
+      carrier: FmcsaCarrier;
+      mcNumbers: string[];
+      // Pulled from SAFER HTML — not available in QCMobile JSON.
+      telephone: string | null;
+      mcs150FormDate: string | null; // MM/DD/YYYY string from SAFER
+      authorityAgeDays: number | null; // computed from mcs150FormDate
+    }
   | { ok: false; reason: "not_found" | "api_error" | "no_key"; message: string };
 
 function getKey(): string {
@@ -122,6 +136,60 @@ async function lookupByDot(dot: string): Promise<FmcsaCarrier | null> {
   return first as FmcsaCarrier;
 }
 
+// Pull telephone + MCS-150 Form Date from SAFER's public HTML.
+// Both fields are missing from QCMobile JSON. SAFER doesn't require an
+// API key. We parse the small chunks of HTML we need with targeted
+// regex — no full HTML parser dependency.
+async function scrapeSaferSnapshot(
+  dot: number,
+): Promise<{ telephone: string | null; mcs150FormDate: string | null }> {
+  try {
+    const res = await fetch(`${SAFER_URL}${dot}`, {
+      headers: {
+        // SAFER blocks default Node fetches without a UA.
+        "User-Agent":
+          "Mozilla/5.0 (compatible; VeritorValuation/1.0; +https://groupveritor.com)",
+        Accept: "text/html",
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return { telephone: null, mcs150FormDate: null };
+    const html = await res.text();
+
+    // Phone — appears under <TH>Phone:</TH> followed by a <TD> with the
+    // formatted number ("(424) 341-1111"). Grab the next phone-shaped
+    // sequence after the Phone: label.
+    let telephone: string | null = null;
+    const phoneSection = html.split(/Phone:/i)[1] ?? "";
+    const phoneMatch = phoneSection.match(/\(\d{3}\)\s*\d{3}-\d{4}/);
+    if (phoneMatch) telephone = phoneMatch[0];
+
+    // MCS-150 Form Date — appears as MM/DD/YYYY under a TH labeled
+    // "MCS-150 Form Date:".
+    let mcs150FormDate: string | null = null;
+    const mcs150Section = html.split(/MCS-150 Form Date:/i)[1] ?? "";
+    const dateMatch = mcs150Section.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    if (dateMatch) mcs150FormDate = dateMatch[0];
+
+    return { telephone, mcs150FormDate };
+  } catch {
+    return { telephone: null, mcs150FormDate: null };
+  }
+}
+
+function authorityAgeDaysFromMcs150(mcs150FormDate: string | null): number | null {
+  if (!mcs150FormDate) return null;
+  // MM/DD/YYYY → Date
+  const m = mcs150FormDate.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!m) return null;
+  const [, mm, dd, yyyy] = m;
+  const formDate = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`);
+  const now = new Date();
+  const diffMs = now.getTime() - formDate.getTime();
+  if (diffMs < 0) return 0;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+}
+
 // Pull MC docket numbers tied to a DOT.
 async function lookupDocketNumbers(dot: number): Promise<string[]> {
   try {
@@ -162,8 +230,21 @@ export async function lookupCarrier(
           "We couldn't find a carrier with that number. New authorities sometimes take 30+ days to appear in FMCSA — try our contact form instead.",
       };
     }
-    const mcNumbers = await lookupDocketNumbers(carrier.dotNumber);
-    return { ok: true, carrier, mcNumbers };
+    // Run docket-numbers + SAFER scrape in parallel — both are best-
+    // effort enrichment and we don't want to serialize their latency.
+    const [mcNumbers, safer] = await Promise.all([
+      lookupDocketNumbers(carrier.dotNumber),
+      scrapeSaferSnapshot(carrier.dotNumber),
+    ]);
+    const authorityAgeDays = authorityAgeDaysFromMcs150(safer.mcs150FormDate);
+    return {
+      ok: true,
+      carrier,
+      mcNumbers,
+      telephone: safer.telephone,
+      mcs150FormDate: safer.mcs150FormDate,
+      authorityAgeDays,
+    };
   } catch (err) {
     return {
       ok: false,

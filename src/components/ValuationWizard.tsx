@@ -4,21 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowIcon, ChevronIcon } from "@/components/Icons";
+import { ArrowIcon, ChevronIcon, CheckIcon } from "@/components/Icons";
 import { attributionPayload } from "@/lib/attribution";
 import { SITE } from "@/lib/site";
+import { DICT, type Locale } from "@/lib/i18n";
 
 // Multi-step valuation wizard.
 //
-// Flow:
-//   step 1 — MC / DOT input (with toggle)
-//   step 2 — confirm FMCSA snapshot ("Is this your company?")
-//   step 3 — contact (email required, name + phone optional)
-//   step 4 — Amazon Relay yes/no + (optional) authority age in months
-//   step 5 — reveal: valuation range + "Schedule a call" CTA
+// UX decisions per user feedback:
+// - One question visible at a time (no anxiety from a 5-step preview).
+// - Thin top progress bar showing % complete + small "Step N of 5" label.
+// - Veritor color logo on a white pill (cream-on-dark contrast).
+// - Custom dark-themed checkbox for TCPA consent.
 //
-// All steps animate in/out with framer-motion. Progress bar pinned at
-// top. Veritor branding applied throughout.
+// Data decisions:
+// - SAFER scrape gives us telephone — pre-filled in step 3.
+// - SAFER MCS-150 Form Date gives us authority age — used silently in
+//   pricing, not shown to user.
 
 type StepId = 1 | 2 | 3 | 4 | 5;
 
@@ -38,6 +40,9 @@ type Carrier = {
   driverOosRate: number;
   vehicleOosNationalAvg: number | null;
   driverOosNationalAvg: number | null;
+  telephone: string | null;
+  mcs150FormDate: string | null;
+  authorityAgeDays: number | null;
   flags: {
     hasActiveAuthority: boolean;
     hasInsuranceOnFile: boolean;
@@ -50,6 +55,7 @@ type Carrier = {
 };
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+const TOTAL_STEPS = 5;
 
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
@@ -62,9 +68,8 @@ function getSessionId(): string {
   return id;
 }
 
-const TOTAL_STEPS = 5;
-
-export function ValuationWizard() {
+export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }) {
+  const t = DICT[locale].wizard;
   const [step, setStep] = useState<StepId>(1);
 
   // Inputs
@@ -74,7 +79,6 @@ export function ValuationWizard() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [hasRelay, setHasRelay] = useState<"" | "yes" | "no">("");
-  const [authorityMonths, setAuthorityMonths] = useState<string>(""); // freeform months as text
   const [tcpaConsent, setTcpaConsent] = useState(false);
 
   // Derived from API
@@ -99,7 +103,7 @@ export function ValuationWizard() {
   async function submitLookup() {
     setError("");
     if (!number.trim()) {
-      setError("Please enter your MC or DOT number.");
+      setError(t.errorNumber);
       return;
     }
     setLoading(true);
@@ -116,14 +120,18 @@ export function ValuationWizard() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Lookup failed.");
+        setError(data.error || t.errorGeneric);
         return;
       }
       setValuationId(data.valuationId);
       setCarrier(data.carrier);
+      // Pre-fill phone from SAFER if available; user can still edit.
+      if (data.carrier?.telephone && !phone) {
+        setPhone(data.carrier.telephone);
+      }
       setStep(2);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t.errorNetwork);
     } finally {
       setLoading(false);
     }
@@ -132,17 +140,15 @@ export function ValuationWizard() {
   async function submitFinalize() {
     setError("");
     if (!tcpaConsent) {
-      setError("Please agree to the contact terms to continue.");
+      setError(t.errorConsent);
       return;
     }
     if (hasRelay === "") {
-      setError("Please pick yes or no for the Amazon Relay question.");
+      setError(t.errorRelay);
       return;
     }
     setLoading(true);
     try {
-      const months = parseInt(authorityMonths, 10);
-      const authorityAgeDays = Number.isFinite(months) && months >= 0 ? months * 30 : null;
       const res = await fetch("/api/valuation/finalize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,26 +158,27 @@ export function ValuationWizard() {
           number: number.trim(),
           kind,
           hasAmazonRelay: hasRelay === "yes",
-          authorityAgeDays,
+          // Authority age is computed server-side from SAFER's MCS-150
+          // Form Date — no need to send from client.
+          authorityAgeDays: null,
           contact: { name, email, phone },
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Could not compute valuation.");
+        setError(data.error || t.errorGeneric);
         return;
       }
       setRange(data.range);
       setFloorReason(data.flooredReason);
       setStep(5);
     } catch {
-      setError("Network error. Please try again.");
+      setError(t.errorNetwork);
     } finally {
       setLoading(false);
     }
   }
 
-  // Step navigation guards
   function nextFromStep2() {
     setError("");
     setStep(3);
@@ -179,49 +186,54 @@ export function ValuationWizard() {
 
   function nextFromStep3() {
     setError("");
-    if (!isEmailValid(email)) {
-      setError("Please enter a valid email so we can send your written offer.");
+    if (name.trim().length < 1) {
+      setError(t.errorName);
       return;
     }
-    if (name.trim().length < 1) {
-      setError("Please enter your name.");
+    if (!isEmailValid(email)) {
+      setError(t.errorEmail);
       return;
     }
     setStep(4);
   }
 
   return (
-    <section className="min-h-[calc(100svh-80px)] bg-[#0a0a0b] py-10 md:py-16">
-      <div className="mx-auto max-w-3xl px-5 md:px-6">
-        {/* Brand row */}
+    <section className="min-h-[calc(100svh-80px)] bg-[#0a0a0b] py-8 md:py-14">
+      <div className="mx-auto max-w-2xl px-5 md:px-6">
+        {/* Brand pill */}
         <div className="mb-8 flex items-center justify-between md:mb-10">
-          <Link href="/" className="flex items-center gap-3" aria-label="Veritor home">
+          <Link
+            href={locale === "en" ? "/" : `/${locale}`}
+            aria-label="Veritor home"
+            className="inline-flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-white/20 transition-shadow hover:ring-white/40"
+          >
             <Image
-              src="/brand/logo-on-dark.png"
+              src="/brand/logo-color-square.png"
               alt="Veritor Group"
               width={32}
               height={32}
-              className="h-8 w-auto"
+              className="h-7 w-7 object-contain"
               priority
             />
-            <span className="text-sm font-semibold tracking-[-0.01em] text-white">
+            <span className="text-[13px] font-semibold tracking-[-0.01em] text-[#0a0a0b]">
               {SITE.name}
             </span>
           </Link>
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/45">
-            Free Valuation
+            {t.brandTag}
           </p>
         </div>
 
-        {/* Progress */}
-        <Progress step={step} />
+        {/* Thin progress bar */}
+        <Progress step={step} label={t.stepOf.replace("{n}", String(step)).replace("{total}", String(TOTAL_STEPS))} />
 
         {/* Step content */}
-        <div className="mt-10 rounded-2xl bg-white/[0.025] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-10 lg:p-12">
+        <div className="mt-8 rounded-2xl bg-white/[0.025] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-10 lg:p-12">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <StepShell key="1">
                 <Step1
+                  t={t}
                   kind={kind}
                   setKind={setKind}
                   number={number}
@@ -234,18 +246,20 @@ export function ValuationWizard() {
             )}
             {step === 2 && carrier && (
               <StepShell key="2">
-                <Step2 carrier={carrier} onBack={() => setStep(1)} onNext={nextFromStep2} />
+                <Step2 t={t} carrier={carrier} onBack={() => setStep(1)} onNext={nextFromStep2} />
               </StepShell>
             )}
             {step === 3 && (
               <StepShell key="3">
                 <Step3
+                  t={t}
                   name={name}
                   setName={setName}
                   email={email}
                   setEmail={setEmail}
                   phone={phone}
                   setPhone={setPhone}
+                  phonePreFilled={!!carrier?.telephone}
                   error={error}
                   onBack={() => setStep(2)}
                   onNext={nextFromStep3}
@@ -255,10 +269,9 @@ export function ValuationWizard() {
             {step === 4 && (
               <StepShell key="4">
                 <Step4
+                  t={t}
                   hasRelay={hasRelay}
                   setHasRelay={setHasRelay}
-                  authorityMonths={authorityMonths}
-                  setAuthorityMonths={setAuthorityMonths}
                   tcpaConsent={tcpaConsent}
                   setTcpaConsent={setTcpaConsent}
                   loading={loading}
@@ -270,66 +283,40 @@ export function ValuationWizard() {
             )}
             {step === 5 && carrier && (
               <StepShell key="5">
-                <Step5 range={range} floorReason={floorReason} carrier={carrier} />
+                <Step5 t={t} range={range} floorReason={floorReason} carrier={carrier} />
               </StepShell>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Footer note */}
-        <p className="mt-8 text-center text-[12px] leading-relaxed text-white/40">
-          Indicative valuation based on FMCSA public data. Final offer
-          confirmed after a short call and document review. No obligation,
-          no listing fees, no commissions.
+        {/* Indicative note */}
+        <p className="mt-7 text-center text-[12px] leading-relaxed text-white/40">
+          {t.indicativeNote}
         </p>
       </div>
     </section>
   );
 }
 
-function Progress({ step }: { step: StepId }) {
-  const labels = ["Lookup", "Confirm", "Contact", "Details", "Result"];
+function Progress({ step, label }: { step: StepId; label: string }) {
+  const pct = (step / TOTAL_STEPS) * 100;
   return (
     <div>
-      <div className="flex items-center gap-2">
-        {labels.map((label, i) => {
-          const idx = i + 1;
-          const active = idx <= step;
-          const current = idx === step;
-          return (
-            <div key={label} className="flex flex-1 items-center gap-2">
-              <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold transition-colors ${
-                  active
-                    ? "bg-[#ff8a1a] text-[#0a0a0b]"
-                    : "bg-white/10 text-white/40"
-                } ${current ? "ring-2 ring-[#ff8a1a]/40 ring-offset-2 ring-offset-[#0a0a0b]" : ""}`}
-              >
-                {idx}
-              </span>
-              {idx < TOTAL_STEPS && (
-                <span
-                  className={`h-px flex-1 transition-colors ${
-                    idx < step ? "bg-[#ff8a1a]/60" : "bg-white/10"
-                  }`}
-                />
-              )}
-            </div>
-          );
-        })}
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/55">
+          {label}
+        </span>
+        <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#ff8a1a]">
+          {Math.round(pct)}%
+        </span>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        {labels.map((label, i) => (
-          <div key={label} className="flex flex-1">
-            <span
-              className={`text-[10px] font-medium uppercase tracking-[0.2em] ${
-                i + 1 === step ? "text-white/85" : "text-white/35"
-              }`}
-            >
-              {label}
-            </span>
-          </div>
-        ))}
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
+        <motion.div
+          initial={false}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: EASE }}
+          className="h-full rounded-full bg-[#ff8a1a]"
+        />
       </div>
     </div>
   );
@@ -353,7 +340,10 @@ const inputClass =
 const labelClass =
   "text-[11px] font-medium uppercase tracking-[0.22em] text-white/55";
 
+type Strings = (typeof DICT)["en"]["wizard"];
+
 function Step1({
+  t,
   kind,
   setKind,
   number,
@@ -362,6 +352,7 @@ function Step1({
   error,
   onSubmit,
 }: {
+  t: Strings;
   kind: "mc" | "dot";
   setKind: (k: "mc" | "dot") => void;
   number: string;
@@ -373,12 +364,11 @@ function Step1({
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem] lg:text-[2.25rem]">
-        Get a written valuation in <span className="italic font-light text-white/85">90 seconds.</span>
+        {t.step1Headline1}{" "}
+        <span className="italic font-light text-white/85">{t.step1Headline2}</span>
       </h2>
       <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/65">
-        Enter your MC or DOT number. We&rsquo;ll pull your FMCSA record,
-        confirm the company, and return a value range — no calls
-        required to find out.
+        {t.step1Intro}
       </p>
 
       <div className="mt-8 grid gap-4">
@@ -392,7 +382,7 @@ function Step1({
                 : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06]"
             }`}
           >
-            MC Number
+            {t.mcLabel}
           </button>
           <button
             type="button"
@@ -403,12 +393,12 @@ function Step1({
                 : "border-white/10 bg-white/[0.03] text-white/60 hover:bg-white/[0.06]"
             }`}
           >
-            DOT Number
+            {t.dotLabel}
           </button>
         </div>
 
         <label className="flex flex-col gap-2">
-          <span className={labelClass}>{kind === "mc" ? "Your MC number" : "Your DOT number"}</span>
+          <span className={labelClass}>{kind === "mc" ? t.yourMc : t.yourDot}</span>
           <input
             type="text"
             inputMode="numeric"
@@ -428,20 +418,20 @@ function Step1({
 
         {error && <p className="text-sm text-red-400">{error}</p>}
 
-        <div className="mt-2 flex items-center justify-between gap-4">
+        <div className="mt-2 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
           <Link
             href="/contact"
             className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
           >
-            Don&rsquo;t have an MC yet?
+            {t.noMcLink}
           </Link>
           <button
             type="button"
             onClick={onSubmit}
             disabled={loading}
-            className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-60"
+            className="group inline-flex items-center justify-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span>{loading ? "Looking up…" : "Look up FMCSA"}</span>
+            <span>{loading ? t.lookingUp : t.lookupCta}</span>
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
               <ArrowIcon />
             </span>
@@ -453,61 +443,56 @@ function Step1({
 }
 
 function Step2({
+  t,
   carrier,
   onBack,
   onNext,
 }: {
+  t: Strings;
   carrier: Carrier;
   onBack: () => void;
   onNext: () => void;
 }) {
-  const addressLine = [carrier.address.street, carrier.address.city, carrier.address.state, carrier.address.zip]
+  const addressLine = [
+    carrier.address.street,
+    carrier.address.city,
+    carrier.address.state,
+    carrier.address.zip,
+  ]
     .filter(Boolean)
     .join(", ");
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem]">
-        Confirm your company.
+        {t.step2Headline}
       </h2>
-      <p className="mt-3 text-[15px] leading-relaxed text-white/65">
-        Pulled from FMCSA. If anything below looks wrong, go back and check
-        the number.
-      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-white/65">{t.step2Intro}</p>
 
       <div className="mt-6 grid gap-3 rounded-xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-        <Row label="Legal name" value={carrier.legalName} />
-        {carrier.dbaName && <Row label="DBA" value={carrier.dbaName} />}
+        <Row label={t.legalName} value={carrier.legalName} />
+        {carrier.dbaName && <Row label={t.dba} value={carrier.dbaName} />}
         <Row
           label="DOT / MC"
-          value={`USDOT ${carrier.dotNumber}${
-            carrier.mcNumbers[0] ? ` · MC-${carrier.mcNumbers[0]}` : ""
-          }`}
+          value={`USDOT ${carrier.dotNumber}${carrier.mcNumbers[0] ? ` · MC-${carrier.mcNumbers[0]}` : ""}`}
         />
-        {addressLine && <Row label="Address" value={addressLine} />}
+        {addressLine && <Row label={t.address} value={addressLine} />}
         <Row
-          label="Authority"
-          value={
-            carrier.flags.hasActiveAuthority
-              ? "Active for-hire"
-              : "Inactive / not for-hire"
-          }
+          label={t.authority}
+          value={carrier.flags.hasActiveAuthority ? t.authorityActive : t.authorityInactive}
           tone={carrier.flags.hasActiveAuthority ? "good" : "warn"}
         />
-        <Row
-          label="Power units · drivers"
-          value={`${carrier.powerUnits} · ${carrier.drivers}`}
-        />
-        <Row label="Crashes (24 mo)" value={String(carrier.crashes24mo)} />
+        <Row label={t.fleetSize} value={`${carrier.powerUnits} · ${carrier.drivers}`} />
+        <Row label={t.crashes} value={String(carrier.crashes24mo)} />
         {carrier.safetyRating && (
           <Row
-            label="Safety rating"
+            label={t.safety}
             value={
               carrier.safetyRating === "S"
-                ? "Satisfactory"
+                ? t.safetySatisfactory
                 : carrier.safetyRating === "C"
-                  ? "Conditional"
+                  ? t.safetyConditional
                   : carrier.safetyRating === "U"
-                    ? "Unsatisfactory"
+                    ? t.safetyUnsatisfactory
                     : carrier.safetyRating
             }
             tone={
@@ -527,14 +512,14 @@ function Step2({
           onClick={onBack}
           className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
         >
-          ← Back
+          {t.back}
         </button>
         <button
           type="button"
           onClick={onNext}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371]"
         >
-          <span>That&rsquo;s us — continue</span>
+          <span>{t.confirmCta}</span>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
             <ArrowIcon />
           </span>
@@ -564,30 +549,32 @@ function Row({
       <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/45">
         {label}
       </span>
-      <span className={`text-right text-[14px] font-medium ${colorClass}`}>
-        {value}
-      </span>
+      <span className={`text-right text-[14px] font-medium ${colorClass}`}>{value}</span>
     </div>
   );
 }
 
 function Step3({
+  t,
   name,
   setName,
   email,
   setEmail,
   phone,
   setPhone,
+  phonePreFilled,
   error,
   onBack,
   onNext,
 }: {
+  t: Strings;
   name: string;
   setName: (v: string) => void;
   email: string;
   setEmail: (v: string) => void;
   phone: string;
   setPhone: (v: string) => void;
+  phonePreFilled: boolean;
   error: string;
   onBack: () => void;
   onNext: () => void;
@@ -595,16 +582,12 @@ function Step3({
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem]">
-        Where should we send the written offer?
+        {t.step3Headline}
       </h2>
-      <p className="mt-3 text-[15px] leading-relaxed text-white/65">
-        FMCSA doesn&rsquo;t share email addresses publicly, so we&rsquo;ll
-        need yours. We&rsquo;ll send the written offer + a calendar link
-        to schedule a quick call.
-      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-white/65">{t.step3Intro}</p>
       <div className="mt-6 grid gap-4">
         <label className="flex flex-col gap-2">
-          <span className={labelClass}>Your name *</span>
+          <span className={labelClass}>{t.name} *</span>
           <input
             type="text"
             value={name}
@@ -616,7 +599,7 @@ function Step3({
           />
         </label>
         <label className="flex flex-col gap-2">
-          <span className={labelClass}>Email *</span>
+          <span className={labelClass}>{t.email} *</span>
           <input
             type="email"
             value={email}
@@ -627,7 +610,14 @@ function Step3({
           />
         </label>
         <label className="flex flex-col gap-2">
-          <span className={labelClass}>Phone (optional)</span>
+          <span className={labelClass}>
+            {t.phone}
+            {phonePreFilled && (
+              <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-300 ring-1 ring-emerald-400/20">
+                {t.fromFmcsa}
+              </span>
+            )}
+          </span>
           <input
             type="tel"
             value={phone}
@@ -645,14 +635,14 @@ function Step3({
           onClick={onBack}
           className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
         >
-          ← Back
+          {t.back}
         </button>
         <button
           type="button"
           onClick={onNext}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371]"
         >
-          <span>Continue</span>
+          <span>{t.continue}</span>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
             <ArrowIcon />
           </span>
@@ -663,10 +653,9 @@ function Step3({
 }
 
 function Step4({
+  t,
   hasRelay,
   setHasRelay,
-  authorityMonths,
-  setAuthorityMonths,
   tcpaConsent,
   setTcpaConsent,
   loading,
@@ -674,10 +663,9 @@ function Step4({
   onBack,
   onSubmit,
 }: {
+  t: Strings;
   hasRelay: "" | "yes" | "no";
   setHasRelay: (v: "" | "yes" | "no") => void;
-  authorityMonths: string;
-  setAuthorityMonths: (v: string) => void;
   tcpaConsent: boolean;
   setTcpaConsent: (v: boolean) => void;
   loading: boolean;
@@ -688,15 +676,13 @@ function Step4({
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem]">
-        Two final details.
+        {t.step4Headline}
       </h2>
-      <p className="mt-3 text-[15px] leading-relaxed text-white/65">
-        These shape the valuation. Both honest answers — no wrong choice.
-      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-white/65">{t.step4Intro}</p>
 
       <div className="mt-6 grid gap-6">
         <div>
-          <p className={`${labelClass} mb-3`}>Active Amazon Relay contract? *</p>
+          <p className={`${labelClass} mb-3`}>{t.relayQuestion}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
@@ -707,8 +693,8 @@ function Step4({
                   : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]"
               }`}
             >
-              <span className="text-[15px] font-semibold text-white">Yes, active Relay</span>
-              <span className="mt-1 text-[13px] text-white/55">Highest-priority bucket.</span>
+              <span className="text-[15px] font-semibold text-white">{t.relayYes}</span>
+              <span className="mt-1 text-[13px] text-white/55">{t.relayYesNote}</span>
             </button>
             <button
               type="button"
@@ -719,47 +705,37 @@ function Step4({
                   : "border-white/10 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]"
               }`}
             >
-              <span className="text-[15px] font-semibold text-white">No Relay</span>
-              <span className="mt-1 text-[13px] text-white/55">Still welcome.</span>
+              <span className="text-[15px] font-semibold text-white">{t.relayNo}</span>
+              <span className="mt-1 text-[13px] text-white/55">{t.relayNoNote}</span>
             </button>
           </div>
         </div>
 
-        <label className="flex flex-col gap-2">
-          <span className={labelClass}>Authority age in months (optional)</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={authorityMonths}
-            onChange={(e) => setAuthorityMonths(e.target.value.replace(/[^0-9]/g, ""))}
-            placeholder="e.g. 4 (months since you got your MC)"
-            className={inputClass}
-          />
-          <span className="text-[12px] text-white/40">
-            Skip if you&rsquo;re not sure — we won&rsquo;t penalize you.
-          </span>
-        </label>
-
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+        {/* Custom dark-themed checkbox. Hides the native input and renders
+            a styled box driven by peer-checked. */}
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/10 transition-colors hover:bg-white/[0.05]">
           <input
             type="checkbox"
             checked={tcpaConsent}
             onChange={(e) => setTcpaConsent(e.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#ff8a1a]"
+            className="peer sr-only"
           />
-          <span className="text-[12.5px] leading-relaxed text-white/55">
-            I agree to receive emails, calls, texts, and WhatsApp messages
-            from {SITE.name} about my valuation, including via automated
-            technology. Consent is not a condition of any purchase.
-            Message and data rates may apply. Reply STOP to opt out of
-            texts. See{" "}
-            <Link href="/privacy" className="text-white/80 underline underline-offset-2">
-              Privacy
+          <span
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-white/25 bg-white/[0.04] transition-all peer-checked:border-[#ff8a1a] peer-checked:bg-[#ff8a1a] peer-focus-visible:ring-2 peer-focus-visible:ring-[#ff8a1a]/40"
+            aria-hidden
+          >
+            <span className={`text-[#0a0a0b] transition-opacity ${tcpaConsent ? "opacity-100" : "opacity-0"}`}>
+              <CheckIcon size={12} />
+            </span>
+          </span>
+          <span className="text-[12.5px] leading-relaxed text-white/65">
+            {t.tcpaConsent.replace("{site}", SITE.name)}{" "}
+            <Link href="/privacy" className="text-white/85 underline underline-offset-2 hover:text-white">
+              {t.privacy}
             </Link>{" "}
-            and{" "}
-            <Link href="/terms" className="text-white/80 underline underline-offset-2">
-              Terms
+            {t.and}{" "}
+            <Link href="/terms" className="text-white/85 underline underline-offset-2 hover:text-white">
+              {t.terms}
             </Link>
             .
           </span>
@@ -774,7 +750,7 @@ function Step4({
           onClick={onBack}
           className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
         >
-          ← Back
+          {t.back}
         </button>
         <button
           type="button"
@@ -782,7 +758,7 @@ function Step4({
           disabled={loading}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span>{loading ? "Computing…" : "Show my valuation"}</span>
+          <span>{loading ? t.computing : t.showValuation}</span>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
             <ArrowIcon />
           </span>
@@ -793,10 +769,12 @@ function Step4({
 }
 
 function Step5({
+  t,
   range,
   floorReason,
   carrier,
 }: {
+  t: Strings;
   range: string;
   floorReason: string | null;
   carrier: Carrier;
@@ -804,33 +782,26 @@ function Step5({
   return (
     <>
       <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#ff8a1a]">
-        Your valuation
+        {t.yourValuation}
       </p>
       <h2 className="mt-3 text-[2rem] font-semibold leading-[1] tracking-[-0.035em] text-white md:text-[2.5rem] lg:text-[3rem]">
         {range}
       </h2>
       <p className="mt-3 text-[14px] text-white/55">
-        For {carrier.legalName}, USDOT {carrier.dotNumber}
-        {carrier.mcNumbers[0] ? ` · MC-${carrier.mcNumbers[0]}` : ""}.
+        {t.forCompany.replace("{name}", carrier.legalName)} USDOT {carrier.dotNumber}
+        {carrier.mcNumbers[0] ? ` · MC-${carrier.mcNumbers[0]}` : ""}
       </p>
 
       {floorReason && (
         <div className="mt-5 rounded-xl bg-amber-500/[0.08] p-4 ring-1 ring-amber-400/20">
           <p className="text-[13px] leading-relaxed text-amber-200">
-            <strong className="font-semibold">Note:</strong> {floorReason} —
-            this caps the indicative valuation at our floor. We can still
-            buy, but final terms will be confirmed on a call.
+            <strong className="font-semibold">{t.note}</strong> {floorReason} — {t.floorNote}
           </p>
         </div>
       )}
 
       <div className="mt-7 rounded-xl bg-white/[0.04] p-5 ring-1 ring-white/10">
-        <p className="text-[13px] leading-relaxed text-white/65">
-          This is an indicative range based on your FMCSA snapshot.
-          Final offer is confirmed on a 15-minute call after we review
-          your insurance, MC age, and contract status — then in writing
-          within 48 hours.
-        </p>
+        <p className="text-[13px] leading-relaxed text-white/65">{t.indicativeBlock}</p>
       </div>
 
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -838,13 +809,13 @@ function Step5({
           href="/contact"
           className="text-[13px] text-white/50 underline-offset-2 hover:text-white/80 hover:underline"
         >
-          Have questions? Contact us →
+          {t.haveQuestions}
         </Link>
         <a
           href={`mailto:${SITE.email}?subject=Schedule a call about my LLC&body=My USDOT ${carrier.dotNumber} valuation came back as ${encodeURIComponent(range)}.`}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371]"
         >
-          <span>Schedule a call</span>
+          <span>{t.scheduleCall}</span>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
             <ChevronIcon />
           </span>

@@ -63,17 +63,19 @@ export async function POST(req: Request) {
       );
     }
 
-    const { carrier, mcNumbers } = lookup;
+    const { carrier, mcNumbers, telephone, mcs150FormDate, authorityAgeDays } = lookup;
     const userAgent = req.headers.get("user-agent") ?? "unknown";
 
     // Persist immediately — even if the user bounces from here, we have
-    // the FMCSA snapshot keyed to their session.
+    // the FMCSA snapshot keyed to their session. Authority age comes
+    // from SAFER's MCS-150 Form Date if available; user-supplied input
+    // wins if provided.
     const saved = await createValuation(
       {
         sessionId: raw.sessionId,
         carrier,
         mcNumbers,
-        authorityAgeDays: raw.authorityAgeDays ?? null,
+        authorityAgeDays: raw.authorityAgeDays ?? authorityAgeDays,
         attribution: raw.attribution ?? null,
       },
       { ip, userAgent },
@@ -108,6 +110,10 @@ export async function POST(req: Request) {
         driverOosRate: carrier.driverOosRate,
         vehicleOosNationalAvg: Number(carrier.vehicleOosRateNationalAverage) || null,
         driverOosNationalAvg: Number(carrier.driverOosRateNationalAverage) || null,
+        // From SAFER scrape — possibly null if SAFER didn't have it.
+        telephone,
+        mcs150FormDate,
+        authorityAgeDays,
         flags,
       },
     });
