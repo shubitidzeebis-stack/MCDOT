@@ -42,7 +42,7 @@ const COPY: Record<Locale, LocaleStrings> = {
     greet: (name) => `Hi ${name},`,
     thanks: "Thanks for sending your LLC details over to us.",
     reply:
-      "A member of our acquisitions team will review and come back to you within a few hours during the working week. If your LLC fits our criteria, the next step is a quick call and a written offer — no pressure either way.",
+      "A member of our acquisitions team will review and come back to you within a few hours, every day of the week. If your LLC fits our criteria, the next step is a quick call and a written offer — no pressure either way.",
     urgent: "If anything urgent comes up before we reply, just answer this email.",
     signoff: `The ${SITE.name} team`,
   },

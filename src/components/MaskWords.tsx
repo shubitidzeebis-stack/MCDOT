@@ -29,7 +29,7 @@ function Word({
       <motion.span
         initial={{ y: "110%" }}
         animate={{ y: "0%" }}
-        transition={{ delay, duration: 1.0, ease: EASE }}
+        transition={{ delay, duration: 0.55, ease: EASE }}
         onAnimationComplete={() => setDone(true)}
         className="inline-block"
       >
@@ -43,7 +43,7 @@ export function MaskWords({
   text,
   className,
   delay = 0,
-  stagger = 0.08,
+  stagger = 0.05,
 }: {
   text: string;
   className?: string;

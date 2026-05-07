@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Why sellers choose Veritor Group",
     description:
-      "Operators buying from operators. Written offers, two-week close, full transfer handled, complete confidentiality.",
+      "Operators buying from operators. Written offers, close in 3–5 business days, full transfer handled, complete confidentiality.",
     url: "/why-veritor",
   },
 };

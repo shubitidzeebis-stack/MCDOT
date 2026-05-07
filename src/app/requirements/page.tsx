@@ -11,7 +11,7 @@ import { BreadcrumbSchema, ServiceSchema } from "@/components/seo/Schema";
 export const metadata: Metadata = {
   title: "Requirements — What we buy",
   description:
-    "Veritor Group acquires US logistics LLCs that meet two profiles: active Amazon Relay contracts (insurance can be inactive), or fresh MC authority under 180 days old with active insurance. See the exact criteria.",
+    "Veritor Group acquires US logistics LLCs that meet two profiles: active Amazon Relay contracts (insurance can be inactive), or MC authority + insurance continuously active for at least 6 months. See the exact criteria.",
   keywords: [
     "MC authority for sale",
     "sell trucking LLC requirements",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "What Veritor Group buys — LLC acquisition criteria",
     description:
-      "Two profiles: Amazon Relay carriers (insurance flexible) or fresh MC authority under 180 days. Clean violation history. Full transfer at closing.",
+      "Two profiles: Amazon Relay carriers (insurance flexible), or MC authority + insurance active for 6+ months. Clean violation history. Full transfer at closing.",
     url: "/requirements",
     images: ["/requirements/document-table.png"],
   },
@@ -66,9 +66,9 @@ export default function RequirementsPage() {
             We acquire two distinct types of US logistics LLCs because they map to two
             different operating plans on our side. An LLC that already runs Amazon Relay
             is the contract — we step into an existing book of work the moment the
-            ownership transfer closes. An LLC with fresh MC authority under 180 days old
-            is a clean operating shell we can onboard into Amazon Relay or other freight
-            networks immediately, before any violation history accumulates.
+            ownership transfer closes. An LLC with at least six months of paid insurance
+            and active MC authority is a clean operating shell we can onboard into
+            Amazon Relay or other freight networks the moment we take over.
           </p>
           <h3>Active vs. inactive insurance</h3>
           <p>
@@ -77,12 +77,17 @@ export default function RequirementsPage() {
             in-force policy, because Amazon&rsquo;s onboarding requires continuous
             coverage history.
           </p>
-          <h3>The 180-day MC authority rule</h3>
+          <h3>The six-month minimum (insurance + MC authority)</h3>
           <p>
-            Amazon Relay&rsquo;s onboarding logic favors fresh authority with no operating
-            history. After roughly six months, MC numbers without operating activity
-            become harder to onboard, and any small violations weigh more heavily against
-            approval. That&rsquo;s why we draw a clean line at 180 days.
+            Amazon Relay won&rsquo;t onboard a carrier until the MC authority and the
+            BIPD insurance policy attached to it have been continuously active for at
+            least 180 days. They look for a real paper trail: six months of premium
+            payments, six months of FMCSA standing, six months without lapses. That&rsquo;s
+            why we&rsquo;re specifically looking for LLCs that are <strong>past</strong>{" "}
+            that 6-month mark — the authority is mature enough for Relay onboarding but
+            still fresh enough to have a clean operating record. If your MC has been
+            paying insurance and active for six months or more, you&rsquo;re in the
+            sweet spot.
           </p>
           <h3>What &ldquo;good standing on violations&rdquo; means</h3>
           <p>

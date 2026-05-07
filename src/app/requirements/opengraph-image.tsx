@@ -14,7 +14,7 @@ export default function OgImage() {
     headlineLine2: "No guesswork.",
     trustRow: [
       "Active Amazon Relay carriers",
-      "Or fresh MC under 180 days",
+      "Or MC + insurance, 6+ months",
       "Active insurance",
       "Clean violations",
     ],

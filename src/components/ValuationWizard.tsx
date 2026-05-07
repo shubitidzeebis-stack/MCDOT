@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowIcon, CheckIcon } from "@/components/Icons";
 import { CalEmbed } from "@/components/CalEmbed";
@@ -59,6 +60,18 @@ type Carrier = {
 const EASE = [0.16, 1, 0.3, 1] as const;
 const TOTAL_STEPS = 5;
 
+function formatSlot(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
   const KEY = "veritor.session";
@@ -72,11 +85,19 @@ function getSessionId(): string {
 
 export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].wizard;
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<StepId>(1);
 
+  // Initialize from URL params if Hero handed us a number+kind. We
+  // auto-run the lookup once the session id is ready so the seller
+  // lands directly on step 2 (the carrier confirmation).
+  const initialKind = (searchParams.get("kind") === "dot" ? "dot" : "mc") as "mc" | "dot";
+  const initialNumber = (searchParams.get("number") ?? "").replace(/[^0-9]/g, "");
+
   // Inputs
-  const [kind, setKind] = useState<"mc" | "dot">("mc");
-  const [number, setNumber] = useState("");
+  const [kind, setKind] = useState<"mc" | "dot">(initialKind);
+  const [number, setNumber] = useState(initialNumber);
+  const [autoRan, setAutoRan] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -96,6 +117,13 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
 
   useEffect(() => {
     sessionIdRef.current = getSessionId();
+    // Auto-run lookup if hero passed a number via URL params.
+    if (!autoRan && initialNumber && step === 1) {
+      setAutoRan(true);
+      // Defer one frame so sessionId is captured.
+      requestAnimationFrame(() => submitLookup());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function isEmailValid(e: string): boolean {
@@ -202,32 +230,29 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
   return (
     <section className="min-h-[calc(100svh-80px)] bg-[#0a0a0b] py-8 md:py-14">
       <div className="mx-auto max-w-2xl px-5 md:px-6">
-        {/* Brand pill */}
-        <div className="mb-8 flex items-center justify-between md:mb-10">
+        {/* Top bar — small inline wordmark + free-valuation tag */}
+        <div className="mb-7 flex items-center justify-between md:mb-9">
           <Link
             href={locale === "en" ? "/" : `/${locale}`}
             aria-label="Veritor home"
-            className="inline-flex items-center gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-white/20 transition-shadow hover:ring-white/40"
+            className="inline-flex items-center"
           >
             <Image
-              src="/brand/logo-color-square.png"
+              src="/brand/logo-on-dark.png"
               alt="Veritor Group"
-              width={32}
-              height={32}
-              className="h-7 w-7 object-contain"
+              width={140}
+              height={28}
+              className="h-7 w-auto object-contain"
               priority
             />
-            <span className="text-[13px] font-semibold tracking-[-0.01em] text-[#0a0a0b]">
-              {SITE.name}
-            </span>
           </Link>
           <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/45">
             {t.brandTag}
           </p>
         </div>
 
-        {/* Thin progress bar */}
-        <Progress step={step} label={t.stepOf.replace("{n}", String(step)).replace("{total}", String(TOTAL_STEPS))} />
+        {/* Thin progress strip — fill only, no percentage or step labels */}
+        <Progress step={step} />
 
         {/* Step content */}
         <div className="mt-8 rounded-2xl bg-white/[0.025] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-10 lg:p-12">
@@ -302,31 +327,33 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
         <p className="mt-7 text-center text-[12px] leading-relaxed text-white/40">
           {t.indicativeNote}
         </p>
+
+        {/* Wordmark below the form — transparent background, larger
+            scale, decorative footer to anchor the page brand. */}
+        <div className="mt-12 flex flex-col items-center md:mt-16">
+          <Image
+            src="/brand/logo-on-dark.png"
+            alt="Veritor Group"
+            width={420}
+            height={84}
+            className="h-12 w-auto opacity-50 md:h-16"
+          />
+        </div>
       </div>
     </section>
   );
 }
 
-function Progress({ step, label }: { step: StepId; label: string }) {
+function Progress({ step }: { step: StepId }) {
   const pct = (step / TOTAL_STEPS) * 100;
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-white/55">
-          {label}
-        </span>
-        <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#ff8a1a]">
-          {Math.round(pct)}%
-        </span>
-      </div>
-      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/10">
-        <motion.div
-          initial={false}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.5, ease: EASE }}
-          className="h-full rounded-full bg-[#ff8a1a]"
-        />
-      </div>
+    <div className="h-[3px] w-full overflow-hidden rounded-full bg-white/8">
+      <motion.div
+        initial={false}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.5, ease: EASE }}
+        className="h-full rounded-full bg-[#ff8a1a]"
+      />
     </div>
   );
 }
@@ -811,6 +838,13 @@ function Step5({
   contact: { name: string; email: string; phone: string };
   hasRelay: "yes" | "no";
 }) {
+  const [slots, setSlots] = useState<string[]>([]);
+  useEffect(() => {
+    fetch("/api/cal/next-slots")
+      .then((r) => (r.ok ? r.json() : { slots: [] }))
+      .then((data) => setSlots(Array.isArray(data.slots) ? data.slots : []))
+      .catch(() => setSlots([]));
+  }, []);
   // Pre-fill the Cal.com booking form with the seller's info + carrier
   // context. Cal.com supports name/email as URL params, plus a generic
   // `notes` field that lands in the booking confirmation. The seller
@@ -851,9 +885,31 @@ function Step5({
           no extra click, no new tab. The user's name + email + carrier
           context are pre-filled but editable. */}
       <div className="mt-7">
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-          {t.scheduleCall}
-        </p>
+        <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+            {t.scheduleCall}
+          </p>
+          {slots.length > 0 && (
+            <p className="text-[12px] text-white/55">
+              {t.nextAvailable}{" "}
+              <span className="font-medium text-white/85">
+                {formatSlot(slots[0])}
+              </span>
+            </p>
+          )}
+        </div>
+        {slots.length > 0 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {slots.slice(0, 3).map((iso) => (
+              <span
+                key={iso}
+                className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-300"
+              >
+                {formatSlot(iso)}
+              </span>
+            ))}
+          </div>
+        )}
         <CalEmbed
           calLink="lukaveritor/15min"
           origin="https://cal.eu"

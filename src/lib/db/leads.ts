@@ -56,15 +56,14 @@ async function ensureTable(sql: Sql) {
 function computePriority(payload: ContactPayload): "high" | "medium" | "low" {
   // Active Amazon Relay LLCs are the highest-value acquisitions.
   if (payload.hasRelay === "yes") return "high";
-  // Fresh MC under 180 days + active insurance + state filled = qualified
-  // non-Relay lead.
+  // MC + insurance active for 6+ months (Amazon Relay onboarding bar) +
+  // active insurance = qualified non-Relay lead.
   const mcAge = payload.mcAgeDays ? parseInt(payload.mcAgeDays, 10) : NaN;
   if (
     payload.hasRelay === "no" &&
     payload.insurance === "active" &&
     Number.isFinite(mcAge) &&
-    mcAge > 0 &&
-    mcAge <= 180
+    mcAge >= 180
   ) {
     return "medium";
   }

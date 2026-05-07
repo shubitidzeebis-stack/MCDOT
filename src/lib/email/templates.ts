@@ -51,7 +51,7 @@ export const autoreply: TemplateFn = (c) => {
     ``,
     `Thanks for sending your LLC details over to us.`,
     ``,
-    `A member of our acquisitions team will review and come back to you within a few hours during the working week. If your LLC fits our criteria, the next step is a quick call and a written offer — no pressure either way.`,
+    `A member of our acquisitions team will review and come back to you within a few hours, every day of the week. If your LLC fits our criteria, the next step is a quick call and a written offer — no pressure either way.`,
     ``,
     `If anything urgent comes up before we reply, just answer this email.`,
     ``,
@@ -65,7 +65,7 @@ export const autoreply: TemplateFn = (c) => {
       <p style="${STYLE.paragraph}">Thanks for sending your LLC details over to us.</p>
       <p style="${STYLE.paragraph}">
         A member of our acquisitions team will review and come back to you
-        <strong style="${STYLE.strong}">within a few hours during the working week</strong>.
+        <strong style="${STYLE.strong}">within a few hours, every day of the week</strong>.
         If your LLC fits our criteria, the next step is a quick call and a
         written offer &mdash; no pressure either way.
       </p>
@@ -90,7 +90,7 @@ export const sellerNurtureStep1: TemplateFn = (c) => {
   const text = [
     `Hi ${first},`,
     ``,
-    `Yesterday you sent us your LLC details. We try to reply to every enquiry within a few hours during the working week — if you didn't hear from us, it's usually one of two things:`,
+    `Yesterday you sent us your LLC details. We try to reply to every enquiry within a few hours, every day of the week — if you didn't hear from us, it's usually one of two things:`,
     ``,
     `  1. Our reply landed in your spam / promotions folder. Worth a quick look.`,
     `  2. Your LLC didn't fit our criteria, in which case we'd have told you why.`,
@@ -106,7 +106,7 @@ export const sellerNurtureStep1: TemplateFn = (c) => {
       <p style="${STYLE.paragraph}">Hi ${safe(first)},</p>
       <p style="${STYLE.paragraph}">
         Yesterday you sent us your LLC details. We try to reply to every enquiry within
-        a few hours during the working week &mdash; if you didn&rsquo;t hear from us,
+        a few hours, every day of the week &mdash; if you didn&rsquo;t hear from us,
         it&rsquo;s usually one of two things:
       </p>
       <ul style="${STYLE.list}">
@@ -186,15 +186,15 @@ export const sellerNurtureStep3: TemplateFn = (c) => {
   const text = [
     `Hi ${first},`,
     ``,
-    `One reason sellers stall: it's hard to picture what the next two weeks would actually look like. Here's the unedited version, day by day.`,
+    `One reason sellers stall: it's hard to picture what the next 3-5 business days would actually look like. Here's the unedited version, day by day.`,
     ``,
-    `Day 1 — You submit your details. We pull FMCSA, verify MC standing, check insurance and Relay status. Within hours we reply with either a written number or "here's why we're passing."`,
+    `Day 1 — You check your MC. We pull FMCSA, verify MC standing, check insurance and Relay status. Within hours we reply with either a written number or "here's why we're passing."`,
     ``,
-    `Day 2-3 — Letter of intent signed. Locks the price. Outlines what transfers (LLC, MC, DOT, EIN, phone, email, bank, contracts).`,
+    `Day 2 — Letter of intent signed. Locks the price. Outlines what transfers (LLC, MC, DOT, EIN, phone, email, bank, contracts).`,
     ``,
-    `Day 3-7 — Diligence. Tax filings current, no undisclosed liens, violation history matches. Our legal counsel drafts the purchase agreement (we pay those fees, not you).`,
+    `Day 2-3 — Diligence. Tax filings current, no undisclosed liens, violation history matches. Our legal counsel drafts the purchase agreement (we pay those fees, not you).`,
     ``,
-    `Day 7-14 — Sign and wire. Final purchase agreement signed by both parties. Closing wire same-day or next-day. Phone / email / bank credentials handed over per checklist.`,
+    `Day 3-5 — In-person closing at your bank. We meet face-to-face at your bank — typically the one attached to your Amazon Relay payments — sign the final agreement, update signatories at the counter, and wire the closing payment from our account to yours while we're standing there together. You walk out with funds, we walk out with the LLC. No remote signing, no waiting for wires to clear out of sight.`,
     ``,
     `Bottlenecks are usually outside our control: bank takes a day to update signatories, lender consent on a loan payoff, FMCSA portal access transfer. We've seen all of these and we know how to handle them.`,
     ``,
@@ -209,8 +209,9 @@ export const sellerNurtureStep3: TemplateFn = (c) => {
     bodyHtml: `
       <p style="${STYLE.paragraph}">Hi ${safe(first)},</p>
       <p style="${STYLE.paragraph}">
-        One reason sellers stall: it&rsquo;s hard to picture what the next two weeks would
-        actually look like. Here&rsquo;s the unedited version, day by day.
+        One reason sellers stall: it&rsquo;s hard to picture what the next 3&ndash;5
+        business days would actually look like. Here&rsquo;s the unedited version,
+        day by day.
       </p>
       <p style="${STYLE.paragraph}"><strong style="${STYLE.strong}">Day 1 &mdash; Submit + triage.</strong></p>
       <p style="${STYLE.paragraphMuted}">

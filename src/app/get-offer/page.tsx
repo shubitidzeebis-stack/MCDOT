@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `Free valuation in 90 seconds — ${SITE.name}`,
     description:
-      "Enter your MC or DOT number. We pull FMCSA, return a value range. Written offer in 48 hours, two-week close.",
+      "Enter your MC or DOT number. We pull FMCSA, return a value range. Written offer in 48 hours, in-person close in 3–5 business days.",
     url: "/get-offer",
   },
 };

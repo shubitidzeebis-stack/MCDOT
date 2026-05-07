@@ -68,11 +68,20 @@ export function computeValuation(
   // Amazon Relay — biggest single driver of value.
   if (input.hasAmazonRelay) factor += 0.3;
 
-  // Authority age. Fresh = +0.20, 6-12mo = +0.10, >2yr = -0.15.
+  // Authority age. Amazon Relay only onboards carriers with 180+ days
+  // of continuously paid insurance and active MC, so we reward maturity:
+  //   180-730 days  = +bonus (the sweet spot)
+  //   <180 days     = no bonus (Relay won't onboard yet)
+  //   >730 days     = small penalty (likely accumulated violations)
   if (input.authorityAgeDays !== null) {
-    if (input.authorityAgeDays < 180) factor += 0.2;
-    else if (input.authorityAgeDays < 365) factor += 0.1;
-    else if (input.authorityAgeDays > 730) factor -= 0.15;
+    if (input.authorityAgeDays >= 180 && input.authorityAgeDays <= 365) {
+      factor += 0.25;
+    } else if (input.authorityAgeDays > 365 && input.authorityAgeDays <= 730) {
+      factor += 0.1;
+    } else if (input.authorityAgeDays > 730) {
+      factor -= 0.1;
+    }
+    // Under 180 days: no bonus, no penalty.
   }
 
   // Out-of-service rates — reward better-than-average performance,

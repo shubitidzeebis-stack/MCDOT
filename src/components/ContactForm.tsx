@@ -634,10 +634,12 @@ function Qualifier({
   }
 
   function pickMcAge(answer: "fresh" | "old" | "unknown") {
+    // "fresh" = 6+ months active (the new sweet spot for Relay onboarding)
+    // "old" = under 6 months — still allowed but lower-priority
     onAnswer({
       hasRelay: "no",
       mcAgeDays:
-        answer === "fresh" ? "120" : answer === "old" ? "365" : "",
+        answer === "fresh" ? "365" : answer === "old" ? "120" : "",
     });
   }
 
@@ -693,11 +695,12 @@ function Qualifier({
       {phase === "mc-age" && (
         <>
           <h3 className="mt-5 text-[1.5rem] font-semibold leading-tight tracking-[-0.015em] text-white md:text-[1.875rem]">
-            How old is your MC authority?
+            How long has your MC authority + insurance been active?
           </h3>
           <p className="mt-3 text-[14px] leading-relaxed text-white/55">
-            Fresh MC authority (under 180 days) is what we look for in non-Relay LLCs.
-            Older authorities can still work depending on history.
+            Amazon Relay only onboards carriers with at least 6 months of continuously
+            paid insurance and active MC authority. That&rsquo;s the bar we look for
+            on non-Relay LLCs.
           </p>
           <div className="mt-6 grid gap-3">
             <button
@@ -706,7 +709,7 @@ function Qualifier({
               className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-[#ff8a1a]/50 hover:bg-[#ff8a1a]/[0.06]"
             >
               <span className="text-[16px] font-semibold text-white">
-                Less than 180 days
+                6 months or longer
               </span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
                 You&rsquo;re a fit. Tell us a little more on the next step.
@@ -718,7 +721,7 @@ function Qualifier({
               className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-white/30 hover:bg-white/[0.08]"
             >
               <span className="text-[16px] font-semibold text-white">
-                More than 180 days
+                Less than 6 months
               </span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
                 We&rsquo;ll still answer questions — submit and we&rsquo;ll be honest about

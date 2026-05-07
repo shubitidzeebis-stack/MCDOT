@@ -46,6 +46,12 @@ type Dict = {
     subhead: string;
     ctaPrimary: string;
     ctaSecondary: string;
+    lookupMc: string;
+    lookupDot: string;
+    lookupMcPlaceholder: string;
+    lookupDotPlaceholder: string;
+    lookupCta: string;
+    lookupHelper: string;
   };
   trust: {
     eyebrow: string;
@@ -186,6 +192,7 @@ type Dict = {
     indicativeBlock: string;
     haveQuestions: string;
     scheduleCall: string;
+    nextAvailable: string;
     // Common
     back: string;
     // Errors
@@ -214,11 +221,17 @@ export const DICT: Record<Locale, Dict> = {
     hero: {
       eyebrow: "US Logistics LLC Acquisitions",
       headlineLine1: "Sell your trucking LLC.",
-      headlineLine2: "Closed in under two weeks.",
+      headlineLine2: "Closed in 3–5 business days.",
       subhead:
         "Veritor Group acquires US logistics LLCs — including those with active Amazon Relay contracts. Clean process. Fair offer. We handle the transfer.",
       ctaPrimary: "Get a free valuation",
       ctaSecondary: "How it works",
+      lookupMc: "MC",
+      lookupDot: "DOT",
+      lookupMcPlaceholder: "Enter your MC number",
+      lookupDotPlaceholder: "Enter your DOT number",
+      lookupCta: "Check your company",
+      lookupHelper: "Free FMCSA lookup. No signup, no obligation.",
     },
     trust: {
       eyebrow: "Track record",
@@ -263,23 +276,23 @@ export const DICT: Record<Locale, Dict> = {
     how: {
       eyebrow: "How it works",
       headline1: "Four steps,",
-      headline2: "two weeks or less.",
+      headline2: "3 to 5 business days.",
       steps: [
         {
-          title: "Submit your details",
-          body: "Tell us about your LLC — MC number, insurance status, Amazon Relay status. Takes 2 minutes.",
+          title: "Check your MC",
+          body: "Enter your MC or DOT number. We pull your FMCSA snapshot — no signup, no obligation. Takes 30 seconds.",
         },
         {
           title: "Get a free valuation",
-          body: "We respond within hours during the working week. If your LLC fits, we make a written offer.",
+          body: "We respond within hours, every day of the week. If your LLC fits, we make a written offer.",
         },
         {
           title: "Sign and verify",
           body: "Standard purchase agreement, light document review, no surprises. We pay legal on our side.",
         },
         {
-          title: "Transfer and close",
-          body: "Funds wired, LLC ownership transferred, phone / email / bank handed over. Done in days, not months.",
+          title: "Meet at the bank",
+          body: "We meet you at your bank, sign in person, and the wire goes from our account to yours at the counter. You walk out with funds.",
         },
       ],
     },
@@ -290,7 +303,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "We close fast — and we close.",
-          body: "Average close under two weeks. We've done this 400+ times. Funds are ready before we make the offer.",
+          body: "Average close in 3–5 business days. We've done this 400+ times. Funds are ready before we make the offer.",
         },
         {
           title: "Fair, written offers.",
@@ -530,7 +543,7 @@ export const DICT: Record<Locale, Dict> = {
       headline1: "Tell us about",
       headline2: "your LLC.",
       intro:
-        "Free valuation, no obligation. We respond within a few hours during the working week.",
+        "Free valuation, no obligation. We respond within a few hours, every day of the week.",
       callLabel: "Call",
       emailLabel: "Email",
       whatsappLabel: "WhatsApp",
@@ -635,6 +648,7 @@ export const DICT: Record<Locale, Dict> = {
         "This is an indicative range based on your FMCSA snapshot. Final offer is confirmed on a 15-minute call after we review your insurance, MC age, and contract status — then in writing within 48 hours.",
       haveQuestions: "Have questions? Contact us →",
       scheduleCall: "Schedule a call",
+      nextAvailable: "Next available:",
       back: "← Back",
       errorNumber: "Please enter your MC or DOT number.",
       errorName: "Please enter your name.",
@@ -665,6 +679,12 @@ export const DICT: Record<Locale, Dict> = {
         "Veritor Group adquiere LLCs de logística en EE. UU. — incluyendo aquellas con contrato activo de Amazon Relay. Proceso limpio. Oferta justa. Nosotros manejamos la transferencia.",
       ctaPrimary: "Valuación gratis",
       ctaSecondary: "Cómo funciona",
+      lookupMc: "MC",
+      lookupDot: "DOT",
+      lookupMcPlaceholder: "Ingrese su número MC",
+      lookupDotPlaceholder: "Ingrese su número DOT",
+      lookupCta: "Verificar su empresa",
+      lookupHelper: "Consulta FMCSA gratuita. Sin registro, sin compromiso.",
     },
     trust: {
       eyebrow: "Trayectoria",
@@ -1082,6 +1102,7 @@ export const DICT: Record<Locale, Dict> = {
         "Este es un rango indicativo basado en su registro FMCSA. La oferta final se confirma en una llamada de 15 minutos tras revisar seguro, antigüedad de MC y estado del contrato — luego por escrito en 48 horas.",
       haveQuestions: "¿Tiene preguntas? Contáctenos →",
       scheduleCall: "Agendar llamada",
+      nextAvailable: "Próximo disponible:",
       back: "← Atrás",
       errorNumber: "Por favor ingrese su número MC o DOT.",
       errorName: "Por favor ingrese su nombre.",
@@ -1112,6 +1133,12 @@ export const DICT: Record<Locale, Dict> = {
         "Veritor Group выкупает логистические LLC в США — включая компании с активным контрактом Amazon Relay. Чистый процесс. Честная цена. Перевод оформляем мы.",
       ctaPrimary: "Бесплатная оценка",
       ctaSecondary: "Как это работает",
+      lookupMc: "MC",
+      lookupDot: "DOT",
+      lookupMcPlaceholder: "Введите номер MC",
+      lookupDotPlaceholder: "Введите номер DOT",
+      lookupCta: "Проверить компанию",
+      lookupHelper: "Бесплатный запрос FMCSA. Без регистрации.",
     },
     trust: {
       eyebrow: "Опыт",
@@ -1528,6 +1555,7 @@ export const DICT: Record<Locale, Dict> = {
         "Это ориентировочный диапазон на основе записи FMCSA. Финальное предложение — после 15-минутного звонка с проверкой страховки, возраста MC и контракта — затем письменно в течение 48 часов.",
       haveQuestions: "Есть вопросы? Свяжитесь с нами →",
       scheduleCall: "Назначить звонок",
+      nextAvailable: "Ближайшее время:",
       back: "← Назад",
       errorNumber: "Пожалуйста, введите номер MC или DOT.",
       errorName: "Пожалуйста, введите имя.",

@@ -16,7 +16,7 @@ export default function Home() {
     <>
       <ServiceSchema
         name="Veritor Group — US logistics LLC acquisition"
-        description="Acquisition of US logistics LLCs and Amazon Relay carriers. Written offers, two-week close, 400+ LLCs closed."
+        description="Acquisition of US logistics LLCs and Amazon Relay carriers. Written offers, close in 3–5 business days, 400+ LLCs closed."
         url="/"
       />
       <Header locale="en" />

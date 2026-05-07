@@ -35,7 +35,7 @@ export const SITE = {
   // images, email signatures, and ad-network metadata.
   trust: {
     acquisitionsCompleted: "400+",
-    averageCloseDays: "Under 2 weeks",
+    averageCloseDays: "3–5 business days",
     yearsActive: "5+",
   },
 

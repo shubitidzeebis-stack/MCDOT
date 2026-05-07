@@ -25,7 +25,7 @@ export default function ThanksPage() {
             </h1>
             <p className="mt-5 max-w-[480px] text-[15px] leading-relaxed text-white/65 md:text-[17px]">
               Thanks for sending your details. A member of our acquisitions team will review
-              and come back to you within a few hours during the working week.
+              and come back to you within a few hours, every day of the week.
             </p>
             <p className="mt-3 max-w-[480px] text-[14px] leading-relaxed text-white/45">
               In the meantime, check your inbox — you should have a confirmation email from us already.

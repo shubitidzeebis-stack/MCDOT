@@ -162,16 +162,57 @@ Available paths for email enrichment, if Veritor wants to invest:
 For now the wizard collects email directly from the seller — no
 reliable way around this.
 
-### Phase 6 backlog
+### Phase 6 — shipped 2026-05-07
 
-- **Realtime calendar slot preview** on wizard reveal — needs Cal.com
-  API key from `https://cal.eu/settings/developer/api-keys`.
-- **Email enrichment service** integration (Hunter / Apollo) once a
-  budget is approved.
-- **Bulk admin actions** — "mark all selected as Contacted", "delete
-  selected".
+- ✅ **Hero MC/DOT input form** — primary CTA replaced with an inline
+  toggle (MC/DOT) + input + "Check your company" button. On submit,
+  routes to `/get-offer?kind=...&number=...` and the wizard auto-runs
+  the FMCSA lookup, landing the seller directly on step 2.
+- ✅ **Hero animation lag fixed** — MaskWords duration cut from 1.0s
+  to 0.55s, stagger from 0.08 to 0.05, and all delay chains collapsed.
+  Total hero reveal now lands in ~1.3s vs ~3s before.
+- ✅ **Wizard UI polish** — top wordmark logo with transparent
+  background (no white pill), thin progress strip only (no percentage,
+  no step counter), bigger faded wordmark below the form.
+- ✅ **Cal.com realtime slot preview** — `/api/cal/next-slots` calls
+  the v2 slots API on cal.eu; reveal screen shows up to 3 upcoming
+  slots above the embed ("Next available: Thu May 8, 9:00 AM").
+- ✅ **Copy: 2-week → 3-5 business days** — replaced everywhere across
+  homepage, layout meta, OG images, how-it-works, requirements, why,
+  about, get-offer, blog, email templates, and i18n dict.
+- ✅ **Copy: response hours** — "during the working week" → "every
+  day of the week" across all surfaces (i18n, thanks, email templates,
+  autoreply).
+- ✅ **Copy: step 1 header** — "Submit your details" → "Check your
+  MC" everywhere (i18n, how-it-works, OG images).
+- ✅ **Copy: in-person bank closing** — how-it-works Day 7-14 fully
+  rewritten as Day 3-5: in-person meeting at the seller's bank
+  (typically Amazon-Relay-attached), face-to-face signing,
+  counter-side wire transfer. Email sequence updated to match.
+- ✅ **Copy: deal-bottlenecks demoted** — was an h3 section in
+  how-it-works, now a small footnote-style paragraph in muted text.
+- ✅ **Copy + logic: 180-day rule flipped** — no longer about
+  "fresh MC under 180 days", now about MC + insurance continuously
+  active for **at least** 6 months (Amazon Relay's actual onboarding
+  requirement). Updated in: requirements page, requirements OG,
+  ContactForm qualifier, lead-priority logic (lib/db/leads.ts), and
+  pricing algorithm (lib/valuation.ts).
+- ✅ **Team member added** — Managing Partner card placed second in
+  the leadership grid (under Luka). Photo at
+  `/about/team-managing-partner.jpg`. **Name placeholder is `[Name TBD]`**
+  — user needs to provide the real name. Grid expanded to
+  `lg:grid-cols-5` to accommodate 5 cards.
+
+### Open / blocked
+
+- 🔓 **Managing Partner name** — using "[Name TBD]" placeholder.
+  Send the actual name and I'll swap it in.
+- **Email enrichment service** (Hunter / Apollo) — still pending a
+  budget decision.
 - **Audit log** — track who changed what status / notes / deleted
   what row.
+- **Bulk admin actions** — "mark all selected as Contacted", "delete
+  selected".
 
 ## Agreed scope
 
