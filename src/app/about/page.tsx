@@ -114,7 +114,7 @@ export default function AboutPage() {
                       alt="Lisa K., Senior Manager at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover object-[50%_75%]"
+                      className="object-cover object-[50%_55%]"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
