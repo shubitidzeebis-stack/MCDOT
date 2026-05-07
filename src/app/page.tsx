@@ -25,9 +25,9 @@ export default function Home() {
         <LiveTicker />
         <TrustBar locale="en" />
         <Requirements locale="en" />
-        <Testimonials />
         <HowItWorks locale="en" />
         <WhyVeritor locale="en" />
+        <Testimonials />
         <ContactForm locale="en" />
       </main>
       <Footer locale="en" />

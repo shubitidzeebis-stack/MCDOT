@@ -27,10 +27,11 @@ files stay as deeper reference.
 - **Manual CPC for at least 60 days.** At ~120 clicks/month you will
   be below Smart Bidding's 30-conversion threshold; resist the UI's
   prompts to "upgrade your bid strategy."
-- **CRITICAL pre-launch [CODE CHANGE REQUIRED]:** fire a NEW GA4 event
-  `valuation_completed` from the wizard's step-5 reveal. Do NOT reuse C1's
-  `generate_lead` — it would blend reporting and make neither campaign
-  evaluable. See §3.
+- **Pre-launch event wiring:** the new GA4 event `valuation_completed`
+  is already wired in [ValuationWizard.tsx](src/components/ValuationWizard.tsx).
+  Distinct from C1's `generate_lead` so reporting stays separable. After
+  the next Vercel deploy, confirm it fires in GA4 DebugView, then import
+  it as the C2 Primary conversion. See §3.
 - **Realistic 90-day forecast:** 8–22 wizard completions/month, CPL
   $40–$75, 1–2 attributable closed deals if Veritor's wizard-lead close
   rate is ≥10%.
@@ -61,24 +62,43 @@ competitor has anything close.
 
 Same moat as C1, but reframed for valuation intent:
 
-> **Operator-led, US-domestic firm. We pulled FMCSA data on 400+ LLCs
-> and closed every one of them. Get a written valuation range in 90
-> seconds — same data we use when we make offers.**
+> **Operator-led, US-domestic firm. We pull live FMCSA data and return
+> a written valuation range — the same data we use when we make
+> offers.** No broker. No listing. No commission.
 
 That last clause is the differentiator. Most "free valuation" tools
-online are lead bait — they ask 10 questions and give you nothing. The
-Veritor wizard pulls live FMCSA data and returns a real range. That's
-the trust angle.
+online are lead bait — they ask a dozen questions and give you nothing.
+The Veritor wizard pulls live FMCSA data and returns a real range.
+That's the trust angle.
+
+**Copy policy: no specific numerical claims in C2 ads.** No counts, no
+years, no time-to-deliver claims, no price brackets, no phone numbers
+in the headline/description body. Phone goes in the call extension
+only. The whole campaign hinges on being "the honest one" — even
+defensible numbers create a verification surface we don't need.
 
 ---
 
-## 3. CRITICAL: pre-launch code change
+## 3. Pre-launch code change — DEPLOYED ✅
 
-**[CODE CHANGE REQUIRED] — Do NOT unpause the campaign until this is
-deployed and verified.**
+**Status:** `valuation_completed` GA4 event is wired in
+[ValuationWizard.tsx](src/components/ValuationWizard.tsx) inside
+`submitFinalize`, fires on successful step 5 transition. Pattern
+mirrors the existing `generate_lead` fire in
+[ContactForm.tsx](src/components/ContactForm.tsx). Consent-gated by
+the existing `window.gtag` guard.
 
-### What
-Fire a new GA4 event `valuation_completed` when the user reaches the
+**Still required from you (one-time, in Google Ads UI):**
+1. Walk through `/get-offer` end-to-end on production after the next
+   Vercel deploy, confirm `valuation_completed` appears in GA4
+   DebugView.
+2. Tools → Conversions → Import from GA4 → check `valuation_completed`
+   → set as Primary (settings in §11).
+3. Confirm "Recording conversions" status before unpausing the
+   campaign.
+
+### What it does
+Fires a new GA4 event `valuation_completed` when the user reaches the
 wizard's value-reveal step (step 5) with contact info captured.
 
 ### Why
@@ -342,61 +362,58 @@ Final URL: `https://groupveritor.com/get-offer`
 Display path: `/sell` `/trucking-company` (renders as
 `groupveritor.com/sell/trucking-company`)
 
-### 15 headlines (≤30 chars, all verified)
+### 15 headlines (≤30 chars, all verified · NO specific numbers)
 
 | # | Headline | Chars | Pin |
 |---|---|---|---|
 | H1 | Don't Take a Lowball Offer | 27 | **P1** |
 | H2 | What's My Trucking LLC Worth? | 30 | **P2** |
 | H3 | Free Trucking Valuation | 24 | — |
-| H4 | FMCSA-Pulled Number in 90 Sec | 30 | — |
-| H5 | 400+ LLCs Valued Since 2019 | 28 | — |
+| H4 | FMCSA-Pulled. Real Data. | 24 | — |
+| H5 | Operator-Led, Not a Broker | 26 | — |
 | H6 | Trucking Company Valuation | 26 | — |
-| H7 | $50K-$250K for Your MC? | 23 | — |
+| H7 | Real Number, Not a Guess | 24 | — |
 | H8 | Get a Written Valuation Range | 30 | — |
 | H9 | Trucking Company Appraisal | 27 | — |
 | H10 | Know Before You Sign Anything | 30 | — |
-| H11 | Call 213-789-6878 Free Quote | 29 | — |
-| H12 | Questions? 213-789-6878 | 23 | — |
+| H11 | Free Quote, No Pressure | 23 | — |
+| H12 | Talk to a Real Operator | 23 | — |
 | H13 | US Buyer. Real FMCSA Data. | 26 | — |
 | H14 | No Broker. No Pressure. | 23 | — |
-| H15 | Valuation in 90 Seconds Flat | 29 | — |
+| H15 | Free. No Listing. No Fees. | 26 | — |
 
 **Pinning logic:** Pin H1 to P1 and H2 to P2 — defensive framing
 ("Don't take a lowball offer") is this campaign's wedge; curiosity
 ("What's it worth?") is the natural follow-up. On mobile, P1+P2 are
 often the only visible text before the description, so this pair tells
-the full story. Leave P3 unpinned so Google can rotate H4/H5/H7/H11–H13
+the full story. Leave P3 unpinned so Google can rotate H4/H5/H7/H8/H13
 and surface the strongest performer. Pinning all 3 positions tanks Ad
 Strength to "Poor."
 
-**Verify H7's price range with Veritor before launch** — `$50K–$250K`
-reflects single-truck OO to small-fleet ranges. Adjust if the actual
-deal range differs. Keep a price-bracket headline regardless; bracketed
-numbers are the highest CTR driver in B2B acquisition advertising.
+**Phone number stays out of headlines and descriptions per Veritor
+copy policy.** It lives only in the **call asset / call extension**
+(see §8). That extension is the contact mechanism, not an ad claim.
 
-**H11/H12 similarity flag:** both contain the phone number. Google may
-flag low uniqueness. If the Ad Strength panel flags it after upload,
-swap H12 for `Free Appraisal. No Listing.` (27 chars).
-
-### 4 descriptions (≤90 chars, each independently complete)
+### 4 descriptions (≤90 chars · NO specific numbers)
 
 | # | Description | Chars |
 |---|---|---|
-| D1 | FMCSA data in 90 sec. Written valuation range. No broker, no obligation, no pressure. | 87 |
-| D2 | 400+ trucking LLCs valued and closed. US-based buyer. Written offer in 48 hours. Call us. | 90 |
+| D1 | FMCSA data, written valuation range. No broker, no obligation, no pressure. | 75 |
+| D2 | Operator-led firm. US-based buyer. Written valuation, then a written offer if you choose. | 90 |
 | D3 | Suspicious of a low offer? We run your FMCSA number and give you the real market range. | 88 |
-| D4 | Operator-led firm. NDA first. Valuation free. If you sell, two-week close. 213-789-6878. | 89 |
+| D4 | Operator-led firm. NDA first. Valuation is free. No listing, no commission, no pressure. | 88 |
 
 **Pin D1** to position 1 (the mechanism — sets expectations correctly).
 Leave D2/D3/D4 unpinned for rotation.
 
 ### Ad-strength self-audit
 
-Predicted **Good** on upload, climbing to **Excellent** if (a) Ad
-Strength panel doesn't flag H11/H12 similarity and (b) H6 ("Trucking
-Company Valuation") stays in the lineup — that exact-match anchor is
-the single biggest QS unlock.
+Predicted **Good** on upload. The pinning of H1+H2 mechanically caps
+Ad Strength — **"Good" is the expected and accepted state for this
+campaign**. Do NOT chase "Excellent" by unpinning H1; the defensive
+wedge framing is worth more than a green meter. H6 ("Trucking Company
+Valuation") is the exact-match QS anchor — keep it in the lineup at
+all costs.
 
 ---
 
@@ -405,23 +422,23 @@ the single biggest QS unlock.
 Add at **campaign level** so they apply to all ad groups (and any future
 ones).
 
-### Sitelinks (6, text ≤25 chars, descriptions ≤35 chars each)
+### Sitelinks (6, text ≤25 chars, descriptions ≤35 chars each · NO specific numbers)
 
 | Text | URL | Desc 1 | Desc 2 |
 |---|---|---|---|
-| How We Value Your LLC | `/get-offer` | FMCSA data + market comps | Written range in 90 seconds |
-| What Sellers Got Paid | `/case-studies` | 400+ closes since 2019 | Real deal data, not estimates |
+| How We Value Your LLC | `/get-offer` | FMCSA data + market comps | Written, no obligation |
+| What We've Done Before | `/case-studies` | Operator-led acquisitions | Real deals, not promises |
 | Is Your Offer Fair? | `/get-offer` | Compare your offer to market | No broker opinion. Real data. |
 | About Veritor Group | `/about` | Operator-led, Dayton OH | US buyer, US bank, US close |
-| FAQ: Valuation Process | `/faq` | How long? 90 seconds online | NDA first, no obligation |
-| Get a Written Offer | `/get-offer` | Free. No listing. No fees. | 48-hour written cash offer |
+| FAQ: Valuation Process | `/faq` | Online, no broker call needed | NDA first, no obligation |
+| Get a Written Offer | `/get-offer` | Free. No listing. No fees. | Written cash offer, your timing |
 
-### Callouts (10, ≤25 chars)
+### Callouts (10, ≤25 chars · NO specific numbers)
 
 ```
-400+ LLCs Closed       Written 48hr Offer      No Commission
-NDA First              US-Based Buyer          FMCSA-Verified Data
-Two-Week Close         No Listing Required     Free Valuation Tool
+Operators, Not Brokers   Written Cash Offer       No Commission
+NDA First                US-Based Buyer           FMCSA-Verified Data
+Fast, Confidential Close No Listing Required      Free Valuation Tool
 Operator-Led Firm
 ```
 
@@ -429,7 +446,7 @@ Operator-Led Firm
 
 - Header: **Services**
 - Values: `Free Valuation` · `Written Offer` · `NDA Conversation` ·
-  `FMCSA Data Pull` · `Two-Week Close` · `Title Transfer Help`
+  `FMCSA Data Pull` · `Confidential Close` · `Title Transfer Help`
 
 ### Call asset
 

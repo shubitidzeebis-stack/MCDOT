@@ -41,7 +41,12 @@ function Mask({
       } ${className ?? ""}`}
     >
       <motion.span
-        initial={{ y: "110%" }}
+        // 110% of the text's own height was just enough to clear the
+        // mask's content box but not the box's bottom padding — leaving
+        // ~7px of letter-tops visible above the bottom edge during the
+        // wait. Park the text well below using calc so any padding the
+        // parent adds is always covered.
+        initial={{ y: "calc(100% + 0.4em)" }}
         animate={{ y: "0%" }}
         transition={{ delay, duration: DURATION, ease: EASE }}
         onAnimationComplete={() => setDone(true)}

@@ -201,6 +201,17 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
       }
       setRange(data.range);
       setFloorReason(data.flooredReason);
+      // GA4 conversion event for Campaign 2 (valuation wedge).
+      // Distinct from homepage `generate_lead` so reporting stays
+      // separable across the two Google Ads campaigns.
+      if (typeof window !== "undefined" && typeof window.gtag === "function") {
+        window.gtag("event", "valuation_completed", {
+          locale,
+          has_amazon_relay: hasRelay === "yes",
+          kind,
+          mc_present: kind === "mc",
+        });
+      }
       setStep(5);
     } catch {
       setError(t.errorNetwork);
