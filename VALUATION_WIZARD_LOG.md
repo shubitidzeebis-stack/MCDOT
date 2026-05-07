@@ -93,15 +93,42 @@ go to `/contact` (wizard not yet localized).
 - Password is `Luka20Gio22` — set as `ADMIN_KEY` on Vercel (production
   + development envs) and in local `.env.local`.
 
-### Phase 4 backlog
+### Phase 4 — shipped 2026-05-07
 
-- **Multi-user auth** — replace single ADMIN_KEY with per-user logins
-  (Vercel Auth / Sign in with Vercel) once team needs separate logins.
-- **Email-from-admin** — compose + send from admin panel using Resend.
-- **Wizard A/B copy tests** — shorter step 1 intro, different step 4
-  phrasing.
-- **Realtime calendar conflict check** — show "next available slot" on
-  the wizard's reveal screen (Cal.com supports a SDK call for this).
+- ✅ **Multi-user auth** — proper per-user login flow at `/admin/login`.
+  - 4 seeded accounts: `luka@`, `lisa@`, `keira@`, `giorgi@groupveritor.com`
+  - Initial shared password = `Luka20Gio22` (the existing ADMIN_KEY value).
+    Each user is expected to change it post-first-login.
+  - Passwords hashed with scrypt (Node built-in, no deps).
+  - Sessions: stateless HMAC-signed cookie (`veritor_admin`), 7-day TTL.
+  - Brute-force guard: 10 attempts / 15 min per IP.
+  - Legacy `?key=ADMIN_KEY` URL still works as emergency fallback.
+- ✅ **Email-from-admin** — compose + send from the detail drawer.
+  - 4 templates (intro, diligence, offer-followup, blank custom).
+  - `{{name}}` and `{{range}}` placeholders auto-fill from row data.
+  - Sent from `info@groupveritor.com`, reply-to = logged-in admin's email
+    so seller replies thread correctly to whoever sent it.
+  - Rate-limited to 30 sends/hour per admin per IP.
+- ✅ **Admin header refactor** — current user name + email shown,
+  Sign-out button calls `/api/admin/logout` and redirects to login.
+
+### Phase 4 — skipped (per user)
+
+- ❌ Wizard A/B copy testing.
+
+### Phase 4 — blocked (needs Cal.com API key)
+
+- 🔒 **Realtime "next available slot" preview** on wizard reveal —
+  needs a Cal.com API key from `https://cal.com/settings/developer/api-keys`.
+  Add it as `CAL_API_KEY` env var when ready and ping me to wire it up.
+
+### Phase 5 backlog
+
+- **Self-service password change** — UI in admin to change own password.
+- **User management UI** — Luka can add / remove / suspend users.
+- **Email send history** per valuation — log to a new table, surface in
+  the drawer.
+- **Realtime calendar slot** (above) once Cal.com API key is provided.
 
 ## Agreed scope
 

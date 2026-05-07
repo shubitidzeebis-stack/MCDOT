@@ -1,8 +1,12 @@
 import { neon } from "@neondatabase/serverless";
+import { cookies } from "next/headers";
+import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
 
-// CSV export of all valuations. Auth via ?key= in querystring (matches
-// the auth model the rest of /admin uses). Streams the CSV with the
-// right Content-Type so a browser GET triggers a file download.
+// CSV export of all valuations. Auth precedence:
+//   1. Session cookie (preferred)
+//   2. ?key=ADMIN_KEY in querystring (legacy)
+// Streams the CSV with the right Content-Type so a browser GET triggers
+// a file download.
 
 export const dynamic = "force-dynamic";
 
@@ -42,10 +46,16 @@ function csvEscape(v: unknown): string {
 }
 
 export async function GET(req: Request) {
-  const expected = process.env.ADMIN_KEY ?? "";
-  const { searchParams } = new URL(req.url);
-  const key = searchParams.get("key") ?? "";
-  if (expected.length === 0 || key !== expected) {
+  const cookieStore = await cookies();
+  const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
+  let authorized = !!session;
+  if (!authorized) {
+    const expected = process.env.ADMIN_KEY ?? "";
+    const { searchParams } = new URL(req.url);
+    const key = searchParams.get("key") ?? "";
+    authorized = expected.length > 0 && key === expected;
+  }
+  if (!authorized) {
     return new Response("Unauthorized.", { status: 401 });
   }
 

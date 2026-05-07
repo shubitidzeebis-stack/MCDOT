@@ -68,7 +68,8 @@ export function AdminValuationsPanel({
   adminKey,
 }: {
   initial: AdminValuationRow[];
-  adminKey: string;
+  /** Legacy fallback. When empty, the API uses the session cookie. */
+  adminKey?: string;
 }) {
   const [rows, setRows] = useState(initial);
   const [filterStatus, setFilterStatus] = useState<"all" | StatusValue>("all");
@@ -149,10 +150,12 @@ export function AdminValuationsPanel({
       ),
     );
     try {
+      const body: Record<string, unknown> = { id, ...patch };
+      if (adminKey) body.key = adminKey;
       const res = await fetch("/api/admin/valuations/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: adminKey, id, ...patch }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error("update failed");
     } catch (err) {
@@ -169,7 +172,11 @@ export function AdminValuationsPanel({
           Wizard valuations
         </h2>
         <a
-          href={`/api/admin/valuations/export?key=${encodeURIComponent(adminKey)}`}
+          href={
+            adminKey
+              ? `/api/admin/valuations/export?key=${encodeURIComponent(adminKey)}`
+              : "/api/admin/valuations/export"
+          }
           className="inline-flex items-center gap-2 rounded-full bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/75 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:text-white"
         >
           ⬇ Export CSV
@@ -337,6 +344,44 @@ function Select({
   );
 }
 
+type EmailTemplate = { id: string; label: string; subject: string; body: string };
+
+const EMAIL_TEMPLATES: EmailTemplate[] = [
+  {
+    id: "intro",
+    label: "Intro / first contact",
+    subject: "Following up on your Veritor valuation",
+    body:
+      "Hi {{name}},\n\nThanks for using our valuation tool. Based on your FMCSA snapshot we landed on {{range}} as an indicative range. I'd like to set up a quick 15-minute call to walk through the details and answer any questions you have about the process.\n\nWhat days work best for you this week?\n\nThanks,",
+  },
+  {
+    id: "diligence",
+    label: "Ready for diligence call",
+    subject: "Quick diligence call — Veritor",
+    body:
+      "Hi {{name}},\n\nReady to move to the next step. For our diligence call we'll need:\n\n- Current insurance certificate (BIPD)\n- Most recent MCS-150 confirmation\n- Last 90 days of broker invoices (one or two examples is fine)\n\nIf you can have those handy when we talk we can get to a written offer the same day.\n\nThanks,",
+  },
+  {
+    id: "offer-followup",
+    label: "Following up on offer",
+    subject: "Quick check-in on your offer",
+    body:
+      "Hi {{name}},\n\nJust wanted to check in — our offer of {{range}} is still on the table and ready to move whenever you are. Happy to revisit any specific terms if there's something you'd like to discuss.\n\nLet me know how you'd like to proceed.\n\nThanks,",
+  },
+  {
+    id: "blank",
+    label: "Blank — write from scratch",
+    subject: "",
+    body: "",
+  },
+];
+
+function fillTemplate(text: string, ctx: { name: string; range: string }): string {
+  return text
+    .replace(/\{\{name\}\}/g, ctx.name || "there")
+    .replace(/\{\{range\}\}/g, ctx.range);
+}
+
 function Row({
   v,
   expanded,
@@ -351,6 +396,65 @@ function Row({
   const [notesDraft, setNotesDraft] = useState(v.notes_internal ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
   const status = (v.status ?? "new") as StatusValue;
+
+  // Email composer state — local to this row.
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailFlash, setEmailFlash] = useState<{
+    kind: "ok" | "err";
+    msg: string;
+  } | null>(null);
+
+  function pickTemplate(id: string) {
+    const tpl = EMAIL_TEMPLATES.find((t) => t.id === id);
+    if (!tpl) return;
+    const range = fmtRange(v.valuation_low, v.valuation_high);
+    const ctx = {
+      name: (v.contact_name ?? "").split(/\s+/)[0] ?? "",
+      range,
+    };
+    setEmailSubject(fillTemplate(tpl.subject, ctx));
+    setEmailBody(fillTemplate(tpl.body, ctx));
+  }
+
+  async function sendEmail() {
+    if (!v.contact_email) {
+      setEmailFlash({ kind: "err", msg: "No email captured for this lead." });
+      return;
+    }
+    if (!emailSubject.trim() || !emailBody.trim()) {
+      setEmailFlash({ kind: "err", msg: "Subject and body are required." });
+      return;
+    }
+    setEmailSending(true);
+    setEmailFlash(null);
+    try {
+      const res = await fetch("/api/admin/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: v.contact_email,
+          subject: emailSubject,
+          body: emailBody,
+          valuationId: v.id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Send failed");
+      setEmailFlash({ kind: "ok", msg: `Sent to ${v.contact_email}.` });
+      setEmailSubject("");
+      setEmailBody("");
+    } catch (err) {
+      setEmailFlash({
+        kind: "err",
+        msg: err instanceof Error ? err.message : "Send failed.",
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  }
   return (
     <>
       <tr className="hover:bg-white/[0.02]">
@@ -464,18 +568,9 @@ function Row({
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-white/70">
                   <Detail label="Power units" value={String(v.power_units ?? "—")} />
                   <Detail label="Drivers" value={String(v.drivers_count ?? "—")} />
-                  <Detail
-                    label="Vehicle OOS %"
-                    value={v.vehicle_oos_pct ?? "—"}
-                  />
-                  <Detail
-                    label="Driver OOS %"
-                    value={v.driver_oos_pct ?? "—"}
-                  />
-                  <Detail
-                    label="Crashes 24mo"
-                    value={String(v.crashes_24mo ?? "—")}
-                  />
+                  <Detail label="Vehicle OOS %" value={v.vehicle_oos_pct ?? "—"} />
+                  <Detail label="Driver OOS %" value={v.driver_oos_pct ?? "—"} />
+                  <Detail label="Crashes 24mo" value={String(v.crashes_24mo ?? "—")} />
                   <Detail
                     label="Safety rating"
                     value={
@@ -496,9 +591,7 @@ function Row({
                     </p>
                   </div>
                 )}
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
+                <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
                   Internal notes
                 </p>
                 <textarea
@@ -522,6 +615,117 @@ function Row({
                     {savingNotes ? "Saving…" : "Save notes"}
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
+                    Send email
+                  </p>
+                  {!emailOpen && v.contact_email && (
+                    <button
+                      type="button"
+                      onClick={() => setEmailOpen(true)}
+                      className="rounded-full bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-white/75 ring-1 ring-white/10 hover:bg-white/[0.08] hover:text-white"
+                    >
+                      Compose →
+                    </button>
+                  )}
+                </div>
+                {!v.contact_email ? (
+                  <p className="mt-3 text-[12px] text-white/45">
+                    No email captured for this lead — wait for them to provide
+                    contact info, or reach out by phone if available.
+                  </p>
+                ) : !emailOpen ? (
+                  <p className="mt-3 text-[12px] text-white/55">
+                    Reply to <span className="text-white/85">{v.contact_email}</span>{" "}
+                    using a template or write a custom message. Sent from{" "}
+                    <span className="text-white/85">info@groupveritor.com</span>{" "}
+                    with reply-to set to your account.
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-3">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+                        Template
+                      </span>
+                      <select
+                        onChange={(e) => pickTemplate(e.target.value)}
+                        defaultValue=""
+                        className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[12px] text-white outline-none focus:border-[#ff8a1a]/50"
+                      >
+                        <option value="" className="bg-[#0a0a0b]">
+                          — Pick a template —
+                        </option>
+                        {EMAIL_TEMPLATES.map((t) => (
+                          <option key={t.id} value={t.id} className="bg-[#0a0a0b]">
+                            {t.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+                        To
+                      </span>
+                      <input
+                        type="email"
+                        value={v.contact_email ?? ""}
+                        readOnly
+                        className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-[13px] text-white/70 outline-none"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+                        Subject
+                      </span>
+                      <input
+                        type="text"
+                        value={emailSubject}
+                        onChange={(e) => setEmailSubject(e.target.value)}
+                        className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.18em] text-white/45">
+                        Body
+                      </span>
+                      <textarea
+                        value={emailBody}
+                        onChange={(e) => setEmailBody(e.target.value)}
+                        rows={10}
+                        className="resize-none rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50"
+                      />
+                    </label>
+                    {emailFlash && (
+                      <p
+                        className={`text-[12px] ${emailFlash.kind === "ok" ? "text-emerald-300" : "text-red-400"}`}
+                      >
+                        {emailFlash.msg}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setEmailOpen(false)}
+                        className="rounded-full px-3 py-1.5 text-[12px] text-white/55 hover:bg-white/[0.04] hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={sendEmail}
+                        disabled={
+                          emailSending || !emailSubject.trim() || !emailBody.trim()
+                        }
+                        className="rounded-full bg-[#ff8a1a] px-4 py-1.5 text-[12px] font-semibold text-[#0a0a0b] transition-colors hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {emailSending ? "Sending…" : "Send email"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </td>

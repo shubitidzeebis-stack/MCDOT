@@ -11,9 +11,12 @@
 // it's an easy upgrade path; this exists for fast daily triage.
 
 import type { Metadata } from "next";
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { neon } from "@neondatabase/serverless";
 import { AdminValuationsPanel } from "@/components/AdminValuationsPanel";
+import { AdminHeader } from "@/components/admin/AdminHeader";
+import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -154,44 +157,44 @@ export default async function AdminPage({
   const expected = process.env.ADMIN_KEY ?? "";
   const { key } = await searchParams;
 
-  // No-key configured = lock everyone out in production. Locally a missing
-  // key is permissive so dev can hit /admin without setup.
-  const okInProd = expected.length > 0 && key === expected;
+  // Auth precedence:
+  //   1. Session cookie (preferred — proper login flow)
+  //   2. Legacy ?key=ADMIN_KEY URL parameter (emergency fallback)
+  //   3. Dev no-config (only when ADMIN_KEY env is unset locally)
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(ADMIN_COOKIE)?.value;
+  const session = verifySession(sessionCookie);
+
+  const okSession = !!session;
+  const okLegacyKey = expected.length > 0 && key === expected;
   const okInDev =
     expected.length === 0 && process.env.NODE_ENV !== "production";
-  if (!okInProd && !okInDev) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0b] p-8 text-white">
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="mt-3 text-sm text-white/55">
-          Append <code className="rounded bg-white/[0.06] px-1.5 py-0.5">?key=YOUR_ADMIN_KEY</code> to the URL.
-        </p>
-      </main>
-    );
+
+  if (!okSession && !okLegacyKey && !okInDev) {
+    redirect("/admin/login");
   }
 
   const { leads, partials, valuations } = await loadLeads();
   const valuationsWithEmail = valuations.filter((v) => v.contact_email);
   const relayValuations = valuations.filter((v) => v.has_amazon_relay === true);
+  const currentUser = session
+    ? { name: session.name, email: session.email }
+    : okLegacyKey
+      ? { name: "Legacy access", email: "?key=…" }
+      : { name: "Dev", email: "(no auth)" };
 
   return (
     <main className="min-h-screen bg-[#0a0a0b] p-6 text-white md:p-10">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Veritor — Admin</h1>
-          <p className="mt-1 text-[13px] text-white/55">
-            {leads.length} leads · {valuations.length} valuations
-            {" "}({valuationsWithEmail.length} w/ email · {relayValuations.length} active Relay)
-            {" "}· {partials.length} active partials
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="text-[13px] text-white/55 hover:text-white"
-        >
-          ← Back to site
-        </Link>
-      </header>
+      <AdminHeader
+        currentUser={currentUser}
+        stats={{
+          leads: leads.length,
+          valuations: valuations.length,
+          withEmail: valuationsWithEmail.length,
+          relay: relayValuations.length,
+          partials: partials.length,
+        }}
+      />
 
       <section className="mt-8">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
@@ -264,7 +267,10 @@ export default async function AdminPage({
         </div>
       </section>
 
-      <AdminValuationsPanel initial={valuations} adminKey={key ?? ""} />
+      <AdminValuationsPanel
+        initial={valuations}
+        adminKey={okSession ? undefined : (key ?? undefined)}
+      />
 
       {partials.length > 0 && (
         <section className="mt-12">
