@@ -45,42 +45,7 @@ export default function AboutPage() {
           objectPosition="object-[50%_60%]"
         />
 
-        <EditorialBlock
-          eyebrow="The story"
-          heading={
-            <>
-              Operators buying <span className="italic font-light text-white/85">from operators.</span>
-            </>
-          }
-        >
-          <p>
-            We&rsquo;re not brokers and we&rsquo;re not flippers. Every LLC we buy goes
-            into our operating book. That&rsquo;s why we close fast and pay fairly:
-            we&rsquo;re not waiting on a third-party buyer or shopping your deal around.
-          </p>
-          <h3>How we got here</h3>
-          <p>
-            Veritor was founded by operators who started as drivers, became
-            owner-operators, and grew into multi-LLC fleet management. We know exactly
-            what an LLC is worth because we know exactly how to run it.
-          </p>
-          <p>
-            Today we&rsquo;ve completed {SITE.trust.acquisitionsCompleted} acquisitions
-            across the United States, with an average close time of{" "}
-            {SITE.trust.averageCloseDays.toLowerCase()}. Our process is deliberately
-            boring: clear requirements, written offers, standard paperwork. No surprises.
-          </p>
-          <h3>What we promise sellers</h3>
-          <ul>
-            <li>A response within hours, not days</li>
-            <li>A written offer, not a verbal handshake</li>
-            <li>Full discretion — your identity stays private</li>
-            <li>We pay our own legal fees</li>
-            <li>If you don&rsquo;t qualify, we&rsquo;ll tell you why</li>
-          </ul>
-        </EditorialBlock>
-
-        <section className="relative bg-[#0a0a0b] pb-20 md:pb-28">
+        <section className="relative bg-[#0a0a0b] pt-12 pb-20 md:pt-16 md:pb-28">
           <div className="mx-auto max-w-[1300px] px-5 md:px-6">
             <div className="rounded-2xl bg-white/[0.025] p-6 ring-1 ring-white/10 backdrop-blur-md md:rounded-3xl md:p-12 lg:p-16">
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.4em] text-[#ff8a1a] md:mb-5 md:text-[11px]">
@@ -116,19 +81,24 @@ export default function AboutPage() {
 
                 <div className="flex flex-col">
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
+                    {/* Source image is a circular portrait centered on a
+                        dark square background, so we scale up inside
+                        the overflow-clipped frame to push the circle's
+                        edges past the frame edges — no dark corners
+                        visible alongside the other portraits. */}
                     <Image
                       src="/about/team-managing-partner.jpg"
-                      alt="Managing Partner at Veritor Group"
+                      alt="Temuka K., Managing Partner at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
+                      className="object-cover scale-[1.45] object-[50%_45%]"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
                     Managing Partner
                   </p>
                   <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
-                    [Name TBD]
+                    Temuka K.
                   </h3>
                   <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
                     Co-leads every acquisition with Luka. Owns the deal
@@ -208,6 +178,41 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+
+        <EditorialBlock
+          eyebrow="The story"
+          heading={
+            <>
+              Operators buying <span className="italic font-light text-white/85">from operators.</span>
+            </>
+          }
+        >
+          <p>
+            We&rsquo;re not brokers and we&rsquo;re not flippers. Every LLC we buy goes
+            into our operating book. That&rsquo;s why we close fast and pay fairly:
+            we&rsquo;re not waiting on a third-party buyer or shopping your deal around.
+          </p>
+          <h3>How we got here</h3>
+          <p>
+            Veritor was founded by operators who started as drivers, became
+            owner-operators, and grew into multi-LLC fleet management. We know exactly
+            what an LLC is worth because we know exactly how to run it.
+          </p>
+          <p>
+            Today we&rsquo;ve completed {SITE.trust.acquisitionsCompleted} acquisitions
+            across the United States, with an average close time of{" "}
+            {SITE.trust.averageCloseDays.toLowerCase()}. Our process is deliberately
+            boring: clear requirements, written offers, standard paperwork. No surprises.
+          </p>
+          <h3>What we promise sellers</h3>
+          <ul>
+            <li>A response within hours, not days</li>
+            <li>A written offer, not a verbal handshake</li>
+            <li>Full discretion — your identity stays private</li>
+            <li>We pay our own legal fees</li>
+            <li>If you don&rsquo;t qualify, we&rsquo;ll tell you why</li>
+          </ul>
+        </EditorialBlock>
 
         <TrustBar locale="en" />
         <ContactForm locale="en" />
