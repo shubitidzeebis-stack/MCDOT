@@ -258,7 +258,7 @@ export const DICT: Record<Locale, Dict> = {
         title: "LLCs without Amazon Relay",
         items: [
           "Active insurance policy in force",
-          "Valid MC number issued within the last 180 days",
+          "MC authority + insurance active for at least 6 months (180+ days)",
           "MC authority in good standing",
           "Clean violation history",
         ],
@@ -532,7 +532,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "What happens if my LLC doesn't qualify for an offer?",
-              a: "We tell you within hours and explain exactly why. No fee, no obligation, no hard sell. If your LLC is close but not quite (for example, MC authority is 200 days old when our limit is 180), we'll often suggest specific steps to get to qualifying status — or we'll tell you straight that the path doesn't make sense and you'd be better off with a different exit option.",
+              a: "We tell you within hours and explain exactly why. No fee, no obligation, no hard sell. If your LLC is close but not quite (for example, MC authority + insurance has only been active for 4 months when we want a clean 6+ month track record), we'll often suggest specific steps to get to qualifying status — or we'll tell you straight that the path doesn't make sense and you'd be better off with a different exit option.",
             },
           ],
         },
@@ -674,7 +674,7 @@ export const DICT: Record<Locale, Dict> = {
     hero: {
       eyebrow: "Compra de LLCs de logística en EE. UU.",
       headlineLine1: "Venda su LLC de transporte.",
-      headlineLine2: "Cerramos en menos de dos semanas.",
+      headlineLine2: "Cerramos en 3–5 días hábiles.",
       subhead:
         "Veritor Group adquiere LLCs de logística en EE. UU. — incluyendo aquellas con contrato activo de Amazon Relay. Proceso limpio. Oferta justa. Nosotros manejamos la transferencia.",
       ctaPrimary: "Valuación gratis",
@@ -711,7 +711,7 @@ export const DICT: Record<Locale, Dict> = {
         title: "LLCs sin Amazon Relay",
         items: [
           "Póliza de seguro activa y vigente",
-          "Número MC emitido dentro de los últimos 180 días",
+          "MC autoridad y seguro activos al menos 6 meses (180+ días)",
           "Autoridad MC en buen estado",
           "Historial de violaciones limpio",
         ],
@@ -729,23 +729,23 @@ export const DICT: Record<Locale, Dict> = {
     how: {
       eyebrow: "Cómo funciona",
       headline1: "Cuatro pasos,",
-      headline2: "dos semanas o menos.",
+      headline2: "3 a 5 días hábiles.",
       steps: [
         {
-          title: "Envíenos sus datos",
-          body: "Cuéntenos sobre su LLC — número MC, estado del seguro, estado de Amazon Relay. Toma 2 minutos.",
+          title: "Verifique su MC",
+          body: "Ingrese su número MC o DOT. Consultamos su registro FMCSA — sin registro, sin compromiso. 30 segundos.",
         },
         {
           title: "Reciba una valuación gratis",
-          body: "Respondemos en horas durante la semana laboral. Si su LLC encaja, hacemos una oferta por escrito.",
+          body: "Respondemos en horas, todos los días de la semana. Si su LLC encaja, hacemos una oferta por escrito.",
         },
         {
           title: "Firme y verifique",
           body: "Contrato de compra estándar, revisión documental ligera, cero sorpresas. Pagamos los honorarios legales de nuestro lado.",
         },
         {
-          title: "Transferencia y cierre",
-          body: "Fondos transferidos, propiedad de la LLC traspasada, teléfono / email / banco entregados. Listo en días, no meses.",
+          title: "Cierre presencial en su banco",
+          body: "Nos reunimos en su banco, firmamos en persona, y la transferencia bancaria sale de nuestra cuenta a la suya en el mostrador. Sale con los fondos.",
         },
       ],
     },
@@ -756,7 +756,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "Cerramos rápido — y cerramos de verdad.",
-          body: "Cierre promedio menor a dos semanas. Lo hemos hecho más de 400 veces. Los fondos están listos antes de hacer la oferta.",
+          body: "Cierre promedio en 3–5 días hábiles. Lo hemos hecho más de 400 veces. Los fondos están listos antes de hacer la oferta.",
         },
         {
           title: "Ofertas justas y por escrito.",
@@ -985,7 +985,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "¿Qué pasa si mi LLC no califica para una oferta?",
-              a: "Le decimos en horas y explicamos exactamente por qué. Sin tarifa, sin obligación, sin presión de venta. Si su LLC está cerca pero no califica del todo (por ejemplo, su autoridad MC tiene 200 días cuando nuestro límite es 180), muchas veces sugerimos pasos específicos para llegar al estado calificado — o le decimos directamente que el camino no tiene sentido y que estaría mejor con una opción de salida diferente.",
+              a: "Le decimos en horas y explicamos exactamente por qué. Sin tarifa, sin obligación, sin presión de venta. Si su LLC está cerca pero no califica del todo (por ejemplo, su MC y seguro llevan solo 4 meses activos cuando buscamos un historial limpio de 6+ meses), muchas veces sugerimos pasos específicos para llegar al estado calificado — o le decimos directamente que el camino no tiene sentido y que estaría mejor con una opción de salida diferente.",
             },
           ],
         },
@@ -996,7 +996,7 @@ export const DICT: Record<Locale, Dict> = {
       headline1: "Cuéntenos sobre",
       headline2: "su LLC.",
       intro:
-        "Valuación gratis, sin compromiso. Respondemos en pocas horas durante la semana laboral.",
+        "Valuación gratis, sin compromiso. Respondemos en pocas horas, todos los días de la semana.",
       callLabel: "Llamar",
       emailLabel: "Email",
       whatsappLabel: "WhatsApp",
@@ -1128,7 +1128,7 @@ export const DICT: Record<Locale, Dict> = {
     hero: {
       eyebrow: "Покупка логистических LLC в США",
       headlineLine1: "Продайте свою транспортную LLC.",
-      headlineLine2: "Закрытие — менее чем за две недели.",
+      headlineLine2: "Закрытие за 3–5 рабочих дней.",
       subhead:
         "Veritor Group выкупает логистические LLC в США — включая компании с активным контрактом Amazon Relay. Чистый процесс. Честная цена. Перевод оформляем мы.",
       ctaPrimary: "Бесплатная оценка",
@@ -1165,7 +1165,7 @@ export const DICT: Record<Locale, Dict> = {
         title: "LLC без Amazon Relay",
         items: [
           "Действующий полис страхования",
-          "MC номер выдан не более 180 дней назад",
+          "MC authority и страховка активны минимум 6 месяцев (180+ дней)",
           "MC authority в хорошем статусе",
           "Чистая история нарушений",
         ],
@@ -1183,23 +1183,23 @@ export const DICT: Record<Locale, Dict> = {
     how: {
       eyebrow: "Как это работает",
       headline1: "Четыре шага,",
-      headline2: "две недели или меньше.",
+      headline2: "3–5 рабочих дней.",
       steps: [
         {
-          title: "Отправьте данные",
-          body: "Расскажите про вашу LLC — MC номер, статус страховки, статус Amazon Relay. Это занимает 2 минуты.",
+          title: "Проверьте свой MC",
+          body: "Введите номер MC или DOT. Запрашиваем вашу запись FMCSA — без регистрации, без обязательств. 30 секунд.",
         },
         {
           title: "Получите бесплатную оценку",
-          body: "Отвечаем в течение нескольких часов в рабочие дни. Если LLC подходит — даём письменный оффер.",
+          body: "Отвечаем в течение нескольких часов, каждый день недели. Если LLC подходит — даём письменный оффер.",
         },
         {
           title: "Подпишите и проверьте",
           body: "Стандартный договор купли-продажи, лёгкая проверка документов, никаких сюрпризов. Юристы — за наш счёт.",
         },
         {
-          title: "Перевод и закрытие",
-          body: "Деньги переводятся, LLC переоформляется, телефон / email / банк передаются. Несколько дней, не месяцев.",
+          title: "Закрытие в банке лично",
+          body: "Встречаемся с вами в вашем банке, подписываем лично, и wire уходит с нашего счёта на ваш прямо у стойки. Уходите с деньгами на руках.",
         },
       ],
     },
@@ -1210,7 +1210,7 @@ export const DICT: Record<Locale, Dict> = {
       points: [
         {
           title: "Закрываем быстро — и реально закрываем.",
-          body: "Среднее закрытие — менее двух недель. Сделано более 400 раз. Деньги готовы ещё до оффера.",
+          body: "Среднее закрытие — 3–5 рабочих дней. Сделано более 400 раз. Деньги готовы ещё до оффера.",
         },
         {
           title: "Честные офферы — на бумаге.",
@@ -1439,7 +1439,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Что если моя LLC не подходит для оффера?",
-              a: "Скажем в течение нескольких часов и объясним точно почему. Без комиссии, без обязательств, без давления продаж. Если LLC близка к подходящей, но чуть-чуть не дотягивает (например, MC authority 200 дней при нашем лимите 180) — часто предложим конкретные шаги, чтобы дойти до подходящего состояния, или прямо скажем, что путь не имеет смысла, и вам лучше другая опция выхода.",
+              a: "Скажем в течение нескольких часов и объясним точно почему. Без комиссии, без обязательств, без давления продаж. Если LLC близка к подходящей, но чуть-чуть не дотягивает (например, MC и страховка активны только 4 месяца, а мы ищем чистую историю 6+ месяцев) — часто предложим конкретные шаги, чтобы дойти до подходящего состояния, или прямо скажем, что путь не имеет смысла, и вам лучше другая опция выхода.",
             },
           ],
         },
@@ -1450,7 +1450,7 @@ export const DICT: Record<Locale, Dict> = {
       headline1: "Расскажите про",
       headline2: "вашу LLC.",
       intro:
-        "Бесплатная оценка, без обязательств. Отвечаем в течение нескольких часов в рабочие дни.",
+        "Бесплатная оценка, без обязательств. Отвечаем в течение нескольких часов, каждый день недели.",
       callLabel: "Звонок",
       emailLabel: "Email",
       whatsappLabel: "WhatsApp",
