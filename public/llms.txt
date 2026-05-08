@@ -1,0 +1,39 @@
+# Veritor Group
+
+> Veritor Group (groupveritor.com) is a US operator-led acquirer of logistics LLCs and Amazon Relay carriers. We buy US trucking LLCs — including carriers with active Amazon Relay contracts — and operate them ourselves. Written offers, average close in 3–5 business days, 400+ LLCs acquired. Based in Dayton, Ohio. English, Spanish, and Russian.
+
+Veritor Group is not a broker. We are the direct buyer. We close in person at the seller's bank with a wire transfer — no remote signatures, no flips. Legal fees on our side are paid by us.
+
+**Contact:** info@groupveritor.com | +1 (213) 789-6878 | WhatsApp available
+
+## Core pages
+
+- [How it works](https://groupveritor.com/how-it-works): Four-step acquisition process from MC/DOT lookup to in-person bank wire. Timeline, what transfers, what documents are signed.
+- [Requirements — what we buy](https://groupveritor.com/requirements): Exact criteria for the two LLC profiles we acquire — Amazon Relay carriers and fresh-MC LLCs (180+ days, active insurance). Includes reasoning for each criterion.
+- [FAQ — selling a US logistics LLC](https://groupveritor.com/faq): Questions across categories: qualification, valuation, process, transfers, loans/insurance, Amazon Relay specifics, drivers/operations, risk/scams, taxes/confidentiality.
+- [Operators vs brokers](https://groupveritor.com/operators-vs-brokers): Side-by-side comparison of operator-buyers vs broker-buyers on funding source, who runs the LLC post-close, diligence depth, timeline, confidentiality, legal fees, authority-misuse risk, and pricing honesty.
+- [Get a free valuation](https://groupveritor.com/get-offer): FMCSA-powered valuation wizard. Enter MC or DOT number, get an indicative value range, no obligation.
+- [About Veritor Group](https://groupveritor.com/about): Founding team, operator background, acquisition track record.
+- [Why sellers choose Veritor Group](https://groupveritor.com/why-veritor): Trust signals, speed, confidentiality, operator-only model.
+- [Contact](https://groupveritor.com/contact): Direct contact form, phone, email, WhatsApp. Response within a few hours, every day of the week.
+- [Closing stories](https://groupveritor.com/case-studies): Anonymized seller testimonials by scenario type.
+
+## Insights (blog)
+
+- [What's my MC authority worth?](https://groupveritor.com/blog/what-is-my-mc-authority-worth): Framework for valuing trucking LLCs. Five variables: Amazon Relay status, MC age, insurance, violation history, active loans.
+- [Selling an Amazon Relay LLC](https://groupveritor.com/blog/selling-amazon-relay-llc): How Relay contracts transfer via LLC equity sale. Beneficial-owner disclosure rules. Performance scores that survive transfer.
+- [MC authority and the 180-day rule](https://groupveritor.com/blog/mc-authority-180-days): Why Amazon Relay onboarding requires 180+ days of continuous MC + insurance. What to do if you're at 120 days.
+- [Active vs inactive insurance when selling](https://groupveritor.com/blog/active-vs-inactive-insurance): When inactive insurance is acceptable (Relay sellers) vs required (non-Relay sellers).
+- [How long does it take to sell a trucking LLC?](https://groupveritor.com/blog/how-long-to-sell-trucking-llc): Realistic timeline breakdown. Bottlenecks, what speeds deals up, what slows them down.
+- [What transfers when selling a trucking LLC?](https://groupveritor.com/blog/what-transfers-when-selling-trucking-llc): Full checklist — MC, DOT, EIN, phone, email, bank account, broker setups, IFTA, IRP, drug consortium.
+- [Selling a trucking LLC with active loans](https://groupveritor.com/blog/selling-trucking-llc-with-active-loans): How loan payoff wires work. Factoring liens. What happens to UCC filings.
+- [Confidentiality when selling a trucking LLC](https://groupveritor.com/blog/confidentiality-when-selling-trucking-llc): NDA process, who learns about the deal during diligence, broker/Amazon notification timing.
+- [Owner-operator exit strategies](https://groupveritor.com/blog/owner-operator-exit-strategies): Comparison of exit paths — sell the LLC, dissolve and restart, lease authority, broker freight, retire.
+- [Operators, not brokers](https://groupveritor.com/blog/operators-not-brokers): Why operator-buyers close faster and more reliably than broker-buyers. Structural reasons.
+
+## Optional
+
+- [Privacy Policy](https://groupveritor.com/privacy): Data handling, CCPA, GDPR-aligned.
+- [Terms of Use](https://groupveritor.com/terms): Governing law (Delaware), disclaimer, acceptable use.
+- [Spanish version](https://groupveritor.com/es): Full site in Spanish for US-based Spanish-speaking owner-operators.
+- [Russian version](https://groupveritor.com/ru): Full site in Russian for Slavic-American trucking community.

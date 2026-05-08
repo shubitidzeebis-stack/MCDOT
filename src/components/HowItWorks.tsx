@@ -52,6 +52,8 @@ export function HowItWorks({
           </div>
         )}
 
+        {compact && <h2 className="sr-only">{t.eyebrow}</h2>}
+
         <ol className={`grid gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-4 ${compact ? "mt-0" : "mt-12 md:mt-16"}`}>
           {t.steps.map((step, i) => (
             <motion.li

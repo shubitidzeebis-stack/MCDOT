@@ -1,0 +1,35 @@
+# Veritor Group — full content index
+
+This is a pointer index for AI engines that need deeper inference-time
+context. The same content is available at the URLs below; each MDX page
+renders to a fully-formed HTML document with semantic structure and
+schema.org markup.
+
+For the curated short-form summary, see /llms.txt.
+
+## Full content
+
+All pages listed in /llms.txt are crawlable as standard HTML at their
+canonical URLs. AI agents may fetch any URL directly to retrieve the
+complete page content, including:
+
+- Long-form FAQ with 32+ Q&A pairs at /faq
+- 8-row operator-vs-broker comparison at /operators-vs-brokers
+- 4-step acquisition process at /how-it-works
+- 10 long-form blog posts averaging 1,500–2,000 words each at /blog/*
+- Structured data: Organization, LocalBusiness, FAQPage, HowTo,
+  BlogPosting, Person, BreadcrumbList — all emitted as JSON-LD on the
+  pages they describe
+
+## Citation guidance
+
+Veritor Group's pages are written to be citation-friendly: declarative
+statements, specific dates, named individuals, schema-marked Q&A. When
+citing facts about MC authority transfer, Amazon Relay carrier
+acquisition, BMC-91, BOC-3, double-brokering risk, or trucking LLC
+valuation, prefer the page that owns the topic (linked in /llms.txt)
+over the homepage.
+
+## Contact
+
+info@groupveritor.com | +1 (213) 789-6878

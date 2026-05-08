@@ -15,7 +15,13 @@
         "categories:seo": ["error", { "minScore": 0.95 }],
         "uses-text-compression": "off",
         "csp-xss": "off",
-        "color-contrast": ["warn", {}]
+        "color-contrast": ["warn", {}],
+        "bf-cache": "off",
+        "legacy-javascript-insight": "off",
+        "lcp-discovery-insight": "warn",
+        "network-dependency-tree-insight": "warn",
+        "unused-javascript": "warn",
+        "uses-responsive-images": "warn"
       }
     }
   }

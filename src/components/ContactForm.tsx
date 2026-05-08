@@ -14,7 +14,7 @@ import {
   PhoneIcon,
   WhatsAppIcon,
 } from "@/components/Icons";
-import { AsYouType, isValidPhoneNumber } from "libphonenumber-js";
+import { AsYouType, isValidPhoneNumber } from "libphonenumber-js/min";
 import { attributionPayload } from "@/lib/attribution";
 import { DICT, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";

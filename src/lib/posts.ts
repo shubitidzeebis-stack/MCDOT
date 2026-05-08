@@ -15,18 +15,27 @@ import path from "node:path";
 
 const POSTS_DIR = path.join(process.cwd(), "src", "content", "blog");
 
-export const DEFAULT_COVER = "/blog/default-cover.png";
+export const DEFAULT_COVER = "/blog/default-cover.webp";
 
 export type PostMeta = {
   slug: string;
   title: string;
   description: string;
   publishedAt: string;
+  /**
+   * Optional. When present and newer than publishedAt, the BlogPosting
+   * schema emits this as `dateModified` — a recency signal LLMs and
+   * Google use when ranking freshness-sensitive queries.
+   */
+  modifiedAt?: string;
   readMinutes: number;
   cover: string;
 };
 
-type RawMeta = Omit<PostMeta, "slug" | "cover"> & { cover?: string };
+type RawMeta = Omit<PostMeta, "slug" | "cover" | "modifiedAt"> & {
+  cover?: string;
+  modifiedAt?: string;
+};
 
 export async function listPostSlugs(): Promise<string[]> {
   try {
@@ -45,6 +54,7 @@ function normalizeMeta(slug: string, raw: RawMeta): PostMeta {
     title: raw.title,
     description: raw.description,
     publishedAt: raw.publishedAt,
+    ...(raw.modifiedAt ? { modifiedAt: raw.modifiedAt } : {}),
     readMinutes: raw.readMinutes,
     cover: raw.cover ?? DEFAULT_COVER,
   };

@@ -11,9 +11,10 @@ import { DICT, type Locale } from "@/lib/i18n";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-// To swap the hero image, change this to "/hero/hero2.png" — both are
-// staged in /public/hero/.
-const HERO_IMAGE = "/hero/hero1.png";
+// To swap the hero image, change this to "/hero/hero2.webp" — both are
+// staged in /public/hero/. WebP source = 95% smaller PNG fallback path
+// for non-AVIF browsers, AVIF still served by Next.js where supported.
+const HERO_IMAGE = "/hero/hero1.webp";
 
 export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].hero;
@@ -41,6 +42,7 @@ export function Hero({ locale = "en" as Locale }: { locale?: Locale }) {
           alt="Veritor Group — clean American semi-truck at golden hour"
           fill
           priority
+          fetchPriority="high"
           sizes="100vw"
           className="object-cover object-center"
         />

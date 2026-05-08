@@ -39,6 +39,7 @@ export function PageHero({
           alt={alt}
           fill
           priority={priority}
+          fetchPriority={priority ? "high" : "auto"}
           sizes="100vw"
           className={`object-cover ${objectPosition}`}
         />

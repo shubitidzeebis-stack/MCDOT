@@ -95,9 +95,12 @@ export function Requirements({
         )}
 
         {compact && (
-          <p className="max-w-[640px] text-[15px] leading-relaxed text-white/65 md:text-lg">
-            {t.intro}
-          </p>
+          <>
+            <h2 className="sr-only">{t.eyebrow}</h2>
+            <p className="max-w-[640px] text-[15px] leading-relaxed text-white/65 md:text-lg">
+              {t.intro}
+            </p>
+          </>
         )}
 
         <div className={`grid gap-5 md:grid-cols-2 md:gap-6 ${compact ? "mt-10 md:mt-12" : "mt-12 md:mt-16"}`}>

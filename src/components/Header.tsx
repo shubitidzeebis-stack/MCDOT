@@ -19,7 +19,10 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
     { label: t.nav.requirements, href: `${prefix}/requirements` },
     { label: t.nav.whyUs, href: `${prefix}/why-veritor` },
     ...(locale === "en"
-      ? [{ label: t.nav.about, href: "/about" }]
+      ? [
+          { label: t.nav.about, href: "/about" },
+          { label: "Closing stories", href: "/case-studies" },
+        ]
       : []),
     { label: t.nav.faq, href: `${prefix}/faq` },
   ];
@@ -109,7 +112,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
               alt={SITE.name}
               width={520}
               height={120}
-              priority
+              fetchPriority="low"
               className="h-7 w-auto md:h-8"
             />
           </Link>

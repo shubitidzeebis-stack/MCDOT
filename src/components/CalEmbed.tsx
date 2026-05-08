@@ -51,13 +51,14 @@ export function CalEmbed({
     return `${origin}/${clean}?${qs.toString()}`;
   }, [calLink, origin, prefill]);
 
-  // If the iframe takes >12s to fire load, surface a fallback link so
-  // the seller still has a path to book.
+  // If the iframe takes >12s to fire load, mark the component as
+  // timed-out so the fallback "open in new tab" link gets foregrounded.
+  // Previously this was a no-op — bug fix.
+  const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
+    if (loaded) return;
     const t = setTimeout(() => {
-      if (!loaded) {
-        // No-op — `loaded` will stay false and the fallback renders.
-      }
+      if (!loaded) setTimedOut(true);
     }, 12_000);
     return () => clearTimeout(t);
   }, [loaded]);
@@ -73,14 +74,14 @@ export function CalEmbed({
       {!loaded && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-[12px] text-white/45">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-[#ff8a1a]" />
-          <p>Loading calendar…</p>
+          <p>{timedOut ? "Calendar slow to load." : "Loading calendar…"}</p>
           <a
             href={src}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 text-[12px] text-white/45 underline-offset-2 hover:text-white/80 hover:underline"
+            className={`mt-3 text-[12px] ${timedOut ? "text-[#ffb371]" : "text-white/45"} underline-offset-2 hover:text-white/80 hover:underline`}
           >
-            Open in a new tab if this doesn’t load
+            {timedOut ? "Open in a new tab →" : "Open in a new tab if this doesn’t load"}
           </a>
         </div>
       )}
@@ -89,6 +90,7 @@ export function CalEmbed({
         src={src}
         title="Schedule a call with Veritor Group"
         onLoad={() => setLoaded(true)}
+        loading="lazy"
         className="block h-full w-full border-0"
         style={{ minHeight: height, opacity: loaded ? 1 : 0, transition: "opacity 0.4s" }}
         allow="payment"

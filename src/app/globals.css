@@ -68,6 +68,38 @@ body {
   }
 }
 
+/* MaskWords entrance — pure CSS so the headline animates on first paint
+ * without waiting for JS hydration. fill-mode: backwards keeps text at
+ * the from-state during the optional delay (handled inline via
+ * animation-delay). */
+@keyframes mask-words-rise {
+  from {
+    transform: translateY(calc(100% + 0.4em));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.mask-words__inner {
+  animation: mask-words-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* IntersectionObserver-driven fade-up — replaces framer-motion's
+ * `whileInView` for pure-CSS scroll reveals (TrustBar, Testimonials,
+ * HowItWorks, WhyVeritor, Requirements). Default state is hidden;
+ * adding the `.in` class triggers the rise. */
+.fade-up {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-up.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .blog-body {
   color: rgba(255, 255, 255, 0.82);
   font-size: 1.0625rem;

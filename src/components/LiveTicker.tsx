@@ -23,10 +23,32 @@ export function LiveTicker() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setIndex((i) => (i + 1) % ENTRIES.length);
-    }, ROTATE_MS);
-    return () => clearInterval(id);
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (id != null) return;
+      id = setInterval(() => {
+        setIndex((i) => (i + 1) % ENTRIES.length);
+      }, ROTATE_MS);
+    };
+    const stop = () => {
+      if (id != null) {
+        clearInterval(id);
+        id = null;
+      }
+    };
+    // Pause the rotation when the tab isn't visible — saves CPU on
+    // background tabs and avoids INP-stealing animation work while the
+    // user is interacting with another page.
+    const onVisibility = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return (

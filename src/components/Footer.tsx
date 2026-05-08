@@ -40,6 +40,7 @@ export async function Footer({ locale = "en" as Locale }: { locale?: Locale }) {
               <li><Link className="text-white/70 hover:text-white" href="/about">{t.nav.about}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/how-it-works">{t.nav.howItWorks}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/why-veritor">{t.nav.whyUs}</Link></li>
+              <li><Link className="text-white/70 hover:text-white" href="/operators-vs-brokers">Operators vs brokers</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/blog">{t.nav.blog}</Link></li>
             </ul>
           </div>
@@ -49,7 +50,9 @@ export async function Footer({ locale = "en" as Locale }: { locale?: Locale }) {
               For sellers
             </p>
             <ul className="mt-4 space-y-2 text-sm">
+              <li><Link className="text-[#ffb371] hover:text-[#ff8a1a]" href="/get-offer">Get a free offer</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/requirements">{t.nav.requirements}</Link></li>
+              <li><Link className="text-white/70 hover:text-white" href="/case-studies">Closing stories</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/faq">{t.nav.faq}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/contact">{t.nav.contact}</Link></li>
             </ul>

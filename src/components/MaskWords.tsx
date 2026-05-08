@@ -1,20 +1,20 @@
-"use client";
-
-import { Fragment, useState } from "react";
-import { motion } from "framer-motion";
-
-const EASE = [0.16, 1, 0.3, 1] as const;
-const DURATION = 0.55;
+import { Fragment } from "react";
 
 // Mask reveal: text starts hidden below an overflow-cropped mask and
-// slides up. Once the slide finishes we switch the mask to
-// overflow-visible so italic descenders / curls (S, r, y, italic
-// 'less') are no longer clipped.
+// slides up via a CSS keyframe (defined in globals.css under
+// @keyframes mask-words-rise). Once the slide finishes we leave the
+// mask overflow-hidden — italic descender clipping during the 0.55s
+// animation is imperceptible.
+//
+// Why CSS instead of framer-motion: framer-motion's `initial` prop runs
+// SSR-side, hiding the H1 until JS hydrates (1–3+ s on slow CPUs). CSS
+// animations run on first paint regardless of JS state, so the headline
+// is on screen as soon as the page paints. Also drops framer-motion
+// from a hot-path component (bundle reduction).
 //
 // Default behavior is to reveal the whole line as a single unit — that
 // reads as a clean "text appears" beat instead of words popping in one
-// by one (which felt laggy at scale). Pass `split="word"` to opt back
-// into the cinematic per-word stagger when it's appropriate.
+// by one. Pass `split="word"` for per-word stagger.
 
 function Mask({
   children,
@@ -29,31 +29,20 @@ function Mask({
   ariaLabel?: string;
   ariaHiddenChildren?: boolean;
 }) {
-  const [done, setDone] = useState(false);
   const props: Record<string, string> = {};
   if (ariaLabel) props["aria-label"] = ariaLabel;
   if (ariaHiddenChildren) props["aria-hidden"] = "true";
   return (
     <span
       {...props}
-      className={`relative inline-block pt-[0.2em] pb-[0.3em] align-bottom ${
-        done ? "overflow-visible" : "overflow-hidden"
-      } ${className ?? ""}`}
+      className={`relative inline-block overflow-hidden pt-[0.2em] pb-[0.4em] align-bottom ${className ?? ""}`}
     >
-      <motion.span
-        // 110% of the text's own height was just enough to clear the
-        // mask's content box but not the box's bottom padding — leaving
-        // ~7px of letter-tops visible above the bottom edge during the
-        // wait. Park the text well below using calc so any padding the
-        // parent adds is always covered.
-        initial={{ y: "calc(100% + 0.4em)" }}
-        animate={{ y: "0%" }}
-        transition={{ delay, duration: DURATION, ease: EASE }}
-        onAnimationComplete={() => setDone(true)}
-        className="inline-block"
+      <span
+        className="mask-words__inner inline-block"
+        style={{ animationDelay: `${delay}s` }}
       >
         {children}
-      </motion.span>
+      </span>
     </span>
   );
 }
