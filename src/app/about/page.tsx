@@ -91,7 +91,7 @@ export default function AboutPage() {
                       alt="Temuka K., Managing Partner at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover scale-[1.55] object-[50%_45%]"
+                      className="object-cover scale-[1.55] object-[50%_42%]"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
@@ -114,7 +114,7 @@ export default function AboutPage() {
                       alt="Lisa K., Senior Manager at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover object-[50%_45%]"
+                      className="object-cover object-[50%_42%]"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
@@ -157,14 +157,14 @@ export default function AboutPage() {
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
                     <Image
                       src="/about/team-keira.png"
-                      alt="Keira T., Lawyer at Veritor Group"
+                      alt="Keira T., Attorney at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-                    Lawyer
+                    Attorney
                   </p>
                   <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
                     Keira T.
