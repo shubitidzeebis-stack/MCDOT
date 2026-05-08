@@ -114,7 +114,7 @@ export default function AboutPage() {
                       alt="Lisa K., Senior Manager at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover object-[50%_50%]"
+                      className="object-cover object-[50%_45%]"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
@@ -157,21 +157,22 @@ export default function AboutPage() {
                   <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
                     <Image
                       src="/about/team-keira.png"
-                      alt="Keira T., Assistant Manager at Veritor Group"
+                      alt="Keira T., Lawyer at Veritor Group"
                       fill
                       sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover"
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-                    Assistant Manager
+                    Lawyer
                   </p>
                   <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
                     Keira T.
                   </h3>
                   <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
-                    First point of contact for sellers — handles intake calls,
-                    NDA paperwork, and scheduling.
+                    In-house counsel. Drafts every NDA and purchase agreement,
+                    handles lender consents, and files FMCSA paperwork after
+                    closing. We pay her fees, not the seller&rsquo;s.
                   </p>
                 </div>
               </div>

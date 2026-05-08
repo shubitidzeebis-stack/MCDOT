@@ -1,5 +1,12 @@
-// Apple touch icon — 180×180 PNG used when the site is added to an
-// iPhone/iPad home screen. Larger / more readable than the favicon.
+// Apple touch icon — 180×180 PNG. Used:
+//  • iOS / iPadOS home-screen install
+//  • Android home-screen install (via the manifest reference)
+//  • Google Search picks this up as the site's circular favicon next
+//    to the URL — when this rendered the full wordmark, Google's
+//    circular crop showed only "ERITO" as a readability disaster.
+//
+// Now: just the V/ monogram, centered, with breathing room around it
+// so any platform's circular crop still shows the full mark.
 
 import { ImageResponse } from "next/og";
 
@@ -15,45 +22,32 @@ export default function AppleIcon() {
           height: "100%",
           background: "#0a0a0b",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          color: "#fff",
-          padding: 14,
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
+            justifyContent: "center",
             fontWeight: 900,
-            fontSize: 64,
-            letterSpacing: -2,
+            fontSize: 110,
+            letterSpacing: -4,
+            lineHeight: 1,
           }}
         >
-          <span style={{ color: "#fff" }}>V</span>
+          <span style={{ color: "#ffffff" }}>V</span>
           <span
             style={{
               color: "#c9a662",
-              marginLeft: -6,
-              transform: "skewX(-20deg)",
+              marginLeft: -10,
+              transform: "skewX(-22deg)",
               fontWeight: 700,
             }}
           >
             /
           </span>
-          <span style={{ color: "#fff" }}>ERITOR</span>
-        </div>
-        <div
-          style={{
-            marginTop: 10,
-            fontSize: 11,
-            letterSpacing: 6,
-            color: "#c9a662",
-            fontWeight: 700,
-          }}
-        >
-          GROUP
         </div>
       </div>
     ),
