@@ -22,6 +22,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
       ? [
           { label: t.nav.about, href: "/about" },
           { label: "Closing stories", href: "/case-studies" },
+          { label: "Areas", href: "/areas" },
         ]
       : []),
     { label: t.nav.faq, href: `${prefix}/faq` },

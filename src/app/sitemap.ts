@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listPostSlugs } from "@/lib/posts";
+import { ALL_STATES } from "@/lib/areas";
 
 // Hard-coded baseline dates per the SEO audit: emitting `new Date()` on
 // every build trains Google to discount the sitemap's freshness signals
@@ -107,5 +108,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   }));
 
-  return [...multiLocaleEntries, ...enOnlyEntries, ...blogEntries];
+  // Area pages — /areas, /areas/[state], /areas/[state]/[city]
+  const areaOverview: MetadataRoute.Sitemap = [{
+    url: `${base}/areas`,
+    lastModified: BASELINE,
+    changeFrequency: "monthly",
+    priority: 0.8,
+    alternates: { languages: { "x-default": `${base}/areas` } },
+  }];
+
+  const stateEntries: MetadataRoute.Sitemap = ALL_STATES.map((state) => ({
+    url: `${base}/areas/${state.slug}`,
+    lastModified: BASELINE,
+    changeFrequency: "monthly" as const,
+    priority: 0.75,
+    alternates: { languages: { "x-default": `${base}/areas/${state.slug}` } },
+  }));
+
+  const cityEntries: MetadataRoute.Sitemap = ALL_STATES.flatMap((state) =>
+    state.cities.map((city) => ({
+      url: `${base}/areas/${state.slug}/${city.slug}`,
+      lastModified: BASELINE,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+      alternates: { languages: { "x-default": `${base}/areas/${state.slug}/${city.slug}` } },
+    }))
+  );
+
+  return [...multiLocaleEntries, ...enOnlyEntries, ...blogEntries, ...areaOverview, ...stateEntries, ...cityEntries];
 }
