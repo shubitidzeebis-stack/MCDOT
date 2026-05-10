@@ -63,6 +63,16 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: SECURITY_HEADERS,
       },
+      // Allow Clarity's replay player (clarity.microsoft.com) to fetch
+      // static CSS/JS assets cross-origin so session replays render with
+      // correct styling instead of blank/unstyled.
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Timing-Allow-Origin", value: "*" },
+        ],
+      },
     ];
   },
 };
