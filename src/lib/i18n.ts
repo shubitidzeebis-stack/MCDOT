@@ -57,6 +57,7 @@ type Dict = {
     eyebrow: string;
     acquisitionsLabel: string;
     closeLabel: string;
+    closeValue: string;
     yearsLabel: string;
   };
   requirements: {
@@ -237,6 +238,7 @@ export const DICT: Record<Locale, Dict> = {
       eyebrow: "Track record",
       acquisitionsLabel: "LLCs closed",
       closeLabel: "Average close",
+      closeValue: "3–5 business days",
       yearsLabel: "Years acquiring",
     },
     requirements: {
@@ -690,6 +692,7 @@ export const DICT: Record<Locale, Dict> = {
       eyebrow: "Trayectoria",
       acquisitionsLabel: "LLCs cerradas",
       closeLabel: "Cierre promedio",
+      closeValue: "3–5 días hábiles",
       yearsLabel: "Años en el negocio",
     },
     requirements: {
@@ -1144,6 +1147,7 @@ export const DICT: Record<Locale, Dict> = {
       eyebrow: "Опыт",
       acquisitionsLabel: "Закрытых сделок",
       closeLabel: "Среднее время закрытия",
+      closeValue: "3–5 рабочих дней",
       yearsLabel: "Лет в бизнесе",
     },
     requirements: {

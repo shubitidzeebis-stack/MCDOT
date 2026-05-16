@@ -11,7 +11,7 @@ export function TrustBar({ locale = "en" as Locale }: { locale?: Locale }) {
 
   const items = [
     { value: SITE.trust.acquisitionsCompleted, label: t.acquisitionsLabel },
-    { value: SITE.trust.averageCloseDays, label: t.closeLabel },
+    { value: t.closeValue, label: t.closeLabel },
     { value: SITE.trust.yearsActive, label: t.yearsLabel },
   ];
 
