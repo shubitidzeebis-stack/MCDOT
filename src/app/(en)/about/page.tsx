@@ -64,7 +64,7 @@ export default function AboutPage() {
           },
           {
             q: "Who founded Veritor Group?",
-            a: "Veritor Group was founded by operators who started as drivers, became owner-operators, and grew into multi-LLC fleet management. Luka S. is the founder; the leadership team includes Temuka K. (Managing Partner), Lisa K. (Senior Manager), Giorgi S. (Customer Relations), and Keira T. (in-house Attorney).",
+            a: "Veritor Group was founded by operators who started as drivers, became owner-operators, and grew into multi-LLC fleet management. Luka S. is the founder; the leadership team includes Temuka K. (Managing Partner) and Lisa K. (Customer Relations).",
           },
         ]}
       />
@@ -153,7 +153,7 @@ export default function AboutPage() {
                     />
                   </div>
                   <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-                    Senior Manager
+                    Customer Relations
                   </p>
                   <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
                     Lisa K.
@@ -165,51 +165,6 @@ export default function AboutPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col">
-                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
-                    <Image
-                      src="/about/team-giorgi.jpg"
-                      alt="Giorgi S., Customer Relations at Veritor Group"
-                      fill
-                      sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-                    Customer Relations
-                  </p>
-                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
-                    Giorgi S.
-                  </h3>
-                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
-                    Owns post-close seller satisfaction — checks in after the
-                    wire transfer, resolves anything that surfaces, and keeps
-                    every relationship clean.
-                  </p>
-                </div>
-
-                <div className="flex flex-col">
-                  <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl ring-1 ring-white/10">
-                    <Image
-                      src="/about/team-keira.webp"
-                      alt="Keira T., Attorney at Veritor Group"
-                      fill
-                      sizes="(min-width: 1024px) 20vw, (min-width: 768px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  </div>
-                  <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-                    Attorney
-                  </p>
-                  <h3 className="mt-2 text-xl font-semibold text-white md:text-2xl">
-                    Keira T.
-                  </h3>
-                  <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
-                    In-house counsel. Drafts every NDA and purchase agreement,
-                    handles lender consents, and files FMCSA paperwork after
-                    closing. We pay her fees, not the seller&rsquo;s.
-                  </p>
-                </div>
               </div>
             </div>
           </div>

@@ -28,8 +28,6 @@ export type AdminUser = {
 const DEFAULT_USERS = [
   { email: "luka@groupveritor.com", name: "Luka S." },
   { email: "lisa@groupveritor.com", name: "Lisa K." },
-  { email: "keira@groupveritor.com", name: "Keira T." },
-  { email: "giorgi@groupveritor.com", name: "Giorgi S." },
 ];
 
 async function ensureTable(sql: Sql) {

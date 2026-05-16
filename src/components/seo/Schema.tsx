@@ -55,24 +55,10 @@ const EMPLOYEES: Array<{
   },
   {
     name: "Lisa K.",
-    jobTitle: "Senior Manager",
+    jobTitle: "Customer Relations",
     description:
       "Oversees deal flow and diligence. Owns the relationship from accepted offer through wire transfer and FMCSA filings.",
     image: "/about/team-lisa.jpg",
-  },
-  {
-    name: "Giorgi S.",
-    jobTitle: "Customer Relations",
-    description:
-      "Owns post-close seller satisfaction — checks in after the wire transfer, resolves anything that surfaces, and keeps every relationship clean.",
-    image: "/about/team-giorgi.jpg",
-  },
-  {
-    name: "Keira T.",
-    jobTitle: "Attorney",
-    description:
-      "In-house counsel. Drafts every NDA and purchase agreement, handles lender consents, and files FMCSA paperwork after closing.",
-    image: "/about/team-keira.webp",
   },
 ];
 
