@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 // Cloudflare Turnstile widget. Loads the CF script once globally and
 // renders an explicit-mode widget into the host element so we can
@@ -69,7 +69,18 @@ type Props = {
   onExpire?: () => void;
 };
 
-export function Turnstile({ siteKey, onToken, onError, onExpire }: Props) {
+// Imperative handle exposed via ref. Callers can invoke `reset()` after
+// consuming a token — Turnstile tokens are single-use, so any flow that
+// sends more than one request per page load (e.g. chat) MUST reset
+// after each successful send.
+export type TurnstileHandle = {
+  reset: () => void;
+};
+
+export const Turnstile = forwardRef<TurnstileHandle, Props>(function Turnstile(
+  { siteKey, onToken, onError, onExpire },
+  ref,
+) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
@@ -80,6 +91,22 @@ export function Turnstile({ siteKey, onToken, onError, onExpire }: Props) {
     onErrorRef.current = onError;
     onExpireRef.current = onExpire;
   }, [onToken, onError, onExpire]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      reset: () => {
+        if (widgetIdRef.current && window.turnstile) {
+          try {
+            window.turnstile.reset(widgetIdRef.current);
+          } catch {
+            // ignore — widget may be unmounted mid-reset
+          }
+        }
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -108,4 +135,4 @@ export function Turnstile({ siteKey, onToken, onError, onExpire }: Props) {
   }, [siteKey]);
 
   return <div ref={containerRef} aria-hidden className="hidden" />;
-}
+});

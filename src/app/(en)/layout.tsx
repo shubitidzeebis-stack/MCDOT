@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AnalyticsGate } from "@/components/AnalyticsGate";
 import { AttributionCapture } from "@/components/AttributionCapture";
+import { ChatWidget } from "@/components/ChatWidget";
 import { CookieBanner } from "@/components/CookieBanner";
 import { WhatsAppFAB } from "@/components/WhatsAppFAB";
+import { getFlag } from "@/lib/flags";
 import {
   LocalBusinessSchema,
   OrganizationSchema,
@@ -111,9 +113,15 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Chat widget kill switch — defaults to false in flags.ts, so the
+  // widget doesn't render until you flip chatWidgetEnabled=true in
+  // Vercel Edge Config. EN-only at launch; ES/RU layouts intentionally
+  // don't mount the widget until their system prompts are reviewed.
+  const chatEnabled = await getFlag("chatWidgetEnabled");
+
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#0a0a0b] text-white">
@@ -126,6 +134,7 @@ export default function RootLayout({
         <AttributionCapture />
         {children}
         <WhatsAppFAB locale="en" />
+        <ChatWidget enabled={chatEnabled} locale="en" />
         <CookieBanner />
         <AnalyticsGate />
       </body>

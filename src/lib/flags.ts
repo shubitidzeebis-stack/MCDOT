@@ -20,13 +20,17 @@ export type FlagKey =
   | "exitIntentEnabled"
   | "preFormQualifierEnabled"
   | "tickerEnabled"
-  | "testimonialsEnabled";
+  | "testimonialsEnabled"
+  | "chatWidgetEnabled";
 
 const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   exitIntentEnabled: true,
   preFormQualifierEnabled: true,
   tickerEnabled: true,
   testimonialsEnabled: true,
+  // Customer chat widget — default OFF. Flip to true in Edge Config to
+  // launch. Both the widget client and the /api/chat route check this.
+  chatWidgetEnabled: false,
 };
 
 export async function getFlag(key: FlagKey): Promise<boolean> {
