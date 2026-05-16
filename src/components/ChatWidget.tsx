@@ -8,6 +8,8 @@ import type { Locale } from "@/lib/i18n";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const SESSION_KEY = "veritor_chat_session_id";
+const TEASER_DISMISSED_KEY = "veritor_chat_teaser_dismissed";
+const TEASER_DELAY_MS = 2500;
 
 // Hidden on conversion-focused pages so the widget doesn't compete with
 // the wizard / contact form. Mirrors the MobileCTA + WhatsAppFAB lists.
@@ -49,6 +51,9 @@ type Copy = {
   mcLabel: string;
   submitHandoff: string;
   handoffThanks: string;
+  teaserGreeting: string;
+  teaserPrompt: string;
+  teaserDismiss: string;
 };
 
 const COPY: Record<Locale, Copy> = {
@@ -75,6 +80,9 @@ const COPY: Record<Locale, Copy> = {
     mcLabel: "MC number (optional)",
     submitHandoff: "Send to Luka",
     handoffThanks: "Got it — Luka will be in touch shortly.",
+    teaserGreeting: "Hi, I'm Jarvis.",
+    teaserPrompt: "How can I help?",
+    teaserDismiss: "Dismiss",
   },
   es: {
     openLabel: "Abrir chat",
@@ -99,6 +107,9 @@ const COPY: Record<Locale, Copy> = {
     mcLabel: "Número MC (opcional)",
     submitHandoff: "Enviar a Luka",
     handoffThanks: "Recibido — Luka le contactará pronto.",
+    teaserGreeting: "Hola, soy Jarvis.",
+    teaserPrompt: "¿En qué puedo ayudarle?",
+    teaserDismiss: "Cerrar",
   },
   ru: {
     openLabel: "Открыть чат",
@@ -123,6 +134,9 @@ const COPY: Record<Locale, Copy> = {
     mcLabel: "Номер MC (необязательно)",
     submitHandoff: "Отправить Луке",
     handoffThanks: "Принято — Лука скоро свяжется.",
+    teaserGreeting: "Здравствуйте, я Джарвис.",
+    teaserPrompt: "Чем могу помочь?",
+    teaserDismiss: "Закрыть",
   },
 };
 
@@ -159,6 +173,8 @@ export function ChatWidget({ enabled, locale = "en" }: Props) {
   const [handoffEmail, setHandoffEmail] = useState("");
   const [handoffMc, setHandoffMc] = useState("");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [teaserVisible, setTeaserVisible] = useState(false);
+  const [teaserDismissed, setTeaserDismissed] = useState(false);
   const sessionIdRef = useRef<string>("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -183,6 +199,28 @@ export function ChatWidget({ enabled, locale = "en" }: Props) {
       sessionIdRef.current = id;
     }
   }, [enabled]);
+
+  // Teaser greeting — shows once per browser session (sessionStorage so
+  // returning visitors on a later day see it again). Skipped if the user
+  // has already opened the chat at least once.
+  useEffect(() => {
+    if (!enabled || hidden) return;
+    if (sessionStorage.getItem(TEASER_DISMISSED_KEY) === "1") {
+      setTeaserDismissed(true);
+      return;
+    }
+    const t = setTimeout(() => setTeaserVisible(true), TEASER_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [enabled, hidden]);
+
+  const dismissTeaser = useCallback(() => {
+    setTeaserDismissed(true);
+    try {
+      sessionStorage.setItem(TEASER_DISMISSED_KEY, "1");
+    } catch {
+      // private browsing — ignore
+    }
+  }, []);
 
   // Auto-scroll on new content.
   useEffect(() => {
@@ -361,8 +399,71 @@ export function ChatWidget({ enabled, locale = "en" }: Props) {
 
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
+  const showTeaser = !open && teaserVisible && !teaserDismissed;
+
   return (
     <>
+      {/* Teaser greeting — pops up above the chat bubble after a short
+          delay. Anchored 76px above the bubble (bubble height ~60px +
+          16px gap). Click body to open chat; click X to dismiss only. */}
+      <AnimatePresence>
+        {showTeaser && (
+          <motion.div
+            key="chat-teaser"
+            initial={{ opacity: 0, y: 12, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.92 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            className="fixed right-4 z-30 max-w-[260px] md:right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+170px+76px)] md:bottom-[164px]"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(true);
+                dismissTeaser();
+              }}
+              className="group relative block w-full rounded-2xl bg-[#0a0a0b]/95 px-4 py-3 pr-8 text-left ring-1 ring-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-colors hover:bg-[#101012]/95"
+            >
+              <p className="text-[12px] font-semibold leading-tight text-[#ff8a1a]">
+                {c.teaserGreeting}
+              </p>
+              <p className="mt-0.5 text-[13px] leading-snug text-white/90">
+                {c.teaserPrompt}
+              </p>
+              {/* Speech-bubble tail pointing down-right toward the chat bubble */}
+              <span
+                aria-hidden
+                className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 bg-[#0a0a0b]/95 ring-1 ring-white/15"
+                style={{ clipPath: "polygon(100% 0, 100% 100%, 0 100%)" }}
+              />
+            </button>
+            <button
+              type="button"
+              aria-label={c.teaserDismiss}
+              onClick={(e) => {
+                e.stopPropagation();
+                dismissTeaser();
+              }}
+              className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-white/45 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="h-3 w-3"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Bubble — sits above WhatsApp FAB. WhatsApp FAB owns
           bottom-[calc(safe-area+88px)] mobile / bottom-6 desktop; we
           stack ~76px higher so they don't overlap. */}
@@ -372,7 +473,10 @@ export function ChatWidget({ enabled, locale = "en" }: Props) {
             key="chat-bubble"
             type="button"
             aria-label={c.openLabel}
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              setOpen(true);
+              dismissTeaser();
+            }}
             initial={{ y: 24, opacity: 0, scale: 0.85 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 24, opacity: 0, scale: 0.85 }}
