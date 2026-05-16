@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { AnalyticsGate } from "@/components/AnalyticsGate";
 import { AttributionCapture } from "@/components/AttributionCapture";
 import { CookieBanner } from "@/components/CookieBanner";
+import { WhatsAppFAB } from "@/components/WhatsAppFAB";
 import {
   LocalBusinessSchema,
   OrganizationSchema,
@@ -124,6 +125,7 @@ export default function RootLayout({
         </a>
         <AttributionCapture />
         {children}
+        <WhatsAppFAB locale="en" />
         <CookieBanner />
         <AnalyticsGate />
       </body>

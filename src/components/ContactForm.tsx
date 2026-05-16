@@ -289,7 +289,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
         });
       }
       // Redirect to thanks page (so we can fire ad conversion pixels later).
-      router.push("/thanks");
+      router.push(locale === "en" ? "/thanks" : `/${locale}/thanks`);
     } catch (err) {
       setStatus("error");
       setErrorMsg(err instanceof Error ? err.message : t.error);

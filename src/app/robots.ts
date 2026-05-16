@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 // Paths blocked for every crawler — admin, transactional success pages,
 // API routes, the unsubscribe link from emails, and the offline fallback.
-const DISALLOW = ["/api/", "/thanks", "/admin", "/unsubscribe", "/offline"];
+const DISALLOW = ["/api/", "/thanks", "/es/thanks", "/ru/thanks", "/admin", "/unsubscribe", "/offline"];
 
 // Explicit named rules for AI / search crawlers. Several crawlers
 // (notably PerplexityBot and GPTBot) prefer their UA to appear by name

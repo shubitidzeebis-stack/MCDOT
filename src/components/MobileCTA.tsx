@@ -33,7 +33,9 @@ export function MobileCTA({ locale = "en" as Locale }: { locale?: Locale }) {
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  if (HIDDEN_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
+  // Strip locale prefix so /es/get-offer matches /get-offer.
+  const normalized = pathname.replace(/^\/(es|ru)(?=\/|$)/, "") || "/";
+  if (HIDDEN_PATHS.some((p) => normalized === p || normalized.startsWith(p + "/"))) {
     return null;
   }
 

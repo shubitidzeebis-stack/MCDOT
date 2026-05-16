@@ -4,17 +4,17 @@ import { Footer } from "@/components/Footer";
 import { ThanksContent } from "@/components/ThanksContent";
 
 export const metadata: Metadata = {
-  title: "Thanks — your enquiry is in",
-  description: "We received your details and will be in touch shortly.",
+  title: "Спасибо — ваш запрос принят",
+  description: "Мы получили ваши данные и скоро свяжемся с вами.",
   robots: { index: false, follow: false },
 };
 
 export default function ThanksPage() {
   return (
     <>
-      <Header locale="en" />
-      <ThanksContent locale="en" />
-      <Footer locale="en" />
+      <Header locale="ru" />
+      <ThanksContent locale="ru" />
+      <Footer locale="ru" />
     </>
   );
 }
