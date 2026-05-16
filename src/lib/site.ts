@@ -10,7 +10,7 @@ export const SITE = {
   // Contact
   phoneDisplay: "+1 (283) 218-6198",
   phoneTel: "+12832186198",
-  whatsappTel: "12832186198",
+  whatsappTel: "13264670388",
   email: "info@groupveritor.com",
   emailFrom: "Veritor Group <info@groupveritor.com>",
 
