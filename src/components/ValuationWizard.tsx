@@ -83,6 +83,22 @@ function getSessionId(): string {
   return id;
 }
 
+function isEmailValid(e: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+}
+
+// Focus + scroll an element. Every click on a step's Continue/Submit
+// button that lands on an invalid form calls this on the first invalid
+// field, so each click produces a DOM mutation (focus change). Without
+// this, Clarity classifies a repeat-click on a button whose only effect
+// is the same error message as a "dead click" — the signal that pushed
+// /get-offer to a 33% dead-click rate.
+function focusInvalid(el: HTMLElement | null | undefined) {
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
 export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].wizard;
   const searchParams = useSearchParams();
@@ -125,10 +141,6 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function isEmailValid(e: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
-  }
 
   async function submitLookup() {
     setError("");
@@ -340,15 +352,25 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
         </p>
 
         {/* Wordmark below the form — transparent background, larger
-            scale, decorative footer to anchor the page brand. */}
+            scale, decorative footer to anchor the page brand. Wrapped in
+            a Link so users who scroll to the bottom and click the
+            wordmark land on the homepage (the top-bar wordmark trains
+            them that the logo IS a link — without this Link, the bottom
+            wordmark generated dead clicks). */}
         <div className="mt-12 flex flex-col items-center md:mt-16">
-          <Image
-            src="/brand/logo-on-dark.png"
-            alt="Veritor Group"
-            width={420}
-            height={84}
-            className="h-12 w-auto opacity-50 md:h-16"
-          />
+          <Link
+            href={locale === "en" ? "/" : `/${locale}`}
+            aria-label="Veritor home"
+            className="inline-flex"
+          >
+            <Image
+              src="/brand/logo-on-dark.png"
+              alt="Veritor Group"
+              width={420}
+              height={84}
+              className="h-12 w-auto opacity-50 transition-opacity duration-200 hover:opacity-80 md:h-16"
+            />
+          </Link>
         </div>
       </div>
     </section>
@@ -645,6 +667,22 @@ function Step3({
   onBack: () => void;
   onNext: () => void;
 }) {
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  function handleNext() {
+    // Focus the first invalid field BEFORE calling parent's onNext. The
+    // parent also validates and sets the global error, but the focus
+    // change here guarantees a DOM mutation per click — defeats Clarity's
+    // dead-click classification on repeat clicks against the same error.
+    if (name.trim().length < 1) {
+      focusInvalid(nameRef.current);
+    } else if (!isEmailValid(email)) {
+      focusInvalid(emailRef.current);
+    }
+    onNext();
+  }
+
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem]">
@@ -655,9 +693,16 @@ function Step3({
         <label className="flex flex-col gap-2">
           <span className={labelClass}>{t.name} *</span>
           <input
+            ref={nameRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
             placeholder="Jane Smith"
             className={inputClass}
             autoComplete="name"
@@ -667,9 +712,16 @@ function Step3({
         <label className="flex flex-col gap-2">
           <span className={labelClass}>{t.email} *</span>
           <input
+            ref={emailRef}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
             placeholder="you@company.com"
             className={inputClass}
             autoComplete="email"
@@ -688,6 +740,12 @@ function Step3({
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleNext();
+              }
+            }}
             placeholder="(555) 555-1234"
             className={inputClass}
             autoComplete="tel"
@@ -705,7 +763,7 @@ function Step3({
         </button>
         <button
           type="button"
-          onClick={onNext}
+          onClick={handleNext}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371]"
         >
           <span>{t.continue}</span>
@@ -739,6 +797,26 @@ function Step4({
   onBack: () => void;
   onSubmit: () => void;
 }) {
+  const relayYesRef = useRef<HTMLButtonElement>(null);
+  const tcpaRef = useRef<HTMLInputElement>(null);
+
+  function handleSubmit() {
+    // Same pattern as Step 3 handleNext — focus first invalid before
+    // delegating to parent. Without this, clicking Show Valuation with
+    // unchecked TCPA or unselected Relay produces the same error text
+    // on every click, which Clarity flags as a dead click after the
+    // first one (no visible DOM mutation between attempts).
+    if (hasRelay === "") {
+      focusInvalid(relayYesRef.current);
+    } else if (!tcpaConsent) {
+      // The actual input is sr-only; focusing it triggers
+      // peer-focus-visible on the styled checkbox so the user sees
+      // the orange ring.
+      focusInvalid(tcpaRef.current);
+    }
+    onSubmit();
+  }
+
   return (
     <>
       <h2 className="text-[1.625rem] font-semibold leading-[1.05] tracking-[-0.025em] text-white md:text-[2rem]">
@@ -751,6 +829,7 @@ function Step4({
           <p className={`${labelClass} mb-3`}>{t.relayQuestion}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
+              ref={relayYesRef}
               type="button"
               onClick={() => setHasRelay("yes")}
               className={`group flex flex-col rounded-xl border p-4 text-left transition-all ${
@@ -781,6 +860,7 @@ function Step4({
             a styled box driven by peer-checked. */}
         <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/10 transition-colors hover:bg-white/[0.05]">
           <input
+            ref={tcpaRef}
             type="checkbox"
             checked={tcpaConsent}
             onChange={(e) => setTcpaConsent(e.target.checked)}
@@ -820,7 +900,7 @@ function Step4({
         </button>
         <button
           type="button"
-          onClick={onSubmit}
+          onClick={handleSubmit}
           disabled={loading}
           className="group inline-flex items-center gap-3 rounded-full bg-[#ff8a1a] py-2 pl-5 pr-2 text-sm font-semibold text-[#0a0a0b] transition-all duration-300 hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-60"
         >
