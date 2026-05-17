@@ -8,8 +8,8 @@ export const SITE = {
   tagline: "We buy US logistics LLCs.",
 
   // Contact
-  phoneDisplay: "+1 (283) 218-6198",
-  phoneTel: "+12832186198",
+  phoneDisplay: "+1 (326) 467-0388",
+  phoneTel: "+13264670388",
   whatsappTel: "13264670388",
   email: "info@groupveritor.com",
   emailFrom: "Veritor Group <info@groupveritor.com>",
