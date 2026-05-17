@@ -15,6 +15,7 @@ import {
   WhatsAppIcon,
 } from "@/components/Icons";
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js/min";
+import { fireConversion, setEnhancedUserData } from "@/lib/analytics";
 import { attributionPayload } from "@/lib/attribution";
 import { DICT, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
@@ -278,16 +279,17 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || t.error);
       }
-      // Fire GA4 lead conversion. Guarded — gtag is undefined when the
-      // visitor declined analytics consent or the GA env var isn't set.
-      // Best-effort: don't block redirect on this.
-      if (typeof window !== "undefined" && typeof window.gtag === "function") {
-        window.gtag("event", "generate_lead", {
-          locale,
-          has_relay: form.hasRelay || "unknown",
-          mc_present: Boolean(form.mc.trim()),
-        });
-      }
+      // GA4 lead event + matching Google Ads conversion. Enhanced
+      // conversions (hashed email + phone) MUST be set before the
+      // conversion event fires so gtag attaches them to it. Helpers
+      // no-op when gtag isn't loaded (consent declined, env unset).
+      await setEnhancedUserData({ email: form.email, phone: form.phone });
+      fireConversion("generate_lead", {
+        locale,
+        has_relay: form.hasRelay || "unknown",
+        mc_present: Boolean(form.mc.trim()),
+        currency: "USD",
+      });
       // Redirect to thanks page (so we can fire ad conversion pixels later).
       router.push(locale === "en" ? "/thanks" : `/${locale}/thanks`);
     } catch (err) {

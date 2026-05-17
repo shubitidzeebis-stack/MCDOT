@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowIcon, CheckIcon } from "@/components/Icons";
 import { CalEmbed } from "@/components/CalEmbed";
+import { fireConversion, setEnhancedUserData } from "@/lib/analytics";
 import { attributionPayload } from "@/lib/attribution";
 import { SITE } from "@/lib/site";
 import { DICT, type Locale } from "@/lib/i18n";
@@ -213,17 +214,20 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
       }
       setRange(data.range);
       setFloorReason(data.flooredReason);
-      // GA4 conversion event for Campaign 2 (valuation wedge).
-      // Distinct from homepage `generate_lead` so reporting stays
-      // separable across the two Google Ads campaigns.
-      if (typeof window !== "undefined" && typeof window.gtag === "function") {
-        window.gtag("event", "valuation_completed", {
-          locale,
-          has_amazon_relay: hasRelay === "yes",
-          kind,
-          mc_present: kind === "mc",
-        });
-      }
+      // GA4 conversion event for Campaign 2 (valuation wedge) +
+      // matching Google Ads conversion. Distinct from homepage
+      // `generate_lead` so reporting stays separable across the two
+      // Google Ads campaigns. Enhanced conversions (hashed email +
+      // phone) raise Google Ads match rate for users without ad cookies.
+      await setEnhancedUserData({ email, phone });
+      fireConversion("valuation_completed", {
+        locale,
+        has_amazon_relay: hasRelay === "yes",
+        kind,
+        mc_present: kind === "mc",
+        currency: "USD",
+        legal_name: carrier?.legalName ?? null,
+      });
       setStep(5);
     } catch {
       setError(t.errorNetwork);
@@ -234,6 +238,17 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
 
   function nextFromStep2() {
     setError("");
+    // Mid-funnel signal: user saw the FMCSA-pulled carrier card and
+    // confirmed it's the right company. Distinct from valuation_completed
+    // (which only fires after Step 4 submit). Useful for optimizing
+    // Google Ads bidding on "qualified intent" earlier in the funnel.
+    fireConversion("valuation_started", {
+      locale,
+      kind,
+      mc_number: carrier?.mcNumbers[0] ?? null,
+      dot_number: carrier?.dotNumber ?? null,
+      legal_name: carrier?.legalName ?? null,
+    });
     setStep(3);
   }
 
@@ -502,12 +517,33 @@ function Step1({
           >
             <span>{loading ? t.lookingUp : t.lookupCta}</span>
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
-              <ArrowIcon />
+              {loading ? <Spinner /> : <ArrowIcon />}
             </span>
           </button>
         </div>
       </div>
     </>
+  );
+}
+
+// Inline 12px spinner — used in CTA buttons when the next action is
+// fetching. `animate-spin` ships with Tailwind by default.
+function Spinner() {
+  return (
+    <svg
+      className="h-3.5 w-3.5 animate-spin"
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden
+    >
+      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+      <path
+        d="M14 8a6 6 0 0 0-6-6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }
 
@@ -906,7 +942,7 @@ function Step4({
         >
           <span>{loading ? t.computing : t.showValuation}</span>
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0a0a0b]/90 text-[#ff8a1a] transition-transform duration-300 group-hover:translate-x-0.5">
-            <ArrowIcon />
+            {loading ? <Spinner /> : <ArrowIcon />}
           </span>
         </button>
       </div>

@@ -9,17 +9,27 @@ declare global {
   }
 }
 
-// Google Analytics 4 (gtag.js). Loaded only after the visitor accepts the
-// analytics consent category — gated upstream in AnalyticsGate. Renders
-// nothing visible; injects the gtag bootstrap into <head>.
+// Google Analytics 4 (gtag.js) + optional Google Ads. Loaded only after
+// the visitor accepts the analytics consent category — gated upstream in
+// AnalyticsGate. Injects gtag bootstrap with Consent Mode v2 defaults.
 //
-// We default ad-related signals OFF (ad_storage, ad_user_data,
-// ad_personalization) so a vanilla install never silently shares data
-// with Google Ads. When we wire conversion tracking later, we'll either
-// flip these post-consent or add an "advertising" consent category.
+// Consent defaults are set from the visitor's actual choices: if they
+// accepted advertising at the same time as analytics, ad_storage starts
+// as `granted` rather than `denied → updated`, so the very first
+// pageview includes ad-attribution signals. Toggles after this point are
+// handled by ConsentSync calling gtag('consent', 'update', ...).
 
-export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
+export function GoogleAnalytics({
+  measurementId,
+  googleAdsId,
+  advertisingGranted,
+}: {
+  measurementId: string;
+  googleAdsId?: string;
+  advertisingGranted: boolean;
+}) {
   if (!measurementId) return null;
+  const adFlag = advertisingGranted ? "granted" : "denied";
   return (
     <>
       <Script
@@ -33,13 +43,14 @@ export function GoogleAnalytics({ measurementId }: { measurementId: string }) {
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('consent', 'default', {
-            ad_storage: 'denied',
-            ad_user_data: 'denied',
-            ad_personalization: 'denied',
+            ad_storage: '${adFlag}',
+            ad_user_data: '${adFlag}',
+            ad_personalization: '${adFlag}',
             analytics_storage: 'granted'
           });
           gtag('js', new Date());
           gtag('config', '${measurementId}', { anonymize_ip: true });
+          ${googleAdsId ? `gtag('config', '${googleAdsId}');` : ""}
         `}
       </Script>
     </>
