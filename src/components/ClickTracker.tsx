@@ -32,15 +32,26 @@ export function ClickTracker() {
       if (!(target instanceof Element)) return;
       const link = target.closest("a[href]");
       if (!(link instanceof HTMLAnchorElement)) return;
+      // Elements that wire their own onClick conversion (e.g. WhatsAppFAB)
+      // opt out so we don't double-fire.
+      if (link.dataset.skipGlobalTrack === "1") return;
       const href = link.href;
       const source = sourceFor(link);
       const page = window.location.pathname;
+      let event: string | null = null;
       if (href.startsWith("tel:") || href.startsWith("sms:")) {
-        fireConversion("phone_call_click", { source, page, channel: href.startsWith("sms:") ? "sms" : "call" });
+        event = "phone_call_click";
       } else if (/^https?:\/\/(wa\.me|api\.whatsapp\.com|web\.whatsapp\.com)\//i.test(href)) {
-        fireConversion("whatsapp_click", { source, page });
+        event = "whatsapp_click";
       } else if (href.startsWith("mailto:")) {
-        fireConversion("email_click", { source, page });
+        event = "email_click";
+      }
+      if (!event) return;
+      const channel = href.startsWith("sms:") ? "sms" : href.startsWith("tel:") ? "call" : undefined;
+      fireConversion(event, channel ? { source, page, channel } : { source, page });
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("[click-tracker]", event, { source, page, href });
       }
     }
     window.addEventListener("click", handler, { capture: true });

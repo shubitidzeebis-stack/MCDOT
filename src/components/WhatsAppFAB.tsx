@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { fireConversion } from "@/lib/analytics";
 import { SITE } from "@/lib/site";
 import type { Locale } from "@/lib/i18n";
 
@@ -60,6 +61,17 @@ export function WhatsAppFAB({ locale = "en" as Locale }: { locale?: Locale }) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
+          // Explicit conversion event so this CTA is tracked even if
+          // the global ClickTracker misses it (e.g. framer-motion
+          // intercepting, or a future regression). data-skip-global-track
+          // tells ClickTracker not to double-fire on the same click.
+          data-skip-global-track="1"
+          onClick={() => {
+            fireConversion("whatsapp_click", {
+              source: "whatsapp_fab",
+              page: pathname,
+            });
+          }}
           initial={{ y: 24, opacity: 0, scale: 0.85 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 24, opacity: 0, scale: 0.85 }}
