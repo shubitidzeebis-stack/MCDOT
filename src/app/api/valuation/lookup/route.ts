@@ -22,6 +22,7 @@ type LookupBody = {
   kind: "mc" | "dot";
   authorityAgeDays?: number | null;
   attribution?: unknown;
+  test?: boolean;
 };
 
 function isLookupBody(x: unknown): x is LookupBody {
@@ -79,6 +80,7 @@ export async function POST(req: Request) {
         telephone,
         mcs150FormDate,
         attribution: raw.attribution ?? null,
+        isTest: raw.test === true,
       },
       { ip, userAgent },
     );

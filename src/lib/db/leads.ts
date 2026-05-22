@@ -47,6 +47,11 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS priority TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS leads_priority_idx ON leads (priority) WHERE priority IS NOT NULL`;
 
+  // Internal test submissions (funnel walk-throughs via ?test=1). Real
+  // rows default false; test rows are flagged so they can be excluded from
+  // lead counts and (eventually) from Jarvis Telegram alerts.
+  await sql`ALTER TABLE leads ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`;
+
   initialized = true;
 }
 
@@ -91,7 +96,7 @@ export async function saveLead(
       INSERT INTO leads (
         name, email, phone, company, mc, has_relay, mc_age_days,
         insurance, state, notes, locale, ip, user_agent,
-        attribution, priority
+        attribution, priority, is_test
       ) VALUES (
         ${payload.name},
         ${payload.email},
@@ -107,7 +112,8 @@ export async function saveLead(
         ${meta.ip},
         ${meta.userAgent},
         ${attribution ? JSON.stringify(attribution) : null}::jsonb,
-        ${priority}
+        ${priority},
+        ${payload.test ?? false}
       )
       RETURNING id
     `;

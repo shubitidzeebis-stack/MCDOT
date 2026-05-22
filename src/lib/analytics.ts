@@ -8,6 +8,7 @@
 // env vars, not code.
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
+import { isTestMode } from "@/lib/test-mode";
 
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "";
 
@@ -26,6 +27,11 @@ function gtagAvailable(): boolean {
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
+  // Internal test mode: emit nothing to GA4 / Google Ads. fireConversion
+  // routes both its GA4 event and its conversion ping through here, so this
+  // single guard suppresses every conversion (including phone/whatsapp
+  // clicks via the global ClickTracker).
+  if (isTestMode()) return;
   if (!gtagAvailable()) return;
   window.gtag!("event", name, params);
 }
@@ -72,6 +78,8 @@ export async function setEnhancedUserData(input: {
   email?: string;
   phone?: string;
 }): Promise<void> {
+  // Internal test mode: never hash/send a tester's PII to Google.
+  if (isTestMode()) return;
   if (!gtagAvailable()) return;
   const data: Record<string, string> = {};
   if (input.email) {

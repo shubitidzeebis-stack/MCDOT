@@ -73,6 +73,8 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS telephone TEXT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS mcs150_form_date TEXT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_status TEXT`;
+  // Internal test funnel-walks (?test=1). Real rows default false.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
@@ -164,6 +166,7 @@ export type CreateValuationInput = {
   telephone: string | null;
   mcs150FormDate: string | null;
   attribution: unknown;
+  isTest?: boolean;
 };
 
 export async function createValuation(
@@ -194,7 +197,7 @@ export async function createValuation(
         driver_oos_pct, driver_oos_national_avg, crashes_24mo,
         safety_rating, bipd_insurance_on_file, mcs150_outdated,
         telephone, mcs150_form_date, insurance_status,
-        fmcsa_raw, attribution, ip, user_agent
+        fmcsa_raw, attribution, ip, user_agent, is_test
       ) VALUES (
         ${input.sessionId},
         ${mcNumber},
@@ -220,7 +223,8 @@ export async function createValuation(
         ${JSON.stringify(c)}::jsonb,
         ${input.attribution ? JSON.stringify(input.attribution) : null}::jsonb,
         ${meta.ip},
-        ${meta.userAgent}
+        ${meta.userAgent},
+        ${input.isTest ?? false}
       )
       RETURNING id
     `;

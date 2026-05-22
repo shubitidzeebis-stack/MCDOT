@@ -66,6 +66,15 @@ export async function POST(req: Request) {
       userAgent: req.headers.get("user-agent") ?? "",
     });
 
+    // Internal test submission (?test=1): the row is persisted with
+    // is_test=true above; bail before any notification + the partial-link
+    // so we don't pollute the inbox / Slack / nurture queue. (Telegram
+    // lives in Jarvis and isn't suppressed here yet — recognizable by the
+    // is_test flag on the row.)
+    if (lead.test) {
+      return NextResponse.json({ ok: true, test: true });
+    }
+
     // Link the partial-capture row (if any) to this completed submission
     // so reports can attribute conversion lift to partial-save catches.
     if (saveResult.ok && saveResult.id && lead.sessionId) {

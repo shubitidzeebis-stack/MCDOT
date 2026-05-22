@@ -16,6 +16,7 @@ import {
 } from "@/components/Icons";
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js/min";
 import { fireConversion, setEnhancedUserData } from "@/lib/analytics";
+import { isTestMode } from "@/lib/test-mode";
 import { attributionPayload } from "@/lib/attribution";
 import { DICT, type Locale } from "@/lib/i18n";
 import { SITE } from "@/lib/site";
@@ -294,6 +295,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
           sessionId: sessionIdRef.current,
           turnstileToken,
           attribution: attributionPayload(),
+          test: isTestMode(),
         }),
       });
       if (!res.ok) {

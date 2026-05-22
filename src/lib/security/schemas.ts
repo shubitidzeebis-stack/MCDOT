@@ -32,6 +32,9 @@ export const contactSchema = z.object({
     .optional(),
   // Honeypot: must be empty if present.
   website: z.string().max(0).optional().or(z.literal("")),
+  // Internal test-mode flag set by the client when ?test=1 is active.
+  // When true the server marks the row is_test and skips all notifications.
+  test: z.boolean().optional(),
 });
 
 export type ContactPayload = z.infer<typeof contactSchema>;

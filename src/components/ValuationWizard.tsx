@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowIcon, CheckIcon } from "@/components/Icons";
 import { CalEmbed } from "@/components/CalEmbed";
 import { fireConversion, setEnhancedUserData } from "@/lib/analytics";
+import { isTestMode } from "@/lib/test-mode";
 import { attributionPayload } from "@/lib/attribution";
 import { SITE } from "@/lib/site";
 import { DICT, type Locale } from "@/lib/i18n";
@@ -159,6 +160,7 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
           number: number.trim(),
           kind,
           attribution: attributionPayload(),
+          test: isTestMode(),
         }),
       });
       const data = await res.json();
@@ -205,6 +207,7 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
           // Form Date — no need to send from client.
           authorityAgeDays: null,
           contact: { name, email, phone },
+          test: isTestMode(),
         }),
       });
       const data = await res.json();

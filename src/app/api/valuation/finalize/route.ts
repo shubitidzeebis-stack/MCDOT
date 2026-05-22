@@ -35,6 +35,7 @@ type FinalizeBody = {
   hasAmazonRelay: boolean;
   authorityAgeDays?: number | null;
   contact?: { name?: string; email?: string; phone?: string };
+  test?: boolean;
 };
 
 function isFinalizeBody(x: unknown): x is FinalizeBody {
@@ -123,6 +124,21 @@ export async function POST(req: Request) {
     const sellerEmail = raw.contact?.email?.trim().toLowerCase();
     const sellerName = raw.contact?.name?.trim();
     const range = formatRange(valuation);
+
+    // Internal test run (?test=1): the row is persisted (is_test=true was
+    // set at /lookup); return the computed range so the wizard renders
+    // normally, but skip every notification + the nurture queue. (Telegram
+    // lives in Jarvis and isn't suppressed here yet.)
+    if (raw.test) {
+      return NextResponse.json({
+        ok: true,
+        range,
+        low: valuation.low,
+        high: valuation.high,
+        flooredReason: valuation.flooredReason,
+        test: true,
+      });
+    }
 
     // Slack ping — independent of email; runs even if no contact info.
     try {
