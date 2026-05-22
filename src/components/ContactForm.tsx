@@ -145,6 +145,9 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
 
   // Latest partial-save fetch — used to coalesce blur events.
   const lastSaveRef = useRef<Promise<unknown> | null>(null);
+  // Dedup key for the last user_data we pushed to gtag (enhanced
+  // conversions), so repeated blurs don't re-hash identical values.
+  const lastEnhancedKeyRef = useRef<string>("");
 
   useEffect(() => {
     sessionIdRef.current = getSessionId();
@@ -231,6 +234,22 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
     });
   }
 
+  // Pre-set hashed user_data for Google Ads enhanced conversions as soon
+  // as the visitor has given us a valid email (phone too, if valid).
+  // gtag('set', 'user_data', ...) is sticky, so it rides along on whatever
+  // conversion fires next — including a phone_call_click on the contact
+  // section's "Call" link, which the global ClickTracker can't otherwise
+  // enrich. The on-submit setEnhancedUserData call stays as a backstop.
+  // Best-effort: not awaited, no error surfaced; deduped by value so we
+  // don't re-hash on every blur.
+  function maybeSetEnhancedData(snapshot: FormState) {
+    if (!isEmailLikeValid(snapshot.email)) return;
+    const key = `${snapshot.email.trim().toLowerCase()}|${snapshot.phone.trim()}`;
+    if (key === lastEnhancedKeyRef.current) return;
+    lastEnhancedKeyRef.current = key;
+    void setEnhancedUserData({ email: snapshot.email, phone: snapshot.phone });
+  }
+
   // Wraps the per-field onChange so we can also fire a blur-side save
   // AND mark the field touched (gates inline validation messages).
   // The ref read happens inside the event handler closure, not during
@@ -239,6 +258,8 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
     markTouched(key);
     // eslint-disable-next-line react-hooks/refs
     flushPartial(formRef.current);
+    // eslint-disable-next-line react-hooks/refs
+    maybeSetEnhancedData(formRef.current);
   };
 
   async function handleSubmit(e: React.FormEvent) {

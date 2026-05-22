@@ -18,6 +18,10 @@ declare global {
 // as `granted` rather than `denied → updated`, so the very first
 // pageview includes ad-attribution signals. Toggles after this point are
 // handled by ConsentSync calling gtag('consent', 'update', ...).
+//
+// The Ads tag enables enhanced conversions (allow_enhanced_conversions).
+// The hashed first-party user_data itself is set elsewhere via
+// gtag('set', 'user_data', ...) — see setEnhancedUserData in lib/analytics.
 
 export function GoogleAnalytics({
   measurementId,
@@ -50,7 +54,7 @@ export function GoogleAnalytics({
           });
           gtag('js', new Date());
           gtag('config', '${measurementId}', { anonymize_ip: true });
-          ${googleAdsId ? `gtag('config', '${googleAdsId}');` : ""}
+          ${googleAdsId ? `gtag('config', '${googleAdsId}', { 'allow_enhanced_conversions': true });` : ""}
         `}
       </Script>
     </>
