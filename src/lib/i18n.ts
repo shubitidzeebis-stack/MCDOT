@@ -188,6 +188,12 @@ type Dict = {
     // Step 5
     yourValuation: string;
     forCompany: string;
+    snapshotHeading: string;
+    authorityAge: string;
+    ageYearsValue: string;
+    ageMonthsValue: string;
+    ageUnknown: string;
+    ageBasis: string;
     note: string;
     floorNote: string;
     indicativeBlock: string;
@@ -643,6 +649,12 @@ export const DICT: Record<Locale, Dict> = {
       computing: "Computing…",
       yourValuation: "Your valuation",
       forCompany: "For",
+      snapshotHeading: "What we used",
+      authorityAge: "Authority age",
+      ageYearsValue: "≈ {n} years",
+      ageMonthsValue: "≈ {n} months",
+      ageUnknown: "Not on file",
+      ageBasis: "Authority age is based on the latest MCS-150 filing ({date}) — the best public proxy in FMCSA. Final age is confirmed on the call.",
       note: "Note:",
       floorNote:
         "this caps the indicative valuation at our floor. We can still buy, but final terms will be confirmed on a call.",
@@ -1098,6 +1110,12 @@ export const DICT: Record<Locale, Dict> = {
       computing: "Calculando…",
       yourValuation: "Su valuación",
       forCompany: "Para",
+      snapshotHeading: "Lo que usamos",
+      authorityAge: "Antigüedad de autoridad",
+      ageYearsValue: "≈ {n} años",
+      ageMonthsValue: "≈ {n} meses",
+      ageUnknown: "No disponible",
+      ageBasis: "La antigüedad se basa en el último registro MCS-150 ({date}) — el mejor indicador público en FMCSA. Se confirma en la llamada.",
       note: "Nota:",
       floorNote:
         "esto limita la valuación indicativa al mínimo. Podemos comprar igualmente, pero los términos finales se confirman en llamada.",
@@ -1552,6 +1570,12 @@ export const DICT: Record<Locale, Dict> = {
       computing: "Вычисляем…",
       yourValuation: "Ваша оценка",
       forCompany: "Для",
+      snapshotHeading: "Что мы учли",
+      authorityAge: "Возраст полномочий",
+      ageYearsValue: "≈ {n} лет",
+      ageMonthsValue: "≈ {n} мес.",
+      ageUnknown: "Нет данных",
+      ageBasis: "Возраст полномочий рассчитан по последней подаче MCS-150 ({date}) — это лучший публичный ориентир в FMCSA. Точный возраст подтвердим на звонке.",
       note: "Примечание:",
       floorNote:
         "это ограничивает ориентировочную оценку нашим минимумом. Мы всё равно можем купить, но условия — на звонке.",

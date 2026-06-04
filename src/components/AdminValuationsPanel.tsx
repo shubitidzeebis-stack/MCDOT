@@ -32,6 +32,13 @@ export type AdminValuationRow = {
   notes_internal: string | null;
   insurance_status: string | null;
   telephone: string | null;
+  phy_address: {
+    street: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    country: string | null;
+  } | null;
 };
 
 const STATUSES = [
@@ -63,6 +70,22 @@ function fmtRange(low: number | null, high: number | null): string {
   if (low === null || high === null) return "—";
   if (low === high) return fmtMoney(low);
   return `${fmtMoney(low)} – ${fmtMoney(high)}`;
+}
+
+// Authority age in human terms. < 1 yr reads in months, otherwise years
+// with one decimal. Derived from the MCS-150 form date (≈ registration
+// age for newer carriers).
+function fmtAge(days: number | null): string {
+  if (days === null || days < 15) return "—";
+  if (days < 365) return `${Math.max(1, Math.round(days / 30.44))} mo`;
+  const years = days / 365.25;
+  const n = years >= 10 ? String(Math.round(years)) : years.toFixed(1).replace(/\.0$/, "");
+  return `${n} yr`;
+}
+
+function fmtLocation(addr: AdminValuationRow["phy_address"]): string {
+  if (!addr) return "—";
+  return [addr.street, addr.city, addr.state, addr.zip].filter(Boolean).join(", ") || "—";
 }
 
 export function AdminValuationsPanel({
@@ -537,6 +560,11 @@ function Row({
           {v.dba_name && (
             <span className="block text-[11px] text-white/45">DBA {v.dba_name}</span>
           )}
+          {v.phy_address?.state && (
+            <span className="block text-[11px] text-white/45">
+              {[v.phy_address.city, v.phy_address.state].filter(Boolean).join(", ")}
+            </span>
+          )}
         </td>
         <td className="px-3 py-3 text-[12px] text-white/65">
           {v.dot_number ? `USDOT ${v.dot_number}` : "—"}
@@ -554,7 +582,7 @@ function Row({
           )}
           {v.authority_age_days !== null && (
             <span className="block text-[10px] text-white/35">
-              {Math.round(v.authority_age_days / 30)} mo
+              {fmtAge(v.authority_age_days)}
             </span>
           )}
         </td>
@@ -642,6 +670,20 @@ function Row({
                   FMCSA snapshot
                 </p>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-[12px] text-white/70">
+                  <div className="col-span-2">
+                    <Detail label="Location" value={fmtLocation(v.phy_address)} />
+                  </div>
+                  <Detail label="Authority age" value={fmtAge(v.authority_age_days)} />
+                  <Detail
+                    label="Authority"
+                    value={
+                      v.authority_status === "A"
+                        ? "Active for-hire"
+                        : v.authority_status === "I"
+                          ? "Inactive"
+                          : "—"
+                    }
+                  />
                   <Detail label="Power units" value={String(v.power_units ?? "—")} />
                   <Detail label="Drivers" value={String(v.drivers_count ?? "—")} />
                   <Detail

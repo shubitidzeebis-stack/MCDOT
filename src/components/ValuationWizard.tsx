@@ -74,6 +74,23 @@ function formatSlot(iso: string): string {
   });
 }
 
+// Human-readable authority age from the day count we derive off SAFER's
+// MCS-150 Form Date. Honest by design: ≈ years once past a year, ≈ months
+// below that. The basis (which date it's computed from) is shown as a
+// caption beneath the snapshot so the seller — who knows their own
+// company — isn't surprised by the number.
+function formatAuthorityAge(days: number | null, t: Strings): string {
+  if (days === null || days < 15) return t.ageUnknown;
+  if (days < 365) {
+    const months = Math.max(1, Math.round(days / 30.44));
+    return t.ageMonthsValue.replace("{n}", String(months));
+  }
+  const years = days / 365.25;
+  // One decimal, but drop a trailing ".0" so whole years read cleanly.
+  const n = years >= 10 ? String(Math.round(years)) : years.toFixed(1).replace(/\.0$/, "");
+  return t.ageYearsValue.replace("{n}", n);
+}
+
 function getSessionId(): string {
   if (typeof window === "undefined") return "";
   const KEY = "veritor.session";
@@ -975,6 +992,14 @@ function Step5({
       .then((data) => setSlots(Array.isArray(data.slots) ? data.slots : []))
       .catch(() => setSlots([]));
   }, []);
+  const addressLine = [
+    carrier.address.street,
+    carrier.address.city,
+    carrier.address.state,
+    carrier.address.zip,
+  ]
+    .filter(Boolean)
+    .join(", ");
   // Pre-fill the Cal.com booking form with the seller's info + carrier
   // context. Cal.com supports name/email as URL params, plus a generic
   // `notes` field that lands in the booking confirmation. The seller
@@ -1006,6 +1031,46 @@ function Step5({
           </p>
         </div>
       )}
+
+      {/* Carrier snapshot — the FMCSA facts that fed the number. The
+          seller asked to see insurance, location, and authority age on
+          the result screen, not just the dollar range. */}
+      <div className="mt-7 grid gap-3 rounded-xl bg-white/[0.04] p-5 ring-1 ring-white/10">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.32em] text-white/40">
+          {t.snapshotHeading}
+        </p>
+        {addressLine && <Row label={t.address} value={addressLine} />}
+        <Row
+          label={t.insurance}
+          value={
+            carrier.flags.insuranceStatus === "active"
+              ? t.insuranceActive
+              : carrier.flags.insuranceStatus === "lapsed"
+                ? t.insuranceLapsed
+                : carrier.flags.insuranceStatus === "not_required"
+                  ? t.insuranceNotRequired
+                  : "—"
+          }
+          tone={
+            carrier.flags.insuranceStatus === "active"
+              ? "good"
+              : carrier.flags.insuranceStatus === "lapsed"
+                ? "warn"
+                : "neutral"
+          }
+        />
+        <Row
+          label={t.authority}
+          value={carrier.flags.hasActiveAuthority ? t.authorityActive : t.authorityInactive}
+          tone={carrier.flags.hasActiveAuthority ? "good" : "warn"}
+        />
+        <Row label={t.authorityAge} value={formatAuthorityAge(carrier.authorityAgeDays, t)} />
+        {carrier.mcs150FormDate && (
+          <p className="mt-1 text-[11px] leading-relaxed text-white/40">
+            {t.ageBasis.replace("{date}", carrier.mcs150FormDate)}
+          </p>
+        )}
+      </div>
 
       <div className="mt-7 rounded-xl bg-white/[0.04] p-5 ring-1 ring-white/10">
         <p className="text-[13px] leading-relaxed text-white/65">{t.indicativeBlock}</p>

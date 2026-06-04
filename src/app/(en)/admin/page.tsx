@@ -78,6 +78,13 @@ type Valuation = {
   notes_internal: string | null;
   insurance_status: string | null;
   telephone: string | null;
+  phy_address: {
+    street: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    country: string | null;
+  } | null;
 };
 
 async function loadLeads(): Promise<{
@@ -116,7 +123,7 @@ async function loadLeads(): Promise<{
                contact_phone, contact_provided_at::text AS contact_provided_at,
                power_units, drivers_count, vehicle_oos_pct, driver_oos_pct,
                crashes_24mo, safety_rating, notes_internal, insurance_status,
-               telephone
+               telephone, phy_address
           FROM valuations
          ORDER BY created_at DESC
          LIMIT 500
