@@ -26,6 +26,7 @@ export type FlagKey =
   // prod until explicitly switched on in Edge Config.
   | "monitorEnabled" // master kill switch for the whole discovery/verify sweep
   | "outreachDraftEnabled" // allow LLM draft generation
+  | "outreachSendEnabled" // master kill switch for actually SENDING approved mail
   | "autoSendEnabled" // skip the human approval gate (per validated persona)
   | "smsOutreachEnabled"; // allow Twilio phone/SMS fallback
 
@@ -39,6 +40,7 @@ const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   chatWidgetEnabled: false,
   monitorEnabled: false,
   outreachDraftEnabled: false,
+  outreachSendEnabled: false,
   autoSendEnabled: false,
   smsOutreachEnabled: false,
 };

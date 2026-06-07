@@ -422,14 +422,14 @@ export function buildUccHandoff(input: {
     linkType = portal.linkType;
     notes = portal.notes;
   } else {
-    // Google fallback (spec-exact expression). state is lowercased back into the
-    // site: filter; quotes wrap the legal name. linkType is 'landing'.
-    const lower = (state ?? "").toLowerCase();
+    // Google fallback. Use the VALIDATED 2-letter code in the site: filter when
+    // we have one; if the state is unrecognized, use a generic UCC search rather
+    // than interpolating an untrusted raw state value into a domain.
+    const query = code
+      ? `site:sos.${code.toLowerCase()}.gov UCC search "${legalName ?? ""}"`
+      : `"${legalName ?? ""}" UCC lien filing secretary of state`;
     searchUrl =
-      "https://www.google.com/search?q=" +
-      encodeURIComponent(
-        `site:sos.${lower}.gov UCC search "${legalName ?? ""}"`,
-      );
+      "https://www.google.com/search?q=" + encodeURIComponent(query);
     linkType = "landing";
     notes = code
       ? `No verified SoS UCC portal on file for ${code}. FALLBACK: this is a Google site: search of the state's SoS domain — confirm you land on the official UCC debtor-search page before searching.`

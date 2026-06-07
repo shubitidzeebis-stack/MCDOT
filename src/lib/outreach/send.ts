@@ -52,7 +52,7 @@ function bodyToHtml(text: string): string {
 }
 
 export type OutreachSendResult =
-  | { skipped: "no_sender" }
+  | { skipped: "no_sender" | "disabled" }
   | { approvedAuto: number; sent: number; failed: number; suppressed: number };
 
 export async function processOutreachQueue(): Promise<OutreachSendResult> {
@@ -60,6 +60,9 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
   const apiKey = process.env.RESEND_OUTREACH_API_KEY;
   // Inert until the dedicated outreach sender is provisioned.
   if (!from || !apiKey) return { skipped: "no_sender" };
+  // Runtime kill switch — flip outreachSendEnabled off in Edge Config to halt
+  // ALL sending instantly (including already-approved + auto-send), no redeploy.
+  if (!(await getFlag("outreachSendEnabled"))) return { skipped: "disabled" };
 
   // ---- P5 auto-send: auto-approve eligible drafts before the send loop. -----
   let approvedAuto = 0;

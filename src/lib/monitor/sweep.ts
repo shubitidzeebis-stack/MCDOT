@@ -67,7 +67,9 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
   // Empty/blank means "every day this cron fires".
   const days = (await getConfigValue("monitorDays"))
     .split(",")
-    .map((s) => Number(s.trim()))
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0) // drop empty tokens so blank/"" => [] => every day
+    .map(Number)
     .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
   const today = new Date().getUTCDay();
   if (days.length > 0 && !days.includes(today)) {

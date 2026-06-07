@@ -37,6 +37,10 @@ export type SoqlParams = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// Hard ceiling on any single backoff sleep, so an oversized Retry-After header
+// can't stall the sweep past the cron's wall-clock budget.
+const MAX_BACKOFF_MS = 8_000;
+
 /** Left-pad a DOT number to 8 digits for InsHist/Carrier joins. */
 export function lpadDot(dot: string | number, len = 8): string {
   const digits = String(dot).replace(/[^0-9]/g, "");
@@ -64,10 +68,12 @@ export async function fetchWithBackoff(
       const retryable = res.status === 429 || res.status >= 500;
       if (retryable && attempt < retries) {
         const retryAfter = Number(res.headers.get("retry-after"));
-        const delay =
+        const raw =
           Number.isFinite(retryAfter) && retryAfter > 0
             ? retryAfter * 1000
             : baseDelayMs * 2 ** attempt + Math.random() * baseDelayMs;
+        // Cap the wait so a large Retry-After can't blow the cron wall-clock budget.
+        const delay = Math.min(raw, MAX_BACKOFF_MS);
         await sleep(delay);
         attempt++;
         continue;
@@ -96,7 +102,13 @@ function buildUrl(dataset: string, params: SoqlParams): string {
   return `${SOCRATA_BASE}/${dataset}.json?${qs.toString()}`;
 }
 
-/** Run one SoQL query against a dataset. Returns [] on a non-OK response. */
+/**
+ * Run one SoQL query against a dataset. THROWS on a non-OK response (after
+ * backoff) rather than returning [] — an empty array from an API error is
+ * indistinguishable from a genuine "no rows", and downstream verify would
+ * wrongly disqualify real carriers during a Socrata outage. Callers wrap this
+ * so a failure skips the item (leaving it to retry) instead of corrupting it.
+ */
 export async function socrataQuery<T = Record<string, unknown>>(
   dataset: string,
   params: SoqlParams,
@@ -106,8 +118,7 @@ export async function socrataQuery<T = Record<string, unknown>>(
   if (token) headers["X-App-Token"] = token;
   const res = await fetchWithBackoff(buildUrl(dataset, params), { headers });
   if (!res.ok) {
-    console.error(`[socrata] ${dataset} ${res.status}`);
-    return [];
+    throw new Error(`Socrata ${dataset} HTTP ${res.status}`);
   }
   return (await res.json()) as T[];
 }

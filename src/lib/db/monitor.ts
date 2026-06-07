@@ -219,14 +219,21 @@ export async function listMonitorForVerification(
   const sql = getSql();
   if (!sql) return [];
   await ensureValuationsSchema();
+  // Verify freshly-discovered rows FIRST (so hot, near-180-day carriers aren't
+  // stuck behind a re-verify backlog), then re-verify 'verified' rows older than
+  // 14 days. Terminal/in-flight stages (sent/suppressed/drafted/approved/
+  // phone-queued/disqualified) are excluded so we don't waste FMCSA quota or
+  // regress an already-contacted carrier back into the pipeline.
   const rows = (await sql`
     SELECT id, dot_number, add_date::text AS add_date, power_units
       FROM valuations
      WHERE source = 'monitor'
        AND dot_number IS NOT NULL
+       AND (monitor_stage IS NULL OR monitor_stage NOT IN
+            ('sent','suppressed','drafted','approved','outreach_phone','disqualified'))
        AND (monitor_stage = 'discovered' OR monitor_stage IS NULL
             OR updated_at < now() - interval '14 days')
-     ORDER BY updated_at ASC
+     ORDER BY (monitor_stage IS DISTINCT FROM 'discovered'), updated_at ASC
      LIMIT ${limit}
   `) as MonitorVerifyTarget[];
   return rows;
@@ -272,13 +279,14 @@ export async function listMonitorCandidates(limit = 500): Promise<MonitorRow[]> 
       SELECT id, created_at::text AS created_at, legal_name, dba_name, dot_number,
              mc_number, monitor_stage, add_date::text AS add_date,
              bipd_anchor_date::text AS bipd_anchor_date,
-             eligible_at::text AS eligible_at, days_to_180, eligibility_state,
+             eligible_at::text AS eligible_at,
+             (eligible_at - CURRENT_DATE) AS days_to_180, eligibility_state,
              insurance_current, insurance_rating, insurance_gaps, audit_score,
              acquisition_score, ucc_status, ucc_rating, census_email, telephone,
              phy_address, power_units, drivers_count, outreach_channel
         FROM valuations
        WHERE source = 'monitor'
-       ORDER BY (days_to_180 IS NULL), days_to_180 ASC,
+       ORDER BY (eligible_at IS NULL), eligible_at ASC,
                 acquisition_score DESC NULLS LAST
        LIMIT ${limit}
     `) as MonitorRow[];
@@ -522,18 +530,26 @@ export type DueOutreach = {
   attempts: number;
 };
 
+// Atomically CLAIM due rows by flipping 'approved' -> 'sending' and returning
+// them in one statement. Because the UPDATE re-checks `stage='approved'` under a
+// row lock, two concurrent senders (e.g. the daily cron racing a "Send now")
+// can't both claim the same row — preventing duplicate emails to a prospect.
+// The caller marks each 'sent' on success, or markOutreachFailed resets it.
 export async function getDueOutreach(limit: number): Promise<DueOutreach[]> {
   const sql = getSql();
   if (!sql) return [];
   await ensureMonitorTables();
   const rows = (await sql`
-    SELECT id, valuation_id, channel, recipient_email, persona, draft_subject,
-           draft_body_text, attempts
-      FROM outreach_queue
-     WHERE stage = 'approved' AND channel = 'email'
-       AND (scheduled_for IS NULL OR scheduled_for <= now())
-     ORDER BY scheduled_for ASC NULLS FIRST
-     LIMIT ${limit}
+    UPDATE outreach_queue SET stage = 'sending'
+     WHERE id IN (
+       SELECT id FROM outreach_queue
+        WHERE stage = 'approved' AND channel = 'email'
+          AND (scheduled_for IS NULL OR scheduled_for <= now())
+        ORDER BY scheduled_for ASC NULLS FIRST
+        LIMIT ${limit}
+     )
+    RETURNING id, valuation_id, channel, recipient_email, persona, draft_subject,
+              draft_body_text, attempts
   `) as DueOutreach[];
   return rows;
 }
@@ -572,12 +588,13 @@ export async function markOutreachFailed(id: number, error: string): Promise<voi
   const sql = getSql();
   if (!sql) return;
   await ensureMonitorTables();
-  // Retry until 5 attempts, then dead-letter.
+  // A failed/aborted send releases the 'sending' claim back to 'approved' to
+  // retry next run; after 5 attempts it dead-letters instead.
   await sql`
     UPDATE outreach_queue
        SET attempts = attempts + 1,
            last_error = ${error.slice(0, 500)},
-           stage = CASE WHEN attempts + 1 >= 5 THEN 'dead' ELSE stage END
+           stage = CASE WHEN attempts + 1 >= 5 THEN 'dead' ELSE 'approved' END
      WHERE id = ${id}
   `;
 }
@@ -747,12 +764,13 @@ export async function listHotProspects(limit = 10): Promise<HotProspect[]> {
   try {
     await ensureValuationsSchema();
     const rows = (await sql`
-      SELECT id, legal_name, dba_name, dot_number, phy_address, days_to_180,
+      SELECT id, legal_name, dba_name, dot_number, phy_address,
+             (eligible_at - CURRENT_DATE) AS days_to_180,
              eligibility_state, insurance_rating, acquisition_score, outreach_channel
         FROM valuations
        WHERE source = 'monitor'
          AND eligibility_state IN ('approaching', 'eligible_now')
-       ORDER BY acquisition_score DESC NULLS LAST, days_to_180 ASC NULLS LAST
+       ORDER BY acquisition_score DESC NULLS LAST, eligible_at ASC NULLS LAST
        LIMIT ${limit}
     `) as HotProspect[];
     return rows;
