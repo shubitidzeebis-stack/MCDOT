@@ -21,7 +21,13 @@ export type FlagKey =
   | "preFormQualifierEnabled"
   | "tickerEnabled"
   | "testimonialsEnabled"
-  | "chatWidgetEnabled";
+  | "chatWidgetEnabled"
+  // Outbound monitoring agent — all default OFF so the feature is inert in
+  // prod until explicitly switched on in Edge Config.
+  | "monitorEnabled" // master kill switch for the whole discovery/verify sweep
+  | "outreachDraftEnabled" // allow LLM draft generation
+  | "autoSendEnabled" // skip the human approval gate (per validated persona)
+  | "smsOutreachEnabled"; // allow Twilio phone/SMS fallback
 
 const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   exitIntentEnabled: true,
@@ -31,6 +37,10 @@ const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   // Customer chat widget — default OFF. Flip to true in Edge Config to
   // launch. Both the widget client and the /api/chat route check this.
   chatWidgetEnabled: false,
+  monitorEnabled: false,
+  outreachDraftEnabled: false,
+  autoSendEnabled: false,
+  smsOutreachEnabled: false,
 };
 
 export async function getFlag(key: FlagKey): Promise<boolean> {
@@ -43,5 +53,27 @@ export async function getFlag(key: FlagKey): Promise<boolean> {
     return FLAGS_DEFAULTS[key];
   } catch {
     return FLAGS_DEFAULTS[key];
+  }
+}
+
+// Non-boolean runtime config (Edge Config supports any JSON value). Used for
+// tunables that aren't simple on/off switches.
+export type ConfigKey =
+  | "monitorDays" // CSV of UTC weekday numbers the sweep runs (0=Sun .. 6=Sat)
+  | "autoSendPersonas"; // CSV allowlist of persona keys cleared for auto-send
+
+const CONFIG_DEFAULTS: Record<ConfigKey, string> = {
+  monitorDays: "1,3,5", // Mon / Wed / Fri
+  autoSendPersonas: "",
+};
+
+export async function getConfigValue(key: ConfigKey): Promise<string> {
+  if (!process.env.EDGE_CONFIG) return CONFIG_DEFAULTS[key];
+  try {
+    const value = await get<string>(key);
+    if (typeof value === "string") return value;
+    return CONFIG_DEFAULTS[key];
+  } catch {
+    return CONFIG_DEFAULTS[key];
   }
 }

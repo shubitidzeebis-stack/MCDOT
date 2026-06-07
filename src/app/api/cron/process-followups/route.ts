@@ -15,9 +15,14 @@ import {
   processQueue,
   recoverPartials,
 } from "@/lib/email/queue";
+import { monitorSweep } from "@/lib/monitor/sweep";
+import { processOutreachQueue } from "@/lib/outreach/send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Give the monitor sweep headroom beyond the default. The sweep self-bounds to
+// ~40s; this ceiling is honored on Pro and capped down automatically on Hobby.
+export const maxDuration = 60;
 
 export async function GET(req: Request) {
   if (!isAuthorisedCronRequest(req)) {
@@ -29,9 +34,33 @@ export async function GET(req: Request) {
   const recovery = await recoverPartials();
   const queue = await processQueue();
 
+  // Outbound monitoring agent — runs AFTER the transactional queue so it can
+  // never starve it. Flag-gated (default OFF) and weekday-gated internally;
+  // wrapped so a sweep failure never breaks the email cron.
+  let monitor: unknown;
+  try {
+    monitor = await monitorSweep();
+  } catch (err) {
+    console.error("[cron] monitorSweep failed", err);
+    monitor = { ran: false, reason: "error" };
+  }
+
+  // Cold-outreach sender — inert until the outreach domain/key are provisioned;
+  // sends only human-approved drafts (plus P5 auto-send allowlist). Wrapped so
+  // it can never break the cron.
+  let outreach: unknown;
+  try {
+    outreach = await processOutreachQueue();
+  } catch (err) {
+    console.error("[cron] processOutreachQueue failed", err);
+    outreach = { error: true };
+  }
+
   return NextResponse.json({
     ok: true,
     recovery,
     queue,
+    monitor,
+    outreach,
   });
 }

@@ -1,6 +1,7 @@
 import { neon } from "@neondatabase/serverless";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { ensureValuationsSchema } from "@/lib/db/valuations";
 
 // CSV export of all valuations. Auth precedence:
 //   1. Session cookie (preferred)
@@ -67,6 +68,9 @@ export async function GET(req: Request) {
 
   let rows: Row[] = [];
   try {
+    // Ensure the `source` column exists, then export only inbound rows — the
+    // outbound monitoring agent's prospects have their own export.
+    await ensureValuationsSchema();
     rows = (await sql`
       SELECT id, created_at::text AS created_at, status, legal_name, dba_name,
              mc_number, dot_number, authority_status, authority_age_days,
@@ -75,6 +79,7 @@ export async function GET(req: Request) {
              valuation_high, valuation_floored_reason, contact_name,
              contact_email, contact_phone, notes_internal
         FROM valuations
+       WHERE source = 'inbound'
        ORDER BY created_at DESC
     `) as Row[];
   } catch (err) {

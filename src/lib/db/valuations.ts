@@ -75,13 +75,59 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_status TEXT`;
   // Internal test funnel-walks (?test=1). Real rows default false.
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT false`;
+  // --- Outbound monitoring agent (additive) ---------------------------------
+  // The valuations table is reused for outbound acquisition targets discovered
+  // by the monitoring agent. `source` partitions inbound (the /get-offer
+  // wizard) from monitor (the agent). Existing rows backfill to 'inbound' via
+  // the column default, so all current admin views keep working unchanged.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'inbound'`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS monitor_stage TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS add_date DATE`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS census_email TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS bipd_anchor_date DATE`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS eligible_at DATE`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS days_to_180 INT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS eligibility_state TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_current BOOLEAN`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_rating TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS insurance_gaps JSONB`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS ucc_status TEXT DEFAULT 'pending'`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS ucc_rating TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS ucc_findings JSONB`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS audited_by TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS audited_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS audit_score TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS acquisition_score INT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS persona TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS outreach_channel TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_email_idx ON valuations (contact_email)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_created_at_idx ON valuations (created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_status_idx ON valuations (status)`;
+  // Monitor partition + work-queue ordering indexes. The partial unique index
+  // makes discovery upserts idempotent (one monitor row per DOT) while still
+  // allowing a separate inbound row for the same DOT.
+  await sql`CREATE INDEX IF NOT EXISTS valuations_source_idx ON valuations (source)`;
+  await sql`CREATE INDEX IF NOT EXISTS valuations_monitor_stage_idx ON valuations (monitor_stage)`;
+  await sql`CREATE INDEX IF NOT EXISTS valuations_eligible_at_idx ON valuations (eligible_at)`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS valuations_monitor_dot_uq ON valuations (dot_number) WHERE source = 'monitor'`;
   initialized = true;
+}
+
+// Ensure the valuations schema (including the additive monitor columns) exists.
+// Safe to call from READ paths (admin dashboard, CSV export) so queries that
+// reference newer columns like `source` don't fail on a fresh deploy before the
+// first wizard write triggers ensureTable(). No-op without DATABASE_URL.
+export async function ensureValuationsSchema(): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  try {
+    await ensureTable(sql);
+  } catch (err) {
+    console.error("[ensureValuationsSchema] error", err);
+  }
 }
 
 export type ValuationStatus =

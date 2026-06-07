@@ -17,6 +17,10 @@ import { neon } from "@neondatabase/serverless";
 import { AdminValuationsPanel } from "@/components/AdminValuationsPanel";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { ensureValuationsSchema } from "@/lib/db/valuations";
+import { AdminMonitorPanel } from "@/components/AdminMonitorPanel";
+import { OutreachDraftsPanel } from "@/components/OutreachDraftsPanel";
+import { listMonitorCandidates, listOutreachDrafts } from "@/lib/db/monitor";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -115,6 +119,12 @@ async function loadLeads(): Promise<{
     try {
       // Wrapped because the table doesn't exist until first wizard
       // submission. Don't break /admin if no one's used the wizard yet.
+      // ensure the schema (incl. the `source` column) exists so this read
+      // can filter on it even before the first wizard write of this deploy.
+      await ensureValuationsSchema();
+      // source='inbound' keeps the outbound monitoring agent's ~40k cold
+      // prospect rows out of this daily-triage dashboard. Those live in the
+      // dedicated monitor view.
       valuations = (await sql`
         SELECT id, created_at::text AS created_at, status, legal_name, dba_name,
                mc_number, dot_number, authority_status, authority_age_days,
@@ -125,6 +135,7 @@ async function loadLeads(): Promise<{
                crashes_24mo, safety_rating, notes_internal, insurance_status,
                telephone, phy_address
           FROM valuations
+         WHERE source = 'inbound'
          ORDER BY created_at DESC
          LIMIT 500
       `) as Valuation[];
@@ -185,6 +196,8 @@ export default async function AdminPage({
   }
 
   const { leads, partials, valuations } = await loadLeads();
+  const monitor = await listMonitorCandidates();
+  const outreachDrafts = await listOutreachDrafts();
   const valuationsWithEmail = valuations.filter((v) => v.contact_email);
   const relayValuations = valuations.filter((v) => v.has_amazon_relay === true);
   const currentUser = session
@@ -279,6 +292,31 @@ export default async function AdminPage({
 
       <AdminValuationsPanel
         initial={valuations}
+        adminKey={okSession ? undefined : (key ?? undefined)}
+      />
+
+      <div className="mt-12 flex items-center justify-end gap-2">
+        <a
+          href={okSession ? "/admin/agent" : `/admin/agent?key=${key ?? ""}`}
+          className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+        >
+          Agent dashboard →
+        </a>
+        <a
+          href={okSession ? "/admin/audit" : `/admin/audit?key=${key ?? ""}`}
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          On-demand audit tool →
+        </a>
+      </div>
+
+      <AdminMonitorPanel
+        initial={monitor}
+        adminKey={okSession ? undefined : (key ?? undefined)}
+      />
+
+      <OutreachDraftsPanel
+        initial={outreachDrafts}
         adminKey={okSession ? undefined : (key ?? undefined)}
       />
 
