@@ -57,7 +57,10 @@ export type OutreachSendResult =
 
 export async function processOutreachQueue(): Promise<OutreachSendResult> {
   const from = process.env.OUTREACH_EMAIL_FROM;
-  const apiKey = process.env.RESEND_OUTREACH_API_KEY;
+  // Accept either the canonical name or the RESEND_OUTREACH_API_Key casing set
+  // in Vercel (env var names are case-sensitive).
+  const apiKey =
+    process.env.RESEND_OUTREACH_API_KEY ?? process.env.RESEND_OUTREACH_API_Key;
   // Inert until the dedicated outreach sender is provisioned.
   if (!from || !apiKey) return { skipped: "no_sender" };
   // Runtime kill switch — flip outreachSendEnabled off in Edge Config to halt

@@ -94,7 +94,8 @@ export default async function AgentPage({
       fmcsaApiKey: !!process.env.FMCSA_API_KEY,
       cronSecret: !!process.env.CRON_SECRET,
       outreachSender:
-        !!process.env.OUTREACH_EMAIL_FROM && !!process.env.RESEND_OUTREACH_API_KEY,
+        !!process.env.OUTREACH_EMAIL_FROM &&
+        !!(process.env.RESEND_OUTREACH_API_KEY ?? process.env.RESEND_OUTREACH_API_Key),
       anthropicOutreach: !!process.env.ANTHROPIC_API_KEY_OUTREACH,
     },
     generatedAt: new Date().toISOString(),
