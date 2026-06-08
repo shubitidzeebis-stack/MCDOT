@@ -93,6 +93,9 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
 
   const startedAt = Date.now();
   const overBudget = () => Date.now() - startedAt > BUDGET_MS;
+  // Per-pass budget reservation so a heavy verify pass can't starve enrich:
+  // discover ≤25%, verify ≤60%, enrich ≤90%, draft uses the remainder.
+  const over = (frac: number) => Date.now() - startedAt > BUDGET_MS * frac;
 
   // ---- Pass 1: discover -----------------------------------------------------
   let discovered = 0;
@@ -109,7 +112,7 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
 
     let maxAddDate = cursor?.last_processed_day ?? null;
     for (const c of candidates) {
-      if (overBudget()) break;
+      if (over(0.25)) break;
       const id = await upsertMonitorCandidate(c);
       if (id != null) discovered++;
       if (c.addDate && (!maxAddDate || c.addDate > maxAddDate)) {
@@ -129,7 +132,7 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
   try {
     const targets = await listMonitorForVerification(VERIFY_CAP);
     for (const t of targets) {
-      if (overBudget()) break;
+      if (over(0.6)) break;
       try {
         const r = await verifyCandidate({
           dotNumber: t.dot_number,
@@ -175,7 +178,7 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
   try {
     const targets = await listMonitorForSafetyEnrich(ENRICH_CAP);
     for (const t of targets) {
-      if (overBudget()) break;
+      if (over(0.9)) break;
       if (!t.dot_number) continue;
       try {
         const c = await lookupCarrierBasics(t.dot_number);
