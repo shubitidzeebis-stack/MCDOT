@@ -260,12 +260,45 @@ export async function lookupCarrier(
 // Lightweight QCMobile-only lookup (no SAFER scrape / docket call) used by the
 // monitor safety enrich, where we only need the OOS / crash / safety-rating
 // fields. Returns null if the DOT isn't in QCMobile yet (brand-new carrier);
-// THROWS on an API/network error so the caller can retry rather than misread.
+// THROWS on a persistent API error so the caller can retry next run.
+//
+// QCMobile is flaky and frequently returns transient 503s, so unlike the inbound
+// wizard's single-shot lookup this retries 5xx/429 with exponential backoff.
 export async function lookupCarrierBasics(dot: string): Promise<FmcsaCarrier | null> {
   if (!process.env.FMCSA_API_KEY) return null;
   const num = normalizeNumber(dot);
   if (!num) return null;
-  return lookupByDot(num);
+  const url = `${BASE_URL}/carriers/${num}?webKey=${getKey()}`;
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(15_000),
+      });
+    } catch {
+      // Network/timeout — retry with backoff.
+      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt + Math.random() * 400));
+      continue;
+    }
+    if (res.ok) {
+      const data = (await res.json()) as FmcsaContentResponse;
+      if (!data.content || data.content.length === 0) return null;
+      const first = data.content[0];
+      if (first && typeof first === "object" && "carrier" in first) {
+        return first.carrier as FmcsaCarrier;
+      }
+      return first as FmcsaCarrier;
+    }
+    lastStatus = res.status;
+    if (res.status === 429 || res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 600 * 2 ** attempt + Math.random() * 400));
+      continue;
+    }
+    break; // non-retryable 4xx
+  }
+  throw new Error(`FMCSA ${lastStatus || "network"}`);
 }
 
 // Convenience flags used by the pricing algorithm + UI displays.
