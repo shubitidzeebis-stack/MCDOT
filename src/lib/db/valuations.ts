@@ -100,6 +100,14 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS acquisition_score INT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS persona TEXT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS outreach_channel TEXT`;
+  // Safety audit (FMCSA SMS/SAFER enrich): OOS rates, crashes, rating + verdict.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_checked_at TIMESTAMPTZ`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS driver_oos_rate REAL`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS vehicle_oos_rate REAL`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS crash_total INT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_rating TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_status TEXT`;
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_findings JSONB`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;

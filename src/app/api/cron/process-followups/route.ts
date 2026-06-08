@@ -20,9 +20,9 @@ import { processOutreachQueue } from "@/lib/outreach/send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Give the monitor sweep headroom beyond the default. The sweep self-bounds to
-// ~40s; this ceiling is honored on Pro and capped down automatically on Hobby.
-export const maxDuration = 60;
+// Give the monitor sweep real headroom on Pro (max 300s). The sweep self-bounds
+// to MONITOR_SWEEP_BUDGET_MS; this is the hard function ceiling above it.
+export const maxDuration = 300;
 
 export async function GET(req: Request) {
   if (!isAuthorisedCronRequest(req)) {

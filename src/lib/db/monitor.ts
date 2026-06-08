@@ -400,10 +400,93 @@ export async function listMonitorForDrafting(
        AND eligibility_state IN ('approaching', 'eligible_now')
        AND insurance_current = true
        AND insurance_rating IN ('green', 'amber')
+       AND safety_status = 'pass'
      ORDER BY days_to_180 ASC NULLS LAST
      LIMIT ${limit}
   `) as MonitorDraftTarget[];
   return rows;
+}
+
+// Carriers awaiting the FMCSA safety enrich: in-window + verified, not yet
+// safety-checked. (Not insurance-gated — enrich the whole in-window set so the
+// dashboard shows complete safety data and a later insurance-gate change needs
+// no re-enrich.) Hottest first.
+export type MonitorSafetyTarget = { id: number; dot_number: string | null };
+
+export async function listMonitorForSafetyEnrich(
+  limit: number,
+): Promise<MonitorSafetyTarget[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  await ensureValuationsSchema();
+  const rows = (await sql`
+    SELECT id, dot_number
+      FROM valuations
+     WHERE source = 'monitor'
+       AND monitor_stage = 'verified'
+       AND dot_number IS NOT NULL
+       AND eligibility_state IN ('approaching', 'eligible_now')
+       AND safety_checked_at IS NULL
+     ORDER BY days_to_180 ASC NULLS LAST
+     LIMIT ${limit}
+  `) as MonitorSafetyTarget[];
+  return rows;
+}
+
+// Persist a safety verdict. A 'fail' disqualifies the carrier; pass/review keep
+// it verified. The score penalty is subtracted from acquisition_score.
+export async function updateMonitorSafety(
+  id: number,
+  s: {
+    driverOosRate: number | null;
+    vehicleOosRate: number | null;
+    crashTotal: number | null;
+    safetyRating: string | null;
+    status: "pass" | "review" | "fail";
+    penalty: number;
+    reasons: string[];
+  },
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  try {
+    await ensureValuationsSchema();
+    await sql`
+      UPDATE valuations
+         SET safety_checked_at = now(),
+             driver_oos_rate = ${s.driverOosRate},
+             vehicle_oos_rate = ${s.vehicleOosRate},
+             crash_total = ${s.crashTotal},
+             safety_rating = ${s.safetyRating},
+             safety_status = ${s.status},
+             safety_findings = ${JSON.stringify(s.reasons)}::jsonb,
+             acquisition_score = GREATEST(0, COALESCE(acquisition_score, 0) - ${s.penalty}),
+             monitor_stage = CASE WHEN ${s.status} = 'fail' THEN 'disqualified' ELSE monitor_stage END,
+             updated_at = now()
+       WHERE id = ${id} AND source = 'monitor'
+    `;
+  } catch (err) {
+    console.error("[updateMonitorSafety] error", err);
+  }
+}
+
+export async function getSafetyStatusCounts(): Promise<Record<string, number>> {
+  const sql = getSql();
+  if (!sql) return {};
+  try {
+    await ensureValuationsSchema();
+    return await groupCounts(
+      sql,
+      sql`SELECT COALESCE(safety_status, '(pending)') AS k, count(*)::int AS n
+            FROM valuations
+           WHERE source = 'monitor'
+             AND eligibility_state IN ('approaching', 'eligible_now')
+           GROUP BY 1`,
+    );
+  } catch (err) {
+    console.error("[getSafetyStatusCounts] error", err);
+    return {};
+  }
 }
 
 export async function setMonitorStage(

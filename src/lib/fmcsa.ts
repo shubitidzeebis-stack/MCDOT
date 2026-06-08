@@ -257,6 +257,17 @@ export async function lookupCarrier(
   }
 }
 
+// Lightweight QCMobile-only lookup (no SAFER scrape / docket call) used by the
+// monitor safety enrich, where we only need the OOS / crash / safety-rating
+// fields. Returns null if the DOT isn't in QCMobile yet (brand-new carrier);
+// THROWS on an API/network error so the caller can retry rather than misread.
+export async function lookupCarrierBasics(dot: string): Promise<FmcsaCarrier | null> {
+  if (!process.env.FMCSA_API_KEY) return null;
+  const num = normalizeNumber(dot);
+  if (!num) return null;
+  return lookupByDot(num);
+}
+
 // Convenience flags used by the pricing algorithm + UI displays.
 export type InsuranceStatus = "active" | "lapsed" | "not_required" | "unknown";
 

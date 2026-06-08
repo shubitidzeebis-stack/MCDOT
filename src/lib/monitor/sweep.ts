@@ -19,22 +19,33 @@ import {
   ensureMonitorTables,
   getCursor,
   listMonitorForDrafting,
+  listMonitorForSafetyEnrich,
   listMonitorForVerification,
   logAgentAction,
   setCursor,
   setMonitorStage,
+  updateMonitorSafety,
   updateMonitorVerification,
   upsertMonitorCandidate,
 } from "@/lib/db/monitor";
 import { discoverCandidates } from "@/lib/monitor/discovery";
 import { verifyCandidate } from "@/lib/monitor/verify";
+import { rateSafety } from "@/lib/audit/safety";
+import { lookupCarrierBasics } from "@/lib/fmcsa";
 import { generateDraft } from "@/lib/outreach/draft";
 import { selectPersona } from "@/lib/outreach/templates";
 
 export type MonitorSweepResult =
   | { ran: false; reason: "disabled" }
   | { ran: false; reason: "not_scheduled_day"; today: number; days: number[] }
-  | { ran: true; discovered: number; verified: number; drafted: number; note?: string };
+  | {
+      ran: true;
+      discovered: number;
+      verified: number;
+      enriched: number;
+      drafted: number;
+      note?: string;
+    };
 
 // Per-run safety rails. The wall-clock budget is the real ceiling (it can never
 // trip the function maxDuration); the caps just bound work on fast runs.
@@ -43,9 +54,11 @@ export type MonitorSweepResult =
 // so it stops early and resumes next run via the Postgres cursor (no data loss
 // — upserts are idempotent). On Pro, set MONITOR_SWEEP_BUDGET_MS≈45000 to let
 // it process real volume per run.
-const BUDGET_MS = Number(process.env.MONITOR_SWEEP_BUDGET_MS) || 8_000;
+// Default tuned for Pro (maxDuration 300). Env var overrides if set.
+const BUDGET_MS = Number(process.env.MONITOR_SWEEP_BUDGET_MS) || 200_000;
 const DISCOVER_CAP = 1500;
-const VERIFY_CAP = 80;
+const VERIFY_CAP = 150;
+const ENRICH_CAP = 40; // QCMobile safety lookups/run — bounded by the 60/min limit
 const DRAFT_CAP = 25; // LLM calls are slower; the wall-clock budget is the real cap
 const BACKFILL_WINDOW_DAYS = 210; // ~7 months — catches carriers nearing 180d
 
@@ -152,6 +165,61 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
     console.error("[monitorSweep] verify pass failed", err);
   }
 
+  // ---- Pass 2.5: safety enrich ----------------------------------------------
+  // For in-window verified carriers, pull FMCSA SMS basics (QCMobile) and apply
+  // the OOS / crash / safety-rating gate. >30% OOS or Unsatisfactory => fail
+  // (disqualified); Conditional / high-crash => review; else pass. A DOT not yet
+  // in QCMobile (brand-new) passes clean. Lookup ERRORS leave it unchecked to
+  // retry next run (never disqualify on a transient API failure).
+  let enriched = 0;
+  try {
+    const targets = await listMonitorForSafetyEnrich(ENRICH_CAP);
+    for (const t of targets) {
+      if (overBudget()) break;
+      if (!t.dot_number) continue;
+      try {
+        const c = await lookupCarrierBasics(t.dot_number);
+        if (!c) {
+          // Not in QCMobile yet — new carrier, no violations on record.
+          await updateMonitorSafety(t.id, {
+            driverOosRate: null,
+            vehicleOosRate: null,
+            crashTotal: null,
+            safetyRating: null,
+            status: "pass",
+            penalty: 0,
+            reasons: ["no FMCSA safety record yet (new carrier)"],
+          });
+          enriched++;
+          continue;
+        }
+        const r = rateSafety({
+          driverInsp: c.driverInsp,
+          driverOosRate: c.driverOosRate,
+          vehicleInsp: c.vehicleInsp,
+          vehicleOosRate: c.vehicleOosRate,
+          crashTotal: c.crashTotal,
+          safetyRating: c.safetyRating,
+        });
+        await updateMonitorSafety(t.id, {
+          driverOosRate: c.driverOosRate,
+          vehicleOosRate: c.vehicleOosRate,
+          crashTotal: c.crashTotal,
+          safetyRating: c.safetyRating,
+          status: r.status,
+          penalty: r.penalty,
+          reasons: r.reasons,
+        });
+        enriched++;
+      } catch (e) {
+        // Transient FMCSA error — leave safety_checked_at NULL, retry next run.
+        console.error("[monitorSweep] safety enrich failed", t.dot_number, e);
+      }
+    }
+  } catch (err) {
+    console.error("[monitorSweep] enrich pass failed", err);
+  }
+
   // ---- Pass 3: draft (gated by outreachDraftEnabled) ------------------------
   // Qualified candidates get a persona-tailored draft into the outreach queue
   // (stage='draft' — human approval is still required to send, unless P5
@@ -214,8 +282,9 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
   await logAgentAction("sweep_completed", "agent", null, {
     discovered,
     verified,
+    enriched,
     drafted,
   });
 
-  return { ran: true, discovered, verified, drafted };
+  return { ran: true, discovered, verified, enriched, drafted };
 }
