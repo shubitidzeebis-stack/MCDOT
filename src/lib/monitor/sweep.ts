@@ -175,8 +175,12 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
   // in QCMobile (brand-new) passes clean. Lookup ERRORS leave it unchecked to
   // retry next run (never disqualify on a transient API failure).
   let enriched = 0;
+  let enrichNote = "";
   try {
     const targets = await listMonitorForSafetyEnrich(ENRICH_CAP);
+    const tCount = targets.length;
+    const enrichStartMs = Date.now() - startedAt;
+    let firstErr = "";
     for (const t of targets) {
       if (over(0.9)) break;
       if (!t.dot_number) continue;
@@ -216,10 +220,13 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
         enriched++;
       } catch (e) {
         // Transient FMCSA error — leave safety_checked_at NULL, retry next run.
+        if (!firstErr) firstErr = (e instanceof Error ? e.message : String(e)).slice(0, 140);
         console.error("[monitorSweep] safety enrich failed", t.dot_number, e);
       }
     }
+    enrichNote = `targets=${tCount} startMs=${enrichStartMs} enriched=${enriched} err=${firstErr}`;
   } catch (err) {
+    enrichNote = `enrich-threw: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`;
     console.error("[monitorSweep] enrich pass failed", err);
   }
 
@@ -289,5 +296,5 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
     drafted,
   });
 
-  return { ran: true, discovered, verified, enriched, drafted };
+  return { ran: true, discovered, verified, enriched, drafted, note: enrichNote };
 }
