@@ -65,7 +65,7 @@ export type ConfigKey =
   | "autoSendPersonas"; // CSV allowlist of persona keys cleared for auto-send
 
 const CONFIG_DEFAULTS: Record<ConfigKey, string> = {
-  monitorDays: "1,3,5", // Mon / Wed / Fri
+  monitorDays: "0,1,2,3,4,5,6", // every day (cron itself fires once daily)
   autoSendPersonas: "",
 };
 
