@@ -11,14 +11,21 @@
 
 import { SITE, formatAddressOneLine } from "@/lib/site";
 
+// Where every outreach email points (per Lukas: straight to the main site).
+const OUTREACH_WEBSITE = "https://groupveritor.com";
+
 export type PersonaKey = "owner_operator" | "small_fleet" | "default";
 
 export type OutreachTemplate = {
   key: PersonaKey;
   label: string;
-  /** Subject-line hint the LLM may refine. {company} is substituted. */
+  /** Subject line. {company} is substituted. */
+  subject: string;
+  /** Real email body. {company} {milestone} {website} are substituted. */
+  body: string;
+  /** Subject-line hint for the optional LLM path. {company} is substituted. */
   subjectHint: string;
-  /** Tone + angle guidance for the LLM. REPLACE with real copy per persona. */
+  /** Tone + angle guidance for the optional LLM path. */
   angle: string;
 };
 
@@ -26,23 +33,71 @@ export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
     key: "owner_operator",
     label: "Owner-operator (1–5 trucks)",
-    subjectHint: "A quick question about {company}",
+    subject: "Are you open to an offer for {company}?",
+    body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+
+You've built something real: an active authority with clean insurance, right at the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is why I'm reaching out now, ahead of it.
+
+I'll be straight with you — we'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+
+Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    subjectHint: "Are you open to an offer for {company}?",
     angle:
-      "Audience: a single owner-operator who just crossed (or is about to cross) the 180-day mark and can now run Amazon Relay. Acknowledge the milestone plainly. Be warm, direct, zero corporate fluff — one person to another. The value prop: we buy the authority/LLC outright, fast close, they keep none of the admin headache. Keep it short.",
+      "One owner-operator to another: warm, direct, no corporate fluff. We buy AND operate the company; operators not brokers; close fast; final steps in person or online. Point them to the website for who we are and an estimate of what their company is worth. NEVER state a dollar figure. Plant interest ahead of the 180-day Amazon Relay milestone.",
   },
   small_fleet: {
     key: "small_fleet",
     label: "Small fleet (6–20 trucks)",
-    subjectHint: "Acquiring small fleets like {company}",
+    subject: "{company} — a quick, serious question",
+    body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and the operation you've built at {company} caught our attention.
+
+You've scaled a real fleet with a team and clean insurance, right at the point where a business like yours becomes most valuable to a buyer. {milestone}That's why I'm reaching out now, ahead of it.
+
+I'll be straight with you — we'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and we keep it discreet so nothing disrupts your drivers or your day-to-day. The final steps are done whichever way suits you, in person or fully online.
+
+Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    subjectHint: "{company} — a quick, serious question",
     angle:
-      "Audience: a small fleet owner (6–20 trucks) reaching Amazon Relay eligibility. Slightly more business-like than the owner-operator note. Emphasize a clean, fast, operator-led acquisition and that we understand the asset (active authority, continuous insurance, Relay-ready). Respect their time.",
+      "Small-fleet owner (6–20 trucks): a touch more business-like, respect their time. We buy and operate; operators not brokers; fast and discreet close that won't disrupt drivers; in person or online. Point to the website for who we are and a worth estimate. NEVER state a dollar figure.",
   },
   default: {
     key: "default",
     label: "Default",
-    subjectHint: "Interested in acquiring {company}",
+    subject: "Are you open to an offer for {company}?",
+    body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+
+You've built something real: an active authority with clean insurance, right at the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is why I'm reaching out now.
+
+We'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+
+Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If you're open to it — or just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    subjectHint: "Are you open to an offer for {company}?",
     angle:
-      "Audience: a newly Relay-eligible US for-hire carrier. Professional, concise, operator-to-operator. We're an operator-led acquirer; we'd like to make an offer to buy the company/authority. Make it easy to reply.",
+      "Newly Relay-eligible for-hire carrier: professional, concise, operator-to-operator. We buy and operate; operators not brokers; close fast; in person or online. Point to the website for who we are and a worth estimate. NEVER state a dollar figure.",
   },
 };
 
@@ -131,27 +186,18 @@ export function renderFallbackDraft(
   f: DraftFacts,
 ): { subject: string; body: string } {
   const company = companyName(f);
-  const offer = offerLine(f);
   const milestone =
     f.eligibilityState === "eligible_now"
-      ? "Now that your authority is active and Amazon Relay–eligible, "
-      : "";
-  const offerSentence = offer
-    ? `Based on what we can see publicly, we'd be in the ${offer} range for the company/authority. `
-    : "";
-  const body = [
-    `Hi,`,
-    ``,
-    `I'm with ${SITE.name}, an operator-led acquirer of US logistics LLCs. ${milestone}we'd like to make you an offer to buy ${company}.`,
-    ``,
-    `${offerSentence}We close fast and handle the paperwork. If you're open to it, just reply and we'll share specifics.`,
-    ``,
-    `Either way, congratulations on the authority — it's no small thing.`,
-  ].join("\n");
-  return {
-    subject: persona.subjectHint.replace("{company}", company),
-    body,
-  };
+      ? "You've just crossed the 180-day mark that makes carriers Amazon Relay–eligible — exactly when demand for an authority like yours peaks. "
+      : f.daysTo180 != null && f.daysTo180 > 0
+        ? `You're about ${f.daysTo180} days from the 180-day mark that makes carriers Amazon Relay–eligible — exactly when demand for an authority like yours peaks. `
+        : "";
+  const body = persona.body
+    .replaceAll("{company}", company)
+    .replaceAll("{milestone}", milestone)
+    .replaceAll("{website}", OUTREACH_WEBSITE);
+  const subject = persona.subject.replaceAll("{company}", company);
+  return { subject, body };
 }
 
 // Plain-text -> branded-shell HTML body (paragraphs). The shell + CAN-SPAM

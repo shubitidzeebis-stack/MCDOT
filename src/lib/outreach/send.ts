@@ -16,9 +16,8 @@ import { Resend } from "resend";
 import { getConfigValue, getFlag } from "@/lib/flags";
 import { isUnsubscribed } from "@/lib/db/email-followups";
 import { unsubscribeUrl } from "@/lib/email/queue";
-import { emailShell, STYLE } from "@/lib/email/shell";
+import { renderOutreachEmail } from "./render";
 import { stripCrLf } from "@/lib/security/sanitize";
-import { SITE, formatAddressOneLine } from "@/lib/site";
 import {
   approveOutreach,
   getDueOutreach,
@@ -32,24 +31,6 @@ import {
 
 const AUTO_SEND_MIN_SCORE = 70;
 const SEND_CAP = 25;
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function bodyToHtml(text: string): string {
-  return text
-    .split(/\n{2,}/)
-    .map(
-      (p) =>
-        `<p style="${STYLE.paragraph}">${escapeHtml(p).replace(/\n/g, "<br/>")}</p>`,
-    )
-    .join("");
-}
 
 export type OutreachSendResult =
   | { skipped: "no_sender" | "disabled" }
@@ -122,17 +103,16 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
         continue;
       }
       const unsub = unsubscribeUrl(to);
-      const subject = stripCrLf(row.draft_subject ?? "Acquisition inquiry");
-      const text = `${row.draft_body_text ?? ""}\n\n—\n${SITE.legalName}\n${formatAddressOneLine()}\nUnsubscribe: ${unsub}`;
-      const html = emailShell({
-        preheader: row.draft_subject ?? "An offer for your company",
-        bodyHtml: bodyToHtml(row.draft_body_text ?? ""),
+      const { subject, text, html } = renderOutreachEmail({
+        subject: stripCrLf(row.draft_subject ?? "Acquisition inquiry"),
+        bodyText: row.draft_body_text ?? "",
         unsubscribeUrl: unsub,
       });
       const { error } = await resend.emails.send({
         from,
         to,
-        replyTo: SITE.email,
+        // Replies go back to the outreach inbox (luka@…), not info@.
+        replyTo: from,
         subject,
         text,
         html,
