@@ -21,6 +21,7 @@ import { stripCrLf } from "@/lib/security/sanitize";
 import {
   approveOutreach,
   getDueOutreach,
+  isOutreachPaused,
   listAutoSendCandidates,
   logAgentAction,
   markMonitorOfferSent,
@@ -33,7 +34,7 @@ const AUTO_SEND_MIN_SCORE = 70;
 const SEND_CAP = 25;
 
 export type OutreachSendResult =
-  | { skipped: "no_sender" | "disabled" }
+  | { skipped: "no_sender" | "disabled" | "paused" }
   | { approvedAuto: number; sent: number; failed: number; suppressed: number };
 
 export async function processOutreachQueue(): Promise<OutreachSendResult> {
@@ -47,6 +48,8 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
   // Runtime kill switch — flip outreachSendEnabled off in Edge Config to halt
   // ALL sending instantly (including already-approved + auto-send), no redeploy.
   if (!(await getFlag("outreachSendEnabled"))) return { skipped: "disabled" };
+  // Auto-pause circuit breaker — tripped by the bounce/complaint webhook.
+  if (await isOutreachPaused()) return { skipped: "paused" };
 
   // ---- P5 auto-send: auto-approve eligible drafts before the send loop. -----
   let approvedAuto = 0;

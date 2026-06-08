@@ -84,6 +84,18 @@ export async function ensureMonitorTables(): Promise<void> {
   await sql`CREATE INDEX IF NOT EXISTS agent_actions_valuation_idx ON agent_actions (valuation_id)`;
   await sql`CREATE INDEX IF NOT EXISTS agent_actions_action_idx ON agent_actions (action)`;
 
+  // Single-row circuit breaker for outbound sending. Flipped to paused=true
+  // automatically by the bounce/complaint webhook; the sender refuses to send
+  // while paused. Resumed manually from the admin dashboard.
+  await sql`
+    CREATE TABLE IF NOT EXISTS outreach_control (
+      id INT PRIMARY KEY DEFAULT 1,
+      paused BOOLEAN NOT NULL DEFAULT false,
+      reason TEXT,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+
   initialized = true;
 }
 
@@ -617,6 +629,108 @@ export async function logAgentAction(
     `;
   } catch (err) {
     console.error("[logAgentAction] error", err);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outreach circuit breaker — bounce/complaint auto-pause.
+// ---------------------------------------------------------------------------
+
+// FAIL-SAFE: if the breaker can't be read, treat sending as paused. The pause
+// is a reputation safeguard; halting on a DB blip is safer than sending blind.
+export async function isOutreachPaused(): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT paused FROM outreach_control WHERE id = 1
+    `) as { paused: boolean }[];
+    return rows[0]?.paused === true;
+  } catch (err) {
+    console.error("[isOutreachPaused] error", err);
+    return true; // fail-safe
+  }
+}
+
+export async function setOutreachPaused(reason: string): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  try {
+    await ensureMonitorTables();
+    await sql`
+      INSERT INTO outreach_control (id, paused, reason, updated_at)
+      VALUES (1, true, ${reason.slice(0, 300)}, now())
+      ON CONFLICT (id) DO UPDATE
+        SET paused = true, reason = ${reason.slice(0, 300)}, updated_at = now()
+    `;
+  } catch (err) {
+    console.error("[setOutreachPaused] error", err);
+  }
+}
+
+export async function resumeOutreach(): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  try {
+    await ensureMonitorTables();
+    await sql`
+      INSERT INTO outreach_control (id, paused, reason, updated_at)
+      VALUES (1, false, NULL, now())
+      ON CONFLICT (id) DO UPDATE
+        SET paused = false, reason = NULL, updated_at = now()
+    `;
+  } catch (err) {
+    console.error("[resumeOutreach] error", err);
+  }
+}
+
+export async function getOutreachControl(): Promise<{
+  paused: boolean;
+  reason: string | null;
+  updated_at: string | null;
+}> {
+  const sql = getSql();
+  if (!sql) return { paused: false, reason: null, updated_at: null };
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT paused, reason, updated_at::text AS updated_at
+        FROM outreach_control WHERE id = 1
+    `) as { paused: boolean; reason: string | null; updated_at: string | null }[];
+    return rows[0] ?? { paused: false, reason: null, updated_at: null };
+  } catch (err) {
+    console.error("[getOutreachControl] error", err);
+    return { paused: false, reason: null, updated_at: null };
+  }
+}
+
+// Rolling deliverability counts for the auto-pause decision.
+export async function getOutreachHealth(
+  days = 7,
+): Promise<{ sent: number; bounced: number; complained: number }> {
+  const sql = getSql();
+  if (!sql) return { sent: 0, bounced: 0, complained: 0 };
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT
+        (SELECT count(*) FROM outreach_queue
+          WHERE stage = 'sent' AND sent_at > now() - make_interval(days => ${days})) AS sent,
+        (SELECT count(*) FROM agent_actions
+          WHERE action = 'outreach_bounced' AND created_at > now() - make_interval(days => ${days})) AS bounced,
+        (SELECT count(*) FROM agent_actions
+          WHERE action = 'outreach_complained' AND created_at > now() - make_interval(days => ${days})) AS complained
+    `) as { sent: string | number; bounced: string | number; complained: string | number }[];
+    const r = rows[0] ?? { sent: 0, bounced: 0, complained: 0 };
+    return {
+      sent: Number(r.sent),
+      bounced: Number(r.bounced),
+      complained: Number(r.complained),
+    };
+  } catch (err) {
+    console.error("[getOutreachHealth] error", err);
+    return { sent: 0, bounced: 0, complained: 0 };
   }
 }
 
