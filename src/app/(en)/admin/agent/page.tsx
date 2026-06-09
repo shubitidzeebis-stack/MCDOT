@@ -51,6 +51,7 @@ export default async function AgentPage({
     cursors,
     hot,
     monitorEnabled,
+    discoveryEnabled,
     outreachDraftEnabled,
     autoSendEnabled,
     smsOutreachEnabled,
@@ -65,6 +66,7 @@ export default async function AgentPage({
     listAllCursors(),
     listHotProspects(10),
     getFlag("monitorEnabled"),
+    getFlag("discoveryEnabled"),
     getFlag("outreachDraftEnabled"),
     getFlag("autoSendEnabled"),
     getFlag("smsOutreachEnabled"),
@@ -82,6 +84,7 @@ export default async function AgentPage({
     hot,
     flags: {
       monitorEnabled,
+      discoveryEnabled,
       outreachDraftEnabled,
       autoSendEnabled,
       smsOutreachEnabled,

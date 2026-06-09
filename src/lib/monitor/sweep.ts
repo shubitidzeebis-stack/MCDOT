@@ -5,12 +5,16 @@
 // Config flag (default OFF) and a weekday allowlist (`monitorDays`), so it is
 // completely inert in production until explicitly switched on.
 //
-// Two passes per run, both bounded by a wall-clock budget and resumable via a
-// Postgres cursor (so a timed-out run picks up where it left off next time):
-//   1. discover — pull new for-hire interstate carriers from Census since the
-//      cursor day, upsert as monitor candidates (idempotent).
-//   2. verify   — for candidates needing it, pull Carrier + InsHist, run the
-//      rating/eligibility/score engine, persist.
+// Two run modes:
+//   - 'cron'     (default): discover (gated by `discoveryEnabled`) → verify →
+//                safety enrich → draft. The normal daily pass.
+//   - 'backfill' (manual ?backfill=1): NO discovery, batched verify + safety
+//      enrich at higher caps, no draft. Used to work the standing backlog
+//      without adding new rows; trigger it repeatedly until drained.
+//
+// All passes are bounded by a wall-clock budget and resumable via a Postgres
+// cursor / queue (a timed-out run picks up where it left off next time; upserts
+// + idempotent stage updates make re-processing safe).
 
 import { getConfigValue, getFlag } from "@/lib/flags";
 import { isUnsubscribed } from "@/lib/db/email-followups";
@@ -22,6 +26,7 @@ import {
   listMonitorForSafetyEnrich,
   listMonitorForVerification,
   logAgentAction,
+  markMonitorNotFound,
   setCursor,
   setMonitorStage,
   updateMonitorSafety,
@@ -29,17 +34,20 @@ import {
   upsertMonitorCandidate,
 } from "@/lib/db/monitor";
 import { discoverCandidates } from "@/lib/monitor/discovery";
-import { verifyCandidate } from "@/lib/monitor/verify";
+import { verifyCandidatesBatch } from "@/lib/monitor/verify";
 import { rateSafety } from "@/lib/audit/safety";
 import { lookupCarrierBasics } from "@/lib/fmcsa";
 import { generateDraft } from "@/lib/outreach/draft";
 import { selectPersona } from "@/lib/outreach/templates";
+
+export type MonitorSweepMode = "cron" | "backfill";
 
 export type MonitorSweepResult =
   | { ran: false; reason: "disabled" }
   | { ran: false; reason: "not_scheduled_day"; today: number; days: number[] }
   | {
       ran: true;
+      mode: MonitorSweepMode;
       discovered: number;
       verified: number;
       enriched: number;
@@ -49,16 +57,14 @@ export type MonitorSweepResult =
 
 // Per-run safety rails. The wall-clock budget is the real ceiling (it can never
 // trip the function maxDuration); the caps just bound work on fast runs.
-// Wall-clock budget for the whole sweep. Default is Hobby-safe: Vercel Hobby
-// caps function execution near 10s and this sweep runs AFTER the email queue,
-// so it stops early and resumes next run via the Postgres cursor (no data loss
-// — upserts are idempotent). On Pro, set MONITOR_SWEEP_BUDGET_MS≈45000 to let
-// it process real volume per run.
 // Default tuned for Pro (maxDuration 300). Env var overrides if set.
 const BUDGET_MS = Number(process.env.MONITOR_SWEEP_BUDGET_MS) || 200_000;
 const DISCOVER_CAP = 1500;
-const VERIFY_CAP = 150;
-const ENRICH_CAP = 40; // QCMobile safety lookups/run — bounded by the 60/min limit
+const VERIFY_CAP_CRON = 150;
+const VERIFY_CAP_BACKFILL = 1500; // batched fetch → cheap; wall-clock is the real cap
+const VERIFY_BATCH = 100; // DOTs per Socrata IN(...) query
+const ENRICH_CAP_CRON = 40; // QCMobile safety lookups/run — bounded by 60/min
+const ENRICH_CAP_BACKFILL = 300; // ~60/min × 5 min
 const DRAFT_CAP = 25; // LLM calls are slower; the wall-clock budget is the real cap
 const BACKFILL_WINDOW_DAYS = 210; // ~7 months — catches carriers nearing 180d
 
@@ -71,97 +77,142 @@ function yyyymmdd(d: Date): string {
   return `${y}${m}${day}`;
 }
 
-export async function monitorSweep(): Promise<MonitorSweepResult> {
+export async function monitorSweep(
+  opts: { mode?: MonitorSweepMode } = {},
+): Promise<MonitorSweepResult> {
+  const mode: MonitorSweepMode = opts.mode ?? "cron";
+  const isBackfill = mode === "backfill";
+
   if (!(await getFlag("monitorEnabled"))) {
     return { ran: false, reason: "disabled" };
   }
 
   // Weekday gate — monitorDays is a CSV of UTC weekday numbers (0=Sun..6=Sat).
-  // Empty/blank means "every day this cron fires".
-  const days = (await getConfigValue("monitorDays"))
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0) // drop empty tokens so blank/"" => [] => every day
-    .map(Number)
-    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
-  const today = new Date().getUTCDay();
-  if (days.length > 0 && !days.includes(today)) {
-    return { ran: false, reason: "not_scheduled_day", today, days };
+  // Empty/blank means "every day this cron fires". Backfill is manual → ignores
+  // the weekday gate.
+  if (!isBackfill) {
+    const days = (await getConfigValue("monitorDays"))
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0) // drop empty tokens so blank/"" => [] => every day
+      .map(Number)
+      .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    const today = new Date().getUTCDay();
+    if (days.length > 0 && !days.includes(today)) {
+      return { ran: false, reason: "not_scheduled_day", today, days };
+    }
   }
 
   await ensureMonitorTables();
 
   const startedAt = Date.now();
   const overBudget = () => Date.now() - startedAt > BUDGET_MS;
-  // Per-pass budget reservation so a heavy verify pass can't starve enrich:
-  // discover ≤25%, verify ≤60%, enrich ≤90%, draft uses the remainder.
+  // Per-pass budget reservation so a heavy pass can't starve a later one.
   const over = (frac: number) => Date.now() - startedAt > BUDGET_MS * frac;
 
-  // ---- Pass 1: discover -----------------------------------------------------
+  const VERIFY_CAP = isBackfill ? VERIFY_CAP_BACKFILL : VERIFY_CAP_CRON;
+  const ENRICH_CAP = isBackfill ? ENRICH_CAP_BACKFILL : ENRICH_CAP_CRON;
+  const ENRICH_FRAC = isBackfill ? 0.97 : 0.9;
+
+  // ---- Pass 1: discover (cron only, gated by discoveryEnabled) --------------
   let discovered = 0;
-  try {
-    const cursor = await getCursor("discover");
-    const sinceDay = cursor?.last_processed_day
-      ? cursor.last_processed_day.replace(/-/g, "")
-      : yyyymmdd(new Date(Date.now() - BACKFILL_WINDOW_DAYS * MS_PER_DAY));
+  const discoverOn = !isBackfill && (await getFlag("discoveryEnabled"));
+  if (discoverOn) {
+    try {
+      const cursor = await getCursor("discover");
+      const sinceDay = cursor?.last_processed_day
+        ? cursor.last_processed_day.replace(/-/g, "")
+        : yyyymmdd(new Date(Date.now() - BACKFILL_WINDOW_DAYS * MS_PER_DAY));
 
-    const candidates = await discoverCandidates({
-      sinceDay,
-      maxRows: DISCOVER_CAP,
-    });
+      const candidates = await discoverCandidates({
+        sinceDay,
+        maxRows: DISCOVER_CAP,
+      });
 
-    let maxAddDate = cursor?.last_processed_day ?? null;
-    for (const c of candidates) {
-      if (over(0.25)) break;
-      const id = await upsertMonitorCandidate(c);
-      if (id != null) discovered++;
-      if (c.addDate && (!maxAddDate || c.addDate > maxAddDate)) {
-        maxAddDate = c.addDate;
+      let maxAddDate = cursor?.last_processed_day ?? null;
+      for (const c of candidates) {
+        if (over(0.25)) break;
+        const id = await upsertMonitorCandidate(c);
+        if (id != null) discovered++;
+        if (c.addDate && (!maxAddDate || c.addDate > maxAddDate)) {
+          maxAddDate = c.addDate;
+        }
       }
+      await setCursor("discover", maxAddDate, {
+        discovered,
+        at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("[monitorSweep] discover pass failed", err);
     }
-    await setCursor("discover", maxAddDate, {
-      discovered,
-      at: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error("[monitorSweep] discover pass failed", err);
   }
 
-  // ---- Pass 2: verify -------------------------------------------------------
+  // ---- Pass 2: verify (batched) ---------------------------------------------
+  // Fetch Carrier + InsHist for a whole chunk of DOTs in two Socrata queries
+  // (verifyCandidatesBatch), then persist each verdict. A carrier missing from
+  // the FMCSA authority table is tagged not-found (retried later), NOT
+  // disqualified — disqualifying on absent data would permanently drop real
+  // carriers. broker-only / inactive authority ARE disqualified, with a reason.
   let verified = 0;
   try {
     const targets = await listMonitorForVerification(VERIFY_CAP);
-    for (const t of targets) {
+    for (let i = 0; i < targets.length; i += VERIFY_BATCH) {
       if (over(0.6)) break;
+      const chunk = targets.slice(i, i + VERIFY_BATCH);
+      let results;
       try {
-        const r = await verifyCandidate({
-          dotNumber: t.dot_number,
-          addDate: t.add_date,
-          powerUnits: t.power_units,
-        });
-        const stage =
-          r.brokerOnly || !r.authorityActive ? "disqualified" : "verified";
-        const authorityStatus = r.brokerOnly
-          ? "broker_only"
-          : r.authorityActive
-            ? "active"
-            : "inactive";
-        await updateMonitorVerification(t.id, {
-          bipdAnchorDate: r.insurance.earliestBipdEffective,
-          eligibleAt: r.eligibility.eligibleAt,
-          daysTo180: r.eligibility.daysTo180,
-          eligibilityState: r.eligibility.state,
-          insuranceCurrent: r.insurance.currentInsured,
-          insuranceRating: r.insurance.rating,
-          insuranceGaps: r.insurance.gaps,
-          auditScore: r.auditRating,
-          acquisitionScore: r.acquisitionScore,
-          authorityStatus,
-          monitorStage: stage,
-        });
-        verified++;
+        results = await verifyCandidatesBatch(
+          chunk.map((t) => ({
+            dotNumber: t.dot_number,
+            addDate: t.add_date,
+            powerUnits: t.power_units,
+          })),
+        );
       } catch (e) {
-        console.error("[monitorSweep] verify failed", t.dot_number, e);
+        // Socrata error for the whole chunk — stop this pass, retry next run.
+        console.error("[monitorSweep] batch verify failed", e);
+        break;
+      }
+      for (let j = 0; j < chunk.length; j++) {
+        const t = chunk[j];
+        const r = results[j];
+        try {
+          if (!r.carrierFound) {
+            await markMonitorNotFound(t.id);
+            continue;
+          }
+          let stage = "verified";
+          let disqualifyReason: string | null = null;
+          if (r.brokerOnly) {
+            stage = "disqualified";
+            disqualifyReason = "broker_only";
+          } else if (!r.authorityActive) {
+            stage = "disqualified";
+            disqualifyReason = "authority_inactive";
+          }
+          const authorityStatus = r.brokerOnly
+            ? "broker_only"
+            : r.authorityActive
+              ? "active"
+              : "inactive";
+          await updateMonitorVerification(t.id, {
+            bipdAnchorDate: r.insurance.earliestBipdEffective,
+            eligibleAt: r.eligibility.eligibleAt,
+            daysTo180: r.eligibility.daysTo180,
+            eligibilityState: r.eligibility.state,
+            insuranceCurrent: r.currentInsured,
+            insuranceRating: r.insurance.rating,
+            insuranceGaps: r.insurance.gaps,
+            auditScore: r.auditRating,
+            acquisitionScore: r.acquisitionScore,
+            authorityStatus,
+            monitorStage: stage,
+            disqualifyReason,
+          });
+          verified++;
+        } catch (e) {
+          console.error("[monitorSweep] verify persist failed", t.dot_number, e);
+        }
       }
     }
   } catch (err) {
@@ -182,7 +233,7 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
     const enrichStartMs = Date.now() - startedAt;
     let firstErr = "";
     for (const t of targets) {
-      if (over(0.9)) break;
+      if (over(ENRICH_FRAC)) break;
       if (!t.dot_number) continue;
       try {
         const c = await lookupCarrierBasics(t.dot_number);
@@ -220,28 +271,31 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
         enriched++;
       } catch (e) {
         // Transient FMCSA error — leave safety_checked_at NULL, retry next run.
-        if (!firstErr) firstErr = (e instanceof Error ? e.message : String(e)).slice(0, 140);
+        if (!firstErr)
+          firstErr = (e instanceof Error ? e.message : String(e)).slice(0, 140);
         console.error("[monitorSweep] safety enrich failed", t.dot_number, e);
       }
     }
-    enrichNote = `targets=${tCount} startMs=${enrichStartMs} enriched=${enriched} err=${firstErr}`;
+    enrichNote = `mode=${mode} targets=${tCount} startMs=${enrichStartMs} enriched=${enriched} err=${firstErr}`;
   } catch (err) {
     enrichNote = `enrich-threw: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`;
     console.error("[monitorSweep] enrich pass failed", err);
   }
 
-  // ---- Pass 3: draft (gated by outreachDraftEnabled) ------------------------
+  // ---- Pass 3: draft (cron only, gated by outreachDraftEnabled) -------------
   // Qualified candidates get a persona-tailored draft into the outreach queue
   // (stage='draft' — human approval is still required to send, unless P5
   // auto-send is on). No usable email → routed to the phone work-queue.
   let drafted = 0;
   try {
-    if (await getFlag("outreachDraftEnabled")) {
+    if (!isBackfill && (await getFlag("outreachDraftEnabled"))) {
       const targets = await listMonitorForDrafting(DRAFT_CAP);
       for (const t of targets) {
         if (overBudget()) break;
         const email = t.census_email?.trim() || null;
-        if (!email) {
+        // Census email fields carry junk ("N/A", "NONE", bare names) — only a
+        // plausibly-deliverable address goes the email route; rest go to phone.
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
           await setMonitorStage(t.id, "outreach_phone", "phone");
           continue;
         }
@@ -268,7 +322,7 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
             },
             { personaKey: persona },
           );
-          await enqueueDraft({
+          const queuedId = await enqueueDraft({
             valuationId: t.id,
             channel: "email",
             recipientEmail: email,
@@ -277,6 +331,12 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
             subject: draft.subject,
             bodyText: draft.body,
           });
+          if (queuedId == null) {
+            // An in-flight (approved/sending/sent) queue row already exists for
+            // this carrier — do NOT regress its stage or touch that row.
+            console.error("[monitorSweep] draft skipped, in-flight row exists", t.dot_number);
+            continue;
+          }
           await setMonitorStage(t.id, "drafted", "email");
           drafted += 1;
         } catch (e) {
@@ -290,11 +350,12 @@ export async function monitorSweep(): Promise<MonitorSweepResult> {
 
   // Heartbeat for the dashboard activity feed.
   await logAgentAction("sweep_completed", "agent", null, {
+    mode,
     discovered,
     verified,
     enriched,
     drafted,
   });
 
-  return { ran: true, discovered, verified, enriched, drafted, note: enrichNote };
+  return { ran: true, mode, discovered, verified, enriched, drafted, note: enrichNote };
 }

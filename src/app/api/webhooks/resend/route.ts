@@ -17,6 +17,7 @@ import {
   getOutreachHealth,
   isOutreachPaused,
   logAgentAction,
+  recordWebhookEvent,
   setOutreachPaused,
 } from "@/lib/db/monitor";
 
@@ -120,16 +121,32 @@ export async function POST(req: Request) {
     const toRaw = evt.data?.to ?? evt.data?.email;
     const email = Array.isArray(toRaw) ? toRaw[0] : toRaw;
 
+    // Idempotency: Svix delivers at-least-once. Process each delivery id once —
+    // a retried event must not double-count into the auto-pause thresholds.
+    const svixId = req.headers.get("svix-id") ?? "";
+    if ((type === "email.complained" || type === "email.bounced") && svixId) {
+      const fresh = await recordWebhookEvent(`${svixId}:${type}`);
+      if (!fresh) return NextResponse.json({ ok: true, duplicate: true });
+    }
+
     if (email && type === "email.complained") {
       await unsubscribe(email, "spam_complaint");
       await logAgentAction("outreach_complained", "resend-webhook", null, { email });
       await slack(`:rotating_light: Outreach SPAM COMPLAINT from ${email} — address suppressed.`);
       await maybePause();
     } else if (email && type === "email.bounced") {
-      await unsubscribe(email, "hard_bounce");
+      // Only a PERMANENT bounce (bad address) suppresses forever. A transient
+      // bounce (mailbox full, greylisting) keeps the address — the prospect
+      // pool is small and non-renewable, so wrongly burning addresses on soft
+      // bounces destroys real targets. Both still count toward the auto-pause
+      // health thresholds via the logged action.
+      const bounceType = (evt.data?.bounce?.type ?? "").toLowerCase();
+      const permanent = bounceType.includes("perm") || bounceType.includes("hard");
+      if (permanent) await unsubscribe(email, "hard_bounce");
       await logAgentAction("outreach_bounced", "resend-webhook", null, {
         email,
         bounceType: evt.data?.bounce?.type ?? null,
+        suppressed: permanent,
       });
       await maybePause();
     }

@@ -9,7 +9,9 @@
 // Anchor resolution (the date the clock runs from):
 //   1. input.anchorDate  → earliest BIPD effective date (best). source from
 //                          input.anchorSource (default 'bipd').
-//   2. input.addDate     → coarse DOT-registration fallback. source 'add_date'.
+//   2. input.addDate     → coarse DOT-registration fallback, pushed forward by
+//                          ADD_DATE_ANCHOR_LAG_DAYS so it can't overstate age.
+//                          source 'add_date'.
 //   3. neither           → no anchor; source 'none'.
 //
 // State thresholds (classified ONLY when anchor present, authority active and
@@ -22,8 +24,10 @@
 // Gating states (override the day-count classification):
 //   no anchor                     → 'awaiting_authority'  (everything null)
 //   !authorityActive              → 'authority_inactive'  (timing still filled)
-//   continuous === false ||
-//     currentlyUninsured === true → 'continuity_broken'
+//   currentlyUninsured === true   → 'continuity_broken'
+//   (NOTE: `continuous` is accepted but deliberately NOT a gate — per the
+//   locked product rule, a HISTORICAL gap only lowers the score; only a
+//   CURRENT lapse hard-gates. Do not "fix" this by gating on continuous.)
 //
 // daysTo180   = 180 - daysSinceAnchor   (negative once eligible).
 // eligibleAt  = anchor + 180 days       (ISO yyyy-mm-dd).
@@ -41,6 +45,15 @@ const MS_PER_DAY = 86_400_000;
 const ELIGIBLE_DAYS = 180;
 const APPROACHING_FROM = 150;
 const PRIME_MAX_DAYS = 365;
+
+// When we fall back to the Census add_date proxy (no BIPD effective date on
+// file — the common case for new carriers with no terminated policies), the
+// TRUE authority-active / insurance-effective date lags DOT registration by
+// ~3–6 weeks. add_date therefore OVERSTATES age and would label a carrier
+// eligible weeks too early. We push the anchor forward by a conservative lag so
+// a label can never overstate eligibility (false positives on timing are worse
+// than contacting a few weeks late, and a human approves every send anyway).
+const ADD_DATE_ANCHOR_LAG_DAYS = 30;
 
 // Parse an ISO yyyy-mm-dd date into a UTC Date at midnight. Returns null for
 // missing/malformed input so callers fall through the anchor chain cleanly.
@@ -108,8 +121,14 @@ export function computeEligibility(input: {
   } else {
     const fromAdd = parseIsoDateUtc(input.addDate);
     if (fromAdd) {
-      anchor = fromAdd;
-      anchorIso = toIsoDateUtc(fromAdd);
+      // Conservative lag: treat the clock as starting LATER than DOT
+      // registration so add_date-anchored carriers are never labelled eligible
+      // too early (see ADD_DATE_ANCHOR_LAG_DAYS).
+      const lagged = new Date(
+        fromAdd.getTime() + ADD_DATE_ANCHOR_LAG_DAYS * MS_PER_DAY,
+      );
+      anchor = lagged;
+      anchorIso = toIsoDateUtc(lagged);
       anchorSource = "add_date";
     }
   }

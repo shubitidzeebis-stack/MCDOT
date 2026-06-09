@@ -86,7 +86,10 @@ export async function POST(req: Request) {
     const auditRating = combineAuditScore(insuranceRating, uccRating, {
       currentlyUninsured,
     });
-    const score = acquisitionScore({
+    // Re-apply the persisted safety penalty — a fresh acquisitionScore() knows
+    // nothing about it, and writing the raw value would silently erase the
+    // deduction the safety enrich applied.
+    const baseScore = acquisitionScore({
       insurance: insuranceRating,
       ucc: uccRating,
       valuationFactor: null,
@@ -95,6 +98,7 @@ export async function POST(req: Request) {
       eligibility: (inputs?.eligibility_state as EligibilityState) ?? undefined,
       currentlyUninsured,
     });
+    const score = Math.max(0, baseScore - (inputs?.safety_penalty ?? 0));
 
     const auditedBy = session?.email ?? "legacy-key";
     const result = await recordUccFindings(raw.id, {

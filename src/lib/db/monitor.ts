@@ -58,12 +58,24 @@ export async function ensureMonitorTables(): Promise<void> {
       last_error TEXT
     )
   `;
+  // When a sender claimed the row ('approved' -> 'sending'). Lets the reaper
+  // detect rows stranded mid-send by a crash/timeout.
+  await sql`ALTER TABLE outreach_queue ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ`;
   // One active draft/send per (valuation, persona). Failed/dead rows are
   // excluded so a retry can be re-queued.
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS outreach_queue_active_uq
       ON outreach_queue (valuation_id, persona)
       WHERE stage NOT IN ('failed', 'dead')
+  `;
+  // Processed webhook deliveries (Svix at-least-once) — PK insert dedupes
+  // retries so a re-delivered bounce/complaint isn't double-counted into the
+  // auto-pause thresholds.
+  await sql`
+    CREATE TABLE IF NOT EXISTS webhook_events (
+      id TEXT PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
   `;
   await sql`CREATE INDEX IF NOT EXISTS outreach_queue_stage_idx ON outreach_queue (stage)`;
   await sql`
@@ -168,7 +180,9 @@ export async function upsertMonitorCandidate(
       dba_name = EXCLUDED.dba_name,
       census_email = EXCLUDED.census_email,
       telephone = EXCLUDED.telephone,
-      add_date = EXCLUDED.add_date,
+      -- Keep the FIRST-SEEN registration date: a later Census correction must
+      -- not silently shift the carrier's 4-month floor / 180-day clock.
+      add_date = COALESCE(valuations.add_date, EXCLUDED.add_date),
       power_units = EXCLUDED.power_units,
       drivers_count = EXCLUDED.drivers_count,
       phy_address = EXCLUDED.phy_address,
@@ -190,6 +204,7 @@ export type MonitorVerification = {
   acquisitionScore: number;
   authorityStatus: string | null;
   monitorStage: string;
+  disqualifyReason: string | null;
 };
 
 export async function updateMonitorVerification(
@@ -212,8 +227,48 @@ export async function updateMonitorVerification(
       acquisition_score = ${v.acquisitionScore},
       authority_status = ${v.authorityStatus},
       monitor_stage = ${v.monitorStage},
+      disqualify_reason = ${v.disqualifyReason},
       updated_at = now()
     WHERE id = ${id} AND source = 'monitor'
+  `;
+}
+
+// One-time recovery: rows disqualified UNDER THE OLD LOGIC (where a carrier
+// merely absent from the FMCSA authority table was wrongly disqualified) carry
+// no disqualify_reason. Reset those to 'discovered' so the fixed verify pass can
+// re-classify them precisely (broker/inactive → disqualified WITH a reason;
+// not-found → parked; active+insured → recovered). Genuine safety failures are
+// left alone. Returns how many were re-opened.
+export async function reopenStaleDisqualified(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return 0;
+  await ensureValuationsSchema();
+  const rows = (await sql`
+    UPDATE valuations
+       SET monitor_stage = 'discovered',
+           authority_status = NULL,
+           disqualify_reason = NULL,
+           updated_at = now() - interval '15 days'
+     WHERE source = 'monitor'
+       AND monitor_stage = 'disqualified'
+       AND disqualify_reason IS NULL
+       AND (safety_status IS NULL OR safety_status <> 'fail')
+     RETURNING id
+  `) as Array<{ id: number }>;
+  return rows.length;
+}
+
+// A discovered carrier that isn't in the FMCSA Carrier authority table yet.
+// We do NOT disqualify it (that would permanently drop a carrier on a data
+// blip) — we tag authority_status='not_found' and leave it 'discovered' so the
+// verify queue retries it (at most weekly, see listMonitorForVerification).
+export async function markMonitorNotFound(id: number): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await ensureValuationsSchema();
+  await sql`
+    UPDATE valuations SET authority_status = 'not_found', updated_at = now()
+     WHERE id = ${id} AND source = 'monitor'
   `;
 }
 
@@ -231,11 +286,13 @@ export async function listMonitorForVerification(
   const sql = getSql();
   if (!sql) return [];
   await ensureValuationsSchema();
-  // Verify freshly-discovered rows FIRST (so hot, near-180-day carriers aren't
-  // stuck behind a re-verify backlog), then re-verify 'verified' rows older than
-  // 14 days. Terminal/in-flight stages (sent/suppressed/drafted/approved/
-  // phone-queued/disqualified) are excluded so we don't waste FMCSA quota or
-  // regress an already-contacted carrier back into the pipeline.
+  // Assess freshly-discovered rows ONCE they reach the 4-month floor (carriers
+  // younger than 120 days aren't worth the effort yet and stay parked), oldest
+  // first so the near-180-day set fills fastest; then re-verify 'verified' rows
+  // older than 14 days to refresh insurance/authority. not-found rows (absent
+  // from the FMCSA authority table) are retried at most weekly rather than
+  // disqualified. Terminal/in-flight stages are excluded so we never waste FMCSA
+  // quota or regress an already-contacted carrier.
   const rows = (await sql`
     SELECT id, dot_number, add_date::text AS add_date, power_units
       FROM valuations
@@ -243,9 +300,15 @@ export async function listMonitorForVerification(
        AND dot_number IS NOT NULL
        AND (monitor_stage IS NULL OR monitor_stage NOT IN
             ('sent','suppressed','drafted','approved','outreach_phone','disqualified'))
-       AND (monitor_stage = 'discovered' OR monitor_stage IS NULL
-            OR updated_at < now() - interval '14 days')
-     ORDER BY (monitor_stage IS DISTINCT FROM 'discovered'), updated_at ASC
+       AND (
+             ((monitor_stage = 'discovered' OR monitor_stage IS NULL)
+                AND add_date IS NOT NULL
+                AND add_date <= CURRENT_DATE - INTERVAL '120 days'
+                AND (authority_status IS DISTINCT FROM 'not_found'
+                     OR updated_at < now() - interval '7 days'))
+             OR (monitor_stage = 'verified' AND updated_at < now() - interval '14 days')
+           )
+     ORDER BY (monitor_stage IS DISTINCT FROM 'discovered'), add_date ASC NULLS LAST
      LIMIT ${limit}
   `) as MonitorVerifyTarget[];
   return rows;
@@ -292,7 +355,17 @@ export async function listMonitorCandidates(limit = 500): Promise<MonitorRow[]> 
              mc_number, monitor_stage, add_date::text AS add_date,
              bipd_anchor_date::text AS bipd_anchor_date,
              eligible_at::text AS eligible_at,
-             (eligible_at - CURRENT_DATE) AS days_to_180, eligibility_state,
+             (eligible_at - CURRENT_DATE) AS days_to_180,
+             CASE
+               WHEN authority_status = 'not_found' THEN 'not_in_fmcsa'
+               WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
+               WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+               WHEN insurance_current = false THEN 'continuity_broken'
+               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+               WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+               ELSE 'aged_out'
+             END AS eligibility_state,
              insurance_current, insurance_rating, insurance_gaps, audit_score,
              acquisition_score, ucc_status, ucc_rating, census_email, telephone,
              phy_address, power_units, drivers_count, outreach_channel
@@ -317,6 +390,7 @@ export type MonitorAuditInputs = {
   eligibility_state: string | null;
   days_to_180: number | null;
   power_units: number | null;
+  safety_penalty: number | null;
 };
 
 export async function getMonitorAuditInputs(
@@ -325,9 +399,22 @@ export async function getMonitorAuditInputs(
   const sql = getSql();
   if (!sql) return null;
   await ensureValuationsSchema();
+  // Timing recomputed LIVE from eligible_at (the stored copies go stale as the
+  // carrier ages) so a UCC-triggered rescore weighs current proximity, and the
+  // persisted safety_penalty so the rescore can re-apply it.
   const rows = (await sql`
-    SELECT insurance_rating, insurance_current, eligibility_state,
-           days_to_180, power_units
+    SELECT insurance_rating, insurance_current,
+           CASE
+             WHEN eligible_at IS NULL THEN eligibility_state
+             WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+             WHEN insurance_current = false THEN 'continuity_broken'
+             WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+             WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+             WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+             ELSE 'aged_out'
+           END AS eligibility_state,
+           (eligible_at - CURRENT_DATE) AS days_to_180,
+           power_units, safety_penalty
       FROM valuations WHERE id = ${id} AND source = 'monitor'
   `) as MonitorAuditInputs[];
   return rows[0] ?? null;
@@ -391,17 +478,31 @@ export async function listMonitorForDrafting(
   const sql = getSql();
   if (!sql) return [];
   await ensureValuationsSchema();
+  // "Ready to email" gate. In-window is computed LIVE from eligible_at (so a
+  // carrier that aged into the window since its last verify is picked up without
+  // a re-verify): days_to_180 in [-185, 30] = approaching ∪ eligible_now.
+  // Insurance: CURRENT insurance is the hard gate; history is soft — a carrier
+  // insured now with green/amber/unknown history qualifies ('unknown' is the
+  // normal state for a healthy new carrier that never cancelled a policy, so
+  // excluding it would drop most real targets). Safety must be an explicit pass.
   const rows = (await sql`
     SELECT id, dot_number, mc_number, legal_name, dba_name, census_email,
-           telephone, phy_address, power_units, days_to_180, eligibility_state
+           telephone, phy_address, power_units,
+           (eligible_at - CURRENT_DATE) AS days_to_180,
+           CASE
+             WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+             ELSE 'eligible_now'
+           END AS eligibility_state
       FROM valuations
      WHERE source = 'monitor'
        AND monitor_stage = 'verified'
-       AND eligibility_state IN ('approaching', 'eligible_now')
+       AND eligible_at IS NOT NULL
+       AND (eligible_at - CURRENT_DATE) <= 30
+       AND (eligible_at - CURRENT_DATE) >= -185
        AND insurance_current = true
-       AND insurance_rating IN ('green', 'amber')
+       AND insurance_rating IN ('green', 'amber', 'unknown')
        AND safety_status = 'pass'
-     ORDER BY days_to_180 ASC NULLS LAST
+     ORDER BY (eligible_at - CURRENT_DATE) ASC NULLS LAST
      LIMIT ${limit}
   `) as MonitorDraftTarget[];
   return rows;
@@ -419,15 +520,20 @@ export async function listMonitorForSafetyEnrich(
   const sql = getSql();
   if (!sql) return [];
   await ensureValuationsSchema();
+  // In-window computed LIVE from eligible_at (days_to_180 in [-185, 30]) so a
+  // carrier that just aged into the window is enriched without waiting for a
+  // re-verify. Hottest (closest to/just past 180) first.
   const rows = (await sql`
     SELECT id, dot_number
       FROM valuations
      WHERE source = 'monitor'
        AND monitor_stage = 'verified'
        AND dot_number IS NOT NULL
-       AND eligibility_state IN ('approaching', 'eligible_now')
+       AND eligible_at IS NOT NULL
+       AND (eligible_at - CURRENT_DATE) <= 30
+       AND (eligible_at - CURRENT_DATE) >= -185
        AND safety_checked_at IS NULL
-     ORDER BY days_to_180 ASC NULLS LAST
+     ORDER BY (eligible_at - CURRENT_DATE) ASC NULLS LAST
      LIMIT ${limit}
   `) as MonitorSafetyTarget[];
   return rows;
@@ -460,8 +566,10 @@ export async function updateMonitorSafety(
              safety_rating = ${s.safetyRating},
              safety_status = ${s.status},
              safety_findings = ${JSON.stringify(s.reasons)}::jsonb,
+             safety_penalty = ${s.penalty},
              acquisition_score = GREATEST(0, COALESCE(acquisition_score, 0) - ${s.penalty}),
              monitor_stage = CASE WHEN ${s.status} = 'fail' THEN 'disqualified' ELSE monitor_stage END,
+             disqualify_reason = CASE WHEN ${s.status} = 'fail' THEN 'safety_fail' ELSE disqualify_reason END,
              updated_at = now()
        WHERE id = ${id} AND source = 'monitor'
     `;
@@ -480,7 +588,9 @@ export async function getSafetyStatusCounts(): Promise<Record<string, number>> {
       sql`SELECT COALESCE(safety_status, '(pending)') AS k, count(*)::int AS n
             FROM valuations
            WHERE source = 'monitor'
-             AND eligibility_state IN ('approaching', 'eligible_now')
+             AND eligible_at IS NOT NULL
+             AND (eligible_at - CURRENT_DATE) <= 30
+             AND (eligible_at - CURRENT_DATE) >= -185
            GROUP BY 1`,
     );
   } catch (err) {
@@ -538,8 +648,11 @@ export async function enqueueDraft(d: {
       recipient_phone = EXCLUDED.recipient_phone,
       draft_subject = EXCLUDED.draft_subject,
       draft_body_text = EXCLUDED.draft_body_text
+    WHERE outreach_queue.stage = 'draft'
     RETURNING id
   `) as Array<{ id: number }>;
+  // null = the existing row is in-flight (approved/sending/sent) — caller must
+  // NOT regress the carrier's stage; the draft content was left untouched.
   return rows[0]?.id ?? null;
 }
 
@@ -634,19 +747,49 @@ export async function getDueOutreach(limit: number): Promise<DueOutreach[]> {
   const sql = getSql();
   if (!sql) return [];
   await ensureMonitorTables();
+  // FOR UPDATE SKIP LOCKED makes the claim atomic under ANY concurrency (two
+  // overlapping senders each lock disjoint rows), not just the single-statement
+  // HTTP path. claimed_at lets the reaper spot rows stranded mid-send.
   const rows = (await sql`
-    UPDATE outreach_queue SET stage = 'sending'
+    UPDATE outreach_queue SET stage = 'sending', claimed_at = now()
      WHERE id IN (
        SELECT id FROM outreach_queue
         WHERE stage = 'approved' AND channel = 'email'
           AND (scheduled_for IS NULL OR scheduled_for <= now())
         ORDER BY scheduled_for ASC NULLS FIRST
         LIMIT ${limit}
+        FOR UPDATE SKIP LOCKED
      )
     RETURNING id, valuation_id, channel, recipient_email, persona, draft_subject,
               draft_body_text, attempts
   `) as DueOutreach[];
   return rows;
+}
+
+// Crash recovery: a row stuck in 'sending' for >30 min was claimed by a sender
+// that died mid-loop. The email MAY have gone out (crash after the Resend call),
+// so we do NOT auto-retry — we dead-letter it to 'failed' for a HUMAN to verify
+// in the Resend dashboard and explicitly re-approve. Prevents both the
+// stranded-forever row and an accidental duplicate cold email.
+export async function reapStaleSending(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return 0;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      UPDATE outreach_queue
+         SET stage = 'failed',
+             last_error = 'stale sending claim (sender crashed mid-send?) — check Resend before re-approving'
+       WHERE stage = 'sending'
+         AND claimed_at IS NOT NULL
+         AND claimed_at < now() - interval '30 minutes'
+      RETURNING id
+    `) as Array<{ id: number }>;
+    return rows.length;
+  } catch (err) {
+    console.error("[reapStaleSending] error", err);
+    return 0;
+  }
 }
 
 // P5 auto-send: draft-stage email rows + their score + persona, for the sender
@@ -676,7 +819,9 @@ export async function markOutreachSent(id: number): Promise<void> {
   const sql = getSql();
   if (!sql) return;
   await ensureMonitorTables();
-  await sql`UPDATE outreach_queue SET stage = 'sent', sent_at = now() WHERE id = ${id}`;
+  // Stage guard: only a row we actually hold the 'sending' claim on can be
+  // marked sent — a stale caller can't flip a reaped/dead row.
+  await sql`UPDATE outreach_queue SET stage = 'sent', sent_at = now() WHERE id = ${id} AND stage = 'sending'`;
 }
 
 export async function markOutreachFailed(id: number, error: string): Promise<void> {
@@ -684,14 +829,53 @@ export async function markOutreachFailed(id: number, error: string): Promise<voi
   if (!sql) return;
   await ensureMonitorTables();
   // A failed/aborted send releases the 'sending' claim back to 'approved' to
-  // retry next run; after 5 attempts it dead-letters instead.
+  // retry next run; after 5 attempts it dead-letters instead. Stage-guarded so
+  // a late failure callback can never regress a row that was already marked
+  // sent (which would cause a duplicate send next run).
   await sql`
     UPDATE outreach_queue
        SET attempts = attempts + 1,
            last_error = ${error.slice(0, 500)},
            stage = CASE WHEN attempts + 1 >= 5 THEN 'dead' ELSE 'approved' END
-     WHERE id = ${id}
+     WHERE id = ${id} AND stage = 'sending'
   `;
+}
+
+// Webhook idempotency: returns true exactly once per delivery id (Svix retries
+// the same id on at-least-once delivery). FAIL-SAFE false on error so a DB blip
+// can't double-count an event into the auto-pause thresholds.
+export async function recordWebhookEvent(id: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      INSERT INTO webhook_events (id) VALUES (${id})
+      ON CONFLICT (id) DO NOTHING
+      RETURNING id
+    `) as Array<{ id: string }>;
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[recordWebhookEvent] error", err);
+    return false;
+  }
+}
+
+// One-time requalification: force every verified row back through the verify
+// queue (by aging updated_at past the 14-day staleness gate) so the whole
+// verified set is re-rated under the CURRENT engine after a rules change.
+// Idempotent and safe — verify is a refresh, not a state regression.
+export async function requalifyVerified(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return 0;
+  await ensureValuationsSchema();
+  const rows = (await sql`
+    UPDATE valuations
+       SET updated_at = now() - interval '15 days'
+     WHERE source = 'monitor' AND monitor_stage = 'verified'
+    RETURNING id
+  `) as Array<{ id: number }>;
+  return rows.length;
 }
 
 // Compliance trail: every agent transition + every human approve/send.
@@ -853,9 +1037,24 @@ export async function getEligibilityCounts(): Promise<Record<string, number>> {
   if (!sql) return {};
   try {
     await ensureValuationsSchema();
+    // Recompute the eligibility bucket LIVE from eligible_at so the dashboard
+    // tracks carriers as they age (a 'too_new' row becomes 'approaching' →
+    // 'eligible_now' with the calendar, no re-verify). Verified rows get a live
+    // bucket; not-yet-assessed rows show '(unassessed)'.
     return await groupCounts(
       sql,
-      sql`SELECT COALESCE(eligibility_state, '(pending)') AS k, count(*)::int AS n
+      sql`SELECT
+            CASE
+              WHEN authority_status = 'not_found' THEN 'not_in_fmcsa'
+              WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
+              WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+              WHEN insurance_current = false THEN 'continuity_broken'
+              WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+              WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+              WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+              ELSE 'aged_out'
+            END AS k,
+            count(*)::int AS n
             FROM valuations WHERE source = 'monitor' GROUP BY 1`,
     );
   } catch (err) {
@@ -963,10 +1162,19 @@ export async function listHotProspects(limit = 10): Promise<HotProspect[]> {
     const rows = (await sql`
       SELECT id, legal_name, dba_name, dot_number, phy_address,
              (eligible_at - CURRENT_DATE) AS days_to_180,
-             eligibility_state, insurance_rating, acquisition_score, outreach_channel
+             CASE
+               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+               ELSE 'eligible_now'
+             END AS eligibility_state,
+             insurance_rating, acquisition_score, outreach_channel
         FROM valuations
        WHERE source = 'monitor'
-         AND eligibility_state IN ('approaching', 'eligible_now')
+         AND monitor_stage = 'verified'
+         AND authority_status = 'active'
+         AND insurance_current = true
+         AND eligible_at IS NOT NULL
+         AND (eligible_at - CURRENT_DATE) <= 30
+         AND (eligible_at - CURRENT_DATE) >= -185
        ORDER BY acquisition_score DESC NULLS LAST, eligible_at ASC NULLS LAST
        LIMIT ${limit}
     `) as HotProspect[];
@@ -974,5 +1182,128 @@ export async function listHotProspects(limit = 10): Promise<HotProspect[]> {
   } catch (err) {
     console.error("[listHotProspects] error", err);
     return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Roster export — every monitor row with its LIVE eligibility + all audit
+// signals, for building the markdown "database" file. Fail-safe (empty on
+// error). Caller buckets in JS.
+// ---------------------------------------------------------------------------
+export type MonitorExportRow = {
+  id: number;
+  dot_number: string | null;
+  mc_number: string | null;
+  legal_name: string | null;
+  dba_name: string | null;
+  phy_address: unknown;
+  add_date: string | null;
+  age_days: number | null;
+  monitor_stage: string | null;
+  authority_status: string | null;
+  eligible_at: string | null;
+  days_to_180: number | null;
+  eligibility_state: string | null;
+  insurance_current: boolean | null;
+  insurance_rating: string | null;
+  safety_status: string | null;
+  safety_rating: string | null;
+  crash_total: number | null;
+  driver_oos_rate: number | null;
+  vehicle_oos_rate: number | null;
+  audit_score: string | null;
+  acquisition_score: number | null;
+  disqualify_reason: string | null;
+  census_email: string | null;
+  telephone: string | null;
+  power_units: number | null;
+};
+
+export async function listMonitorForExport(
+  limit = 100_000,
+  offset = 0,
+): Promise<MonitorExportRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  try {
+    await ensureValuationsSchema();
+    const rows = (await sql`
+      SELECT id, dot_number, mc_number, legal_name, dba_name, phy_address,
+             add_date::text AS add_date,
+             (CURRENT_DATE - add_date) AS age_days,
+             monitor_stage, authority_status,
+             eligible_at::text AS eligible_at,
+             (eligible_at - CURRENT_DATE) AS days_to_180,
+             CASE
+               WHEN authority_status = 'not_found' THEN 'not_in_fmcsa'
+               WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
+               WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+               WHEN insurance_current = false THEN 'continuity_broken'
+               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+               WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+               ELSE 'aged_out'
+             END AS eligibility_state,
+             insurance_current, insurance_rating, safety_status, safety_rating,
+             crash_total, driver_oos_rate, vehicle_oos_rate, audit_score,
+             acquisition_score, disqualify_reason, census_email, telephone,
+             power_units
+        FROM valuations
+       WHERE source = 'monitor'
+       ORDER BY (eligible_at - CURRENT_DATE) ASC NULLS LAST, id ASC
+       LIMIT ${limit} OFFSET ${offset}
+    `) as MonitorExportRow[];
+    return rows;
+  } catch (err) {
+    console.error("[listMonitorForExport] error", err);
+    return [];
+  }
+}
+
+// Add_date age distribution across ALL monitor rows — the real measurement of
+// how the standing backlog splits around the 4-month floor and the 180-day
+// window (independent of whether a row has been verified yet).
+export type MonitorAgeHistogram = {
+  no_date: number;
+  under_120: number;
+  d120_150: number;
+  d150_180: number;
+  d180_365: number;
+  over_365: number;
+  total: number;
+};
+
+export async function getMonitorAgeHistogram(): Promise<MonitorAgeHistogram> {
+  const empty: MonitorAgeHistogram = {
+    no_date: 0,
+    under_120: 0,
+    d120_150: 0,
+    d150_180: 0,
+    d180_365: 0,
+    over_365: 0,
+    total: 0,
+  };
+  const sql = getSql();
+  if (!sql) return empty;
+  try {
+    await ensureValuationsSchema();
+    const rows = (await sql`
+      SELECT
+        count(*) FILTER (WHERE add_date IS NULL)::int AS no_date,
+        count(*) FILTER (WHERE add_date > CURRENT_DATE - INTERVAL '120 days')::int AS under_120,
+        count(*) FILTER (WHERE add_date <= CURRENT_DATE - INTERVAL '120 days'
+                           AND add_date > CURRENT_DATE - INTERVAL '150 days')::int AS d120_150,
+        count(*) FILTER (WHERE add_date <= CURRENT_DATE - INTERVAL '150 days'
+                           AND add_date > CURRENT_DATE - INTERVAL '180 days')::int AS d150_180,
+        count(*) FILTER (WHERE add_date <= CURRENT_DATE - INTERVAL '180 days'
+                           AND add_date > CURRENT_DATE - INTERVAL '365 days')::int AS d180_365,
+        count(*) FILTER (WHERE add_date <= CURRENT_DATE - INTERVAL '365 days')::int AS over_365,
+        count(*)::int AS total
+        FROM valuations WHERE source = 'monitor'
+    `) as MonitorAgeHistogram[];
+    return rows[0] ?? empty;
+  } catch (err) {
+    console.error("[getMonitorAgeHistogram] error", err);
+    return empty;
   }
 }

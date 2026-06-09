@@ -20,6 +20,7 @@ import { renderOutreachEmail } from "./render";
 import { stripCrLf } from "@/lib/security/sanitize";
 import {
   approveOutreach,
+  discardOutreach,
   getDueOutreach,
   isOutreachPaused,
   listAutoSendCandidates,
@@ -27,6 +28,7 @@ import {
   markMonitorOfferSent,
   markOutreachFailed,
   markOutreachSent,
+  reapStaleSending,
   setMonitorStage,
 } from "@/lib/db/monitor";
 
@@ -85,6 +87,12 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
   }
 
   // ---- Send approved rows. --------------------------------------------------
+  // First, dead-letter any rows stranded in 'sending' by a crashed prior run —
+  // the email MAY have gone out, so a human verifies in Resend before re-approving.
+  const reaped = await reapStaleSending();
+  if (reaped > 0) {
+    console.error(`[outreach] reaped ${reaped} stale 'sending' row(s) -> failed (verify in Resend)`);
+  }
   const resend = new Resend(apiKey);
   const due = await getDueOutreach(SEND_CAP);
   let sent = 0;
@@ -100,7 +108,9 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
     }
     try {
       if (await isUnsubscribed(to)) {
-        await markOutreachSent(row.id); // stop retrying
+        // Dead-letter (NOT 'sent') — a suppressed skip must not inflate the
+        // sent denominator that the bounce/complaint auto-pause rates divide by.
+        await discardOutreach(row.id);
         await setMonitorStage(row.valuation_id, "suppressed");
         suppressed += 1;
         continue;

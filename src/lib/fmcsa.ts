@@ -265,7 +265,11 @@ export async function lookupCarrier(
 // QCMobile is flaky and frequently returns transient 503s, so unlike the inbound
 // wizard's single-shot lookup this retries 5xx/429 with exponential backoff.
 export async function lookupCarrierBasics(dot: string): Promise<FmcsaCarrier | null> {
-  if (!process.env.FMCSA_API_KEY) return null;
+  // THROW (don't return null) when the key is missing: a null is interpreted by
+  // the safety enrich as "brand-new carrier, no record → pass clean", so a
+  // silently-unset key would mark every carrier safe WITHOUT a real check.
+  // Throwing leaves the carrier unchecked to retry, which is the safe failure.
+  if (!process.env.FMCSA_API_KEY) throw new Error("FMCSA_API_KEY not set");
   const num = normalizeNumber(dot);
   if (!num) return null;
   const url = `${BASE_URL}/carriers/${num}?webKey=${getKey()}`;
@@ -296,7 +300,11 @@ export async function lookupCarrierBasics(dot: string): Promise<FmcsaCarrier | n
       await new Promise((r) => setTimeout(r, 600 * 2 ** attempt + Math.random() * 400));
       continue;
     }
-    break; // non-retryable 4xx
+    // 404 = the DOT is genuinely not in QCMobile (brand-new carrier) — that is
+    // a CONFIRMED not-found, same as 200-with-empty-content. Throwing here
+    // would retry the same carrier every run forever and starve the enrich.
+    if (res.status === 404) return null;
+    break; // other non-retryable 4xx (401 bad key etc.) -> throw below
   }
   throw new Error(`FMCSA ${lastStatus || "network"}`);
 }

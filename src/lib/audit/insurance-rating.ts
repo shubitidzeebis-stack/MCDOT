@@ -212,7 +212,11 @@ export function rateInsuranceHistory(
       gaps: [],
       currentInsured,
       lapsedNow: !currentInsured,
-      continuous: false,
+      // Per the contract ("no gap > grace AND not lapsedNow"): a currently-
+      // insured carrier with zero terminated policies has NO evidence of any
+      // gap — that's continuous, not broken. (Rating stays 'unknown' because
+      // continuity can't be POSITIVELY proven without history.)
+      continuous: currentInsured,
       longestGapDays: 0,
       currentInsurer,
       rating: "unknown",

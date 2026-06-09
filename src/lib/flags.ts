@@ -25,6 +25,7 @@ export type FlagKey =
   // Outbound monitoring agent — all default OFF so the feature is inert in
   // prod until explicitly switched on in Edge Config.
   | "monitorEnabled" // master kill switch for the whole discovery/verify sweep
+  | "discoveryEnabled" // gate JUST the discover pass (pause new findings, keep verify/enrich/draft)
   | "outreachDraftEnabled" // allow LLM draft generation
   | "outreachSendEnabled" // master kill switch for actually SENDING approved mail
   | "autoSendEnabled" // skip the human approval gate (per validated persona)
@@ -39,6 +40,11 @@ const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   // launch. Both the widget client and the /api/chat route check this.
   chatWidgetEnabled: false,
   monitorEnabled: false,
+  // Default OFF (fail-safe paused): discovery only runs when explicitly set true
+  // in Edge Config. Lets us work the standing backlog without adding new rows,
+  // and resume later by flipping this — no redeploy. verify/enrich/draft are
+  // unaffected (they run whenever monitorEnabled is on).
+  discoveryEnabled: false,
   outreachDraftEnabled: false,
   outreachSendEnabled: false,
   autoSendEnabled: false,

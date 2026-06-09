@@ -21,6 +21,7 @@ export type AgentDashboardData = {
   hot: HotProspect[];
   flags: {
     monitorEnabled: boolean;
+    discoveryEnabled: boolean;
     outreachDraftEnabled: boolean;
     autoSendEnabled: boolean;
     smsOutreachEnabled: boolean;
@@ -121,6 +122,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill on={data.flags.monitorEnabled} label="Monitor" />
+          <StatusPill on={data.flags.discoveryEnabled} label="Discovery" />
           <StatusPill on={data.flags.outreachDraftEnabled} label="Drafting" />
           <StatusPill on={data.flags.autoSendEnabled} label="Auto-send" warn />
           <StatusPill on={data.readiness.outreachSender} label="Sender" />

@@ -108,6 +108,12 @@ async function ensureTable(sql: Sql) {
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_rating TEXT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_status TEXT`;
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_findings JSONB`;
+  // The safety score deduction, persisted so later score recomputes (e.g. UCC
+  // capture) can re-apply it instead of silently erasing it.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS safety_penalty INT`;
+  // Why a monitor row was disqualified (broker_only / authority_inactive /
+  // safety_fail). Lets the roster explain rejections instead of a bare stage.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS disqualify_reason TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
