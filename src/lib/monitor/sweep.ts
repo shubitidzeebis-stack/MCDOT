@@ -22,6 +22,7 @@ import {
   enqueueDraft,
   ensureMonitorTables,
   getCursor,
+  getOutreachStageCounts,
   listMonitorForDrafting,
   listMonitorForSafetyEnrich,
   listMonitorForVerification,
@@ -289,7 +290,18 @@ export async function monitorSweep(
   let drafted = 0;
   try {
     if (!isBackfill && (await getFlag("outreachDraftEnabled"))) {
-      const targets = await listMonitorForDrafting(DRAFT_CAP);
+      // Just-in-time drafting: keep at most ~2 days of sends queued so the
+      // personalized timing lines ("~N days from the 180-day mark") are always
+      // fresh when the email actually goes out. The queue refills hourly.
+      const dailyCap = Math.min(
+        500,
+        Math.max(1, Number(await getConfigValue("outreachDailyCap")) || 20),
+      );
+      const stages = await getOutreachStageCounts();
+      const pending = (stages["draft"] ?? 0) + (stages["approved"] ?? 0);
+      const room = dailyCap * 2 - pending;
+      const targets =
+        room > 0 ? await listMonitorForDrafting(Math.min(DRAFT_CAP, room)) : [];
       for (const t of targets) {
         if (overBudget()) break;
         const email = t.census_email?.trim() || null;
@@ -348,14 +360,17 @@ export async function monitorSweep(
     console.error("[monitorSweep] draft pass failed", err);
   }
 
-  // Heartbeat for the dashboard activity feed.
-  await logAgentAction("sweep_completed", "agent", null, {
-    mode,
-    discovered,
-    verified,
-    enriched,
-    drafted,
-  });
+  // Heartbeat for the dashboard activity feed — only when work happened, so
+  // hourly no-op runs don't flood the feed.
+  if (discovered + verified + enriched + drafted > 0) {
+    await logAgentAction("sweep_completed", "agent", null, {
+      mode,
+      discovered,
+      verified,
+      enriched,
+      drafted,
+    });
+  }
 
   return { ran: true, mode, discovered, verified, enriched, drafted, note: enrichNote };
 }

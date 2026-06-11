@@ -22,6 +22,7 @@ import {
   approveOutreach,
   discardOutreach,
   getDueOutreach,
+  getOutreachHealth,
   isOutreachPaused,
   listAutoSendCandidates,
   logAgentAction,
@@ -32,11 +33,20 @@ import {
   setMonitorStage,
 } from "@/lib/db/monitor";
 
-const AUTO_SEND_MIN_SCORE = 70;
-const SEND_CAP = 25;
+// Auto-send floor: every draft already passed the HARD gates (active authority
+// + insured now + safety pass + in-window), so the score is a ranking, not a
+// filter. 40 is below any realistically-qualified carrier (a cold approaching
+// 1-truck scores ~49) and only screens pathological rows.
+const AUTO_SEND_MIN_SCORE = 40;
+// Per-RUN ceiling (the rolling-24h `outreachDailyCap` config is the real
+// throttle; this just bounds one invocation's wall-clock).
+const SEND_CAP_PER_RUN = 25;
+// The cron fires hourly — spread the daily budget across runs so sends trickle
+// through the day (better inbox placement than one daily burst).
+const RUNS_PER_DAY = 24;
 
 export type OutreachSendResult =
-  | { skipped: "no_sender" | "disabled" | "paused" }
+  | { skipped: "no_sender" | "disabled" | "paused" | "daily_cap" }
   | { approvedAuto: number; sent: number; failed: number; suppressed: number };
 
 export async function processOutreachQueue(): Promise<OutreachSendResult> {
@@ -93,8 +103,24 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
   if (reaped > 0) {
     console.error(`[outreach] reaped ${reaped} stale 'sending' row(s) -> failed (verify in Resend)`);
   }
+
+  // Warm-up throttle: never exceed `outreachDailyCap` sends in any rolling 24h,
+  // and spread the budget across the hourly cron runs instead of bursting.
+  const dailyCap = Math.min(
+    500,
+    Math.max(1, Number(await getConfigValue("outreachDailyCap")) || 20),
+  );
+  const { sent: sent24h } = await getOutreachHealth(1);
+  const remainingToday = dailyCap - sent24h;
+  if (remainingToday <= 0) return { skipped: "daily_cap" };
+  const perRun = Math.min(
+    SEND_CAP_PER_RUN,
+    remainingToday,
+    Math.max(1, Math.ceil(dailyCap / RUNS_PER_DAY)),
+  );
+
   const resend = new Resend(apiKey);
-  const due = await getDueOutreach(SEND_CAP);
+  const due = await getDueOutreach(perRun);
   let sent = 0;
   let failed = 0;
   let suppressed = 0;

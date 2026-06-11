@@ -1,11 +1,20 @@
-// Outreach persona/template registry.
+// Outreach persona/template registry — REAL copy (Lukas-approved direction,
+// 2026-06-11): two tracks per persona, selected by eligibility:
 //
-// PLACEHOLDER COPY: the `angle` strings below are deliberately generic so the
-// machinery works end-to-end today. Lukas replaces them with the real, tuned
-// copy per persona once the buckets are validated — that's the only "content"
-// step left. The LLM (draft.ts) turns an angle + the carrier's real facts into
-// a finished email; renderFallbackDraft() produces a compliant email with no
-// LLM at all (used when ANTHROPIC_API_KEY_OUTREACH is unset or the call fails).
+//   INTRO (approaching, <180d):  warm introduction — who we are, how the
+//     process works, how easy it is, requirements/everything on the website,
+//     get in touch if interested. Plants the seed ahead of the 180-day mark.
+//   OFFER (eligible_now, ≥180d): offer-style but NOT a direct offer — if they
+//     fit our requirements and would consider selling, get in touch.
+//
+// Both tracks: operators-not-brokers, simple process (lookup → valuation →
+// offer), fast close, final steps in person or fully online, link to the
+// website, reply-to-get-in-touch, confidential. NEVER a dollar figure
+// (tease-then-quote is the locked pricing strategy).
+//
+// The LLM (draft.ts) personalizes angle + facts when a key is set;
+// renderFallbackDraft() produces the finished tailored email with no LLM at
+// all (placeholders {company} {milestone} {website}) — that is the live path.
 //
 // Nothing here sends mail or needs secrets — pure data + pure functions.
 
@@ -15,14 +24,22 @@ import { SITE, formatAddressOneLine } from "@/lib/site";
 const OUTREACH_WEBSITE = "https://groupveritor.com";
 
 export type PersonaKey = "owner_operator" | "small_fleet" | "default";
+export type TrackKey = "intro" | "offer";
 
-export type OutreachTemplate = {
-  key: PersonaKey;
-  label: string;
+export type TrackCopy = {
   /** Subject line. {company} is substituted. */
   subject: string;
   /** Real email body. {company} {milestone} {website} are substituted. */
   body: string;
+};
+
+export type OutreachTemplate = {
+  key: PersonaKey;
+  label: string;
+  /** Warm introduction — carriers APPROACHING the 180-day mark. */
+  intro: TrackCopy;
+  /** Offer-style (not a direct offer) — carriers PAST the 180-day mark. */
+  offer: TrackCopy;
   /** Subject-line hint for the optional LLM path. {company} is substituted. */
   subjectHint: string;
   /** Tone + angle guidance for the optional LLM path. */
@@ -33,71 +50,131 @@ export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
     key: "owner_operator",
     label: "Owner-operator (1–5 trucks)",
-    subject: "Are you open to an offer for {company}?",
-    body: `Hi there,
+    intro: {
+      subject: "Introduction — we buy trucking companies like {company}",
+      body: `Hi there,
 
-I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} came up in our research of new authorities that are doing it right.
 
-You've built something real: an active authority with clean insurance, right at the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is why I'm reaching out now, ahead of it.
+This isn't a pitch yet, just an early introduction. {milestone}That's the point where buyers like us start paying real attention — so I wanted you to know who we are before you get there.
 
-I'll be straight with you — we'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+We're operators, not brokers: we buy companies like yours outright and run them ourselves. The process is simple — a quick lookup of your DOT, a straight valuation, then an offer — and closing is fast, with the final steps done in person or fully online, whichever suits you.
 
-Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+Who we are, how it works, and the requirements we look for are all on our site: {website}
 
-If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+If selling is something you'd consider once you cross that mark — or you're just curious what {company} could be worth — reply to this email anytime. No pressure, fully confidential.
 
 Best,
 Luka
 Veritor Group`,
+    },
+    offer: {
+      subject: "Are you open to an offer for {company}?",
+      body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+
+You've built something real: an active authority with clean insurance, past the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is exactly why I'm reaching out.
+
+I'll be straight with you: if {company} fits our requirements and selling is something you'd consider, we'd like to talk. We're operators, not brokers — we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+
+How the process works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    },
     subjectHint: "Are you open to an offer for {company}?",
     angle:
-      "One owner-operator to another: warm, direct, no corporate fluff. We buy AND operate the company; operators not brokers; close fast; final steps in person or online. Point them to the website for who we are and an estimate of what their company is worth. NEVER state a dollar figure. Plant interest ahead of the 180-day Amazon Relay milestone.",
+      "One owner-operator to another: warm, direct, no corporate fluff. We buy AND operate the company; operators not brokers; simple process (DOT lookup, valuation, offer); close fast; final steps in person or online. Requirements + worth estimate on the website. NEVER state a dollar figure. INTRO track (approaching 180d): introduction only, plant the seed, invite contact. OFFER track (past 180d): offer-style but not a direct offer — if they fit requirements and would sell, get in touch.",
   },
   small_fleet: {
     key: "small_fleet",
     label: "Small fleet (6–20 trucks)",
-    subject: "{company} — a quick, serious question",
-    body: `Hi there,
+    intro: {
+      subject: "Introducing Veritor Group — for when {company} hits 180 days",
+      body: `Hi there,
 
 I'm Luka with Veritor Group — we buy and operate trucking companies, and the operation you've built at {company} caught our attention.
 
-You've scaled a real fleet with a team and clean insurance, right at the point where a business like yours becomes most valuable to a buyer. {milestone}That's why I'm reaching out now, ahead of it.
+This is an introduction, not a pitch. {milestone}That's the point where a fleet like yours becomes seriously interesting to buyers — so I wanted to be on your radar before you get there.
 
-I'll be straight with you — we'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and we keep it discreet so nothing disrupts your drivers or your day-to-day. The final steps are done whichever way suits you, in person or fully online.
+We're operators, not brokers: we acquire companies like yours and run them ourselves. The process is simple — a quick lookup, a straight valuation, then an offer — and we keep it fast and discreet, so nothing disrupts your drivers or your day-to-day. Final steps in person or fully online, your call.
 
-Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+Who we are, how it works, and the requirements we look for are all on our site: {website}
 
-If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+If selling is something you'd weigh up once you cross that mark — or you'd just like to know what {company} could be worth — reply anytime. No pressure, fully confidential.
 
 Best,
 Luka
 Veritor Group`,
+    },
+    offer: {
+      subject: "{company} — a quick, serious question",
+      body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and the operation you've built at {company} caught our attention.
+
+You've scaled a real fleet with a team and clean insurance, past the point where a business like yours becomes most valuable to a buyer. {milestone}That's exactly why I'm reaching out now.
+
+I'll be straight with you: if {company} fits our requirements and selling is something you'd consider, we'd like to talk. We're operators, not brokers — we run these companies ourselves, we close fast, and we keep it discreet so nothing disrupts your drivers or your day-to-day. Final steps in person or fully online, whichever suits you.
+
+How the process works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If the timing's interesting — or you're just curious — reply to this email and I'll take it from there. No pressure, fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    },
     subjectHint: "{company} — a quick, serious question",
     angle:
-      "Small-fleet owner (6–20 trucks): a touch more business-like, respect their time. We buy and operate; operators not brokers; fast and discreet close that won't disrupt drivers; in person or online. Point to the website for who we are and a worth estimate. NEVER state a dollar figure.",
+      "Small-fleet owner (6–20 trucks): business-like, respect their time. We buy and operate; operators not brokers; simple process; fast and discreet close that won't disrupt drivers; in person or online. Requirements + worth estimate on the website. NEVER state a dollar figure. INTRO track (approaching 180d): introduction only, be on their radar, invite contact. OFFER track (past 180d): offer-style but not a direct offer — if they fit requirements and would sell, get in touch.",
   },
   default: {
     key: "default",
     label: "Default",
-    subject: "Are you open to an offer for {company}?",
-    body: `Hi there,
+    intro: {
+      subject: "Introduction — we buy trucking companies like {company}",
+      body: `Hi there,
 
-I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} came up in our research of new authorities.
 
-You've built something real: an active authority with clean insurance, right at the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is why I'm reaching out now.
+This is an early introduction, not a pitch. {milestone}That's the point where buyers like us start paying close attention — so I wanted you to know who we are before you get there.
 
-We'd like to make you an offer. We're operators, not brokers: we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+We're operators, not brokers: we buy companies like yours outright and run them ourselves. The process is simple — a quick lookup, a straight valuation, then an offer — and closing is fast, with the final steps done in person or fully online, whichever suits you.
 
-Who we are, how it works, what we look for, and an estimate of what your company could be worth are all here: {website}
+Who we are, how it works, and the requirements we look for are all on our site: {website}
 
-If you're open to it — or just curious — reply to this email and I'll take it from there. No pressure, and fully confidential.
+If selling is something you'd consider once you cross that mark — or you're just curious what {company} could be worth — reply to this email anytime. No pressure, fully confidential.
 
 Best,
 Luka
 Veritor Group`,
+    },
+    offer: {
+      subject: "Are you open to an offer for {company}?",
+      body: `Hi there,
+
+I'm Luka with Veritor Group — we buy and operate trucking companies, and {company} stood out to us.
+
+You've built something real: an active authority with clean insurance, past the point where a company like yours becomes most valuable to a buyer. {milestone}That timing is why I'm reaching out.
+
+If {company} fits our requirements and selling is something you'd consider, we'd like to talk. We're operators, not brokers: we run these companies ourselves, we close fast, and the final steps are done whichever way suits you, in person or fully online.
+
+How the process works, what we look for, and an estimate of what your company could be worth are all here: {website}
+
+If you're open to it — or just curious — reply to this email and I'll take it from there. No pressure, fully confidential.
+
+Best,
+Luka
+Veritor Group`,
+    },
     subjectHint: "Are you open to an offer for {company}?",
     angle:
-      "Newly Relay-eligible for-hire carrier: professional, concise, operator-to-operator. We buy and operate; operators not brokers; close fast; in person or online. Point to the website for who we are and a worth estimate. NEVER state a dollar figure.",
+      "For-hire carrier near/past the 180-day mark: professional, concise, operator-to-operator. We buy and operate; operators not brokers; simple process; close fast; in person or online. Requirements + worth estimate on the website. NEVER state a dollar figure. INTRO track (approaching): introduction + invite contact. OFFER track (past 180d): offer-style but not a direct offer.",
   },
 };
 
@@ -107,6 +184,16 @@ export function selectPersona(input: {
   if (input.powerUnits != null && input.powerUnits >= 6) return "small_fleet";
   if (input.powerUnits != null && input.powerUnits >= 1) return "owner_operator";
   return "default";
+}
+
+// Which copy track a carrier gets: past the mark -> offer; approaching -> intro.
+export function selectTrack(f: {
+  eligibilityState: string | null;
+  daysTo180: number | null;
+}): TrackKey {
+  if (f.eligibilityState === "eligible_now") return "offer";
+  if (f.daysTo180 != null && f.daysTo180 <= 0) return "offer";
+  return "intro";
 }
 
 // The hard facts the LLM is allowed to use. NOTHING outside this may appear in
@@ -135,12 +222,26 @@ function offerLine(f: DraftFacts): string {
   return "";
 }
 
+// The personalized timing sentence. Intro track: "you're ~N days from the
+// mark"; offer track: "you've crossed it". Empty when timing is unknown — the
+// surrounding copy reads cleanly either way.
+function milestoneLine(track: TrackKey, f: DraftFacts): string {
+  if (track === "offer") {
+    return "You've crossed the 180-day mark that makes carriers Amazon Relay–eligible — exactly when demand for an authority like yours peaks. ";
+  }
+  if (f.daysTo180 != null && f.daysTo180 > 0) {
+    return `Your authority is about ${f.daysTo180} days from the 180-day mark that makes carriers Amazon Relay–eligible. `;
+  }
+  return "Your authority is approaching the 180-day mark that makes carriers Amazon Relay–eligible. ";
+}
+
 // Build the system + user prompt for the LLM. Pure — no I/O.
 export function buildDraftPrompt(
   persona: OutreachTemplate,
   f: DraftFacts,
 ): { system: string; user: string } {
   const offer = offerLine(f);
+  const track = selectTrack(f);
   const system = [
     `You write short cold B2B acquisition-outreach emails for ${SITE.name} (${SITE.legalName}), an operator-led acquirer of US logistics LLCs.`,
     `Goal: open a conversation about buying the recipient's trucking company / operating authority.`,
@@ -157,6 +258,7 @@ export function buildDraftPrompt(
 
   const user = [
     `PERSONA: ${persona.label}`,
+    `TRACK: ${track === "offer" ? "OFFER — past the 180-day mark; offer-style but not a direct offer" : "INTRO — approaching the 180-day mark; warm introduction, plant the seed"}`,
     `ANGLE: ${persona.angle}`,
     `SUBJECT HINT (refine, keep it specific): ${persona.subjectHint.replace("{company}", companyName(f))}`,
     ``,
@@ -179,24 +281,21 @@ export function buildDraftPrompt(
   return { system, user };
 }
 
-// Deterministic, compliant fallback used when the LLM is unavailable. Clearly
-// generic — Lukas's real copy lives in `angle` and flows through the LLM.
+// Deterministic personalized draft — the live path (no LLM key set). Picks the
+// intro/offer track off the carrier's real timing and fills the placeholders.
 export function renderFallbackDraft(
   persona: OutreachTemplate,
   f: DraftFacts,
 ): { subject: string; body: string } {
   const company = companyName(f);
-  const milestone =
-    f.eligibilityState === "eligible_now"
-      ? "You've just crossed the 180-day mark that makes carriers Amazon Relay–eligible — exactly when demand for an authority like yours peaks. "
-      : f.daysTo180 != null && f.daysTo180 > 0
-        ? `You're about ${f.daysTo180} days from the 180-day mark that makes carriers Amazon Relay–eligible — exactly when demand for an authority like yours peaks. `
-        : "";
-  const body = persona.body
+  const track = selectTrack(f);
+  const copy = persona[track];
+  const milestone = milestoneLine(track, f);
+  const body = copy.body
     .replaceAll("{company}", company)
     .replaceAll("{milestone}", milestone)
     .replaceAll("{website}", OUTREACH_WEBSITE);
-  const subject = persona.subject.replaceAll("{company}", company);
+  const subject = copy.subject.replaceAll("{company}", company);
   return { subject, body };
 }
 

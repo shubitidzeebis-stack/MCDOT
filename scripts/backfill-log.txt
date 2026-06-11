@@ -1,0 +1,10 @@
+﻿START 2026-06-11T13:10:16.0871902+02:00
+run=1 verified=217 enriched=300 note=mode=backfill targets=300 startMs=5573 enriched=300 err=
+run=2 verified=0 enriched=300 note=mode=backfill targets=300 startMs=109 enriched=300 err=
+run=3 verified=0 enriched=300 note=mode=backfill targets=300 startMs=120 enriched=300 err=
+run=4 verified=0 enriched=300 note=mode=backfill targets=300 startMs=111 enriched=300 err=
+run=5 verified=0 enriched=78 note=mode=backfill targets=78 startMs=113 enriched=78 err=
+run=6 verified=0 enriched=0 note=mode=backfill targets=0 startMs=109 enriched=0 err=
+run=7 verified=0 enriched=0 note=mode=backfill targets=0 startMs=108 enriched=0 err=
+DRAINED after 7 runs
+END 2026-06-11T13:12:00.4398044+02:00

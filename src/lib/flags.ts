@@ -68,11 +68,15 @@ export async function getFlag(key: FlagKey): Promise<boolean> {
 // tunables that aren't simple on/off switches.
 export type ConfigKey =
   | "monitorDays" // CSV of UTC weekday numbers the sweep runs (0=Sun .. 6=Sat)
-  | "autoSendPersonas"; // CSV allowlist of persona keys cleared for auto-send
+  | "autoSendPersonas" // CSV allowlist of persona keys cleared for auto-send
+  | "outreachDailyCap"; // max cold emails per rolling 24h — the warm-up throttle
 
 const CONFIG_DEFAULTS: Record<ConfigKey, string> = {
   monitorDays: "0,1,2,3,4,5,6", // every day (cron itself fires once daily)
   autoSendPersonas: "",
+  // Warm-up ramp: bump in Edge Config weekly (20 → 40 → 70 → 100 → 150), no
+  // redeploy. The sender also spreads sends across hourly cron runs.
+  outreachDailyCap: "20",
 };
 
 export async function getConfigValue(key: ConfigKey): Promise<string> {
