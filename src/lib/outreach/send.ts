@@ -41,9 +41,12 @@ const AUTO_SEND_MIN_SCORE = 40;
 // Per-RUN ceiling (the rolling-24h `outreachDailyCap` config is the real
 // throttle; this just bounds one invocation's wall-clock).
 const SEND_CAP_PER_RUN = 25;
-// The cron fires hourly — spread the daily budget across runs so sends trickle
-// through the day (better inbox placement than one daily burst).
-const RUNS_PER_DAY = 24;
+// The cron fires every 15 minutes during the US-business-hours window
+// (vercel.json: */15 14-21 UTC ≈ 10am–6pm Eastern) — 32 runs/day. At the
+// starting cap of 20/day that is EXACTLY one email per 15 minutes, landing in
+// recipients' inboxes during their workday. Raising the cap raises the
+// per-run batch (e.g. cap 150 → 5 per 15-min slot), keeping the same rhythm.
+const RUNS_PER_DAY = 32;
 
 export type OutreachSendResult =
   | { skipped: "no_sender" | "disabled" | "paused" | "daily_cap" }
