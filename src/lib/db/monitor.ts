@@ -914,6 +914,28 @@ export async function requalifyVerified(): Promise<number> {
   return rows.length;
 }
 
+// Dead-letter every not-yet-sent outreach row (draft/approved) and return the
+// carriers to 'verified' so the next sweep re-drafts them with CURRENT copy.
+// Used after a template change so stale wording can never go out.
+export async function discardPendingOutreach(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return 0;
+  await ensureMonitorTables();
+  const rows = (await sql`
+    UPDATE outreach_queue SET stage = 'dead', last_error = 'discarded: template change'
+     WHERE stage IN ('draft', 'approved')
+    RETURNING valuation_id
+  `) as Array<{ valuation_id: number }>;
+  if (rows.length > 0) {
+    const ids = rows.map((r) => r.valuation_id);
+    await sql`
+      UPDATE valuations SET monitor_stage = 'verified', updated_at = now()
+       WHERE id = ANY(${ids}) AND source = 'monitor' AND monitor_stage = 'drafted'
+    `;
+  }
+  return rows.length;
+}
+
 // Compliance trail: every agent transition + every human approve/send.
 // Best-effort — never throws into the caller.
 export async function logAgentAction(

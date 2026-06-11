@@ -16,7 +16,13 @@ import {
   recoverPartials,
 } from "@/lib/email/queue";
 import { monitorSweep } from "@/lib/monitor/sweep";
-import { reopenStaleDisqualified, requalifyVerified } from "@/lib/db/monitor";
+import {
+  discardPendingOutreach,
+  reopenStaleDisqualified,
+  requalifyVerified,
+  resumeOutreach,
+  setOutreachPaused,
+} from "@/lib/db/monitor";
 import { processOutreachQueue } from "@/lib/outreach/send";
 
 export const runtime = "nodejs";
@@ -50,6 +56,21 @@ export async function GET(req: Request) {
   if (url.searchParams.get("requalify") === "1") {
     const requalified = await requalifyVerified();
     return NextResponse.json({ ok: true, requalified });
+  }
+
+  // Ops levers (CRON_SECRET-gated): trip/release the send breaker and discard
+  // stale pending drafts after a copy change (they re-draft with current copy).
+  if (url.searchParams.get("pause-outreach") === "1") {
+    await setOutreachPaused("manual pause (copy review)");
+    return NextResponse.json({ ok: true, paused: true });
+  }
+  if (url.searchParams.get("resume-outreach") === "1") {
+    await resumeOutreach();
+    return NextResponse.json({ ok: true, paused: false });
+  }
+  if (url.searchParams.get("discard-pending-outreach") === "1") {
+    const discarded = await discardPendingOutreach();
+    return NextResponse.json({ ok: true, discarded });
   }
 
   if (url.searchParams.get("backfill") === "1") {
