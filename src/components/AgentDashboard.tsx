@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import type {
   AgentActionRow,
   HotProspect,
+  MonitorCompanyDetail,
   MonitorCursor,
+  MonitorExportRow,
+  OutreachDraftRow,
+  OutreachEmailDetail,
   OutreachSentRow,
 } from "@/lib/db/monitor";
 
@@ -45,8 +49,17 @@ export type AgentDashboardData = {
     webhookSecret: boolean;
     anthropicOutreach: boolean;
   };
+  adminKey: string | null;
   generatedAt: string;
 };
+
+// What the drill-down modal is currently showing.
+type DrillView =
+  | { type: "list"; kind: "hot" | "phone" | "disqualified" | "review"; title: string }
+  | { type: "drafts" }
+  | { type: "sent" }
+  | { type: "company"; id: number }
+  | { type: "email"; id: number };
 
 function sum(rec: Record<string, number>): number {
   return Object.values(rec).reduce((a, b) => a + b, 0);
@@ -119,6 +132,14 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
       setResuming(false);
     }
   }
+
+  // ── Drill-down modal state ────────────────────────────────────────────────
+  // A small history stack so list → company navigation has a Back button.
+  const [drillStack, setDrillStack] = useState<DrillView[]>([]);
+  const drill = drillStack[drillStack.length - 1] ?? null;
+  const openDrill = (v: DrillView) => setDrillStack((s) => [...s, v]);
+  const backDrill = () => setDrillStack((s) => s.slice(0, -1));
+  const closeDrill = () => setDrillStack([]);
 
   const stage = data.stageCounts;
   const totalMonitored = sum(stage);
@@ -198,15 +219,38 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </div>
       )}
 
-      {/* KPI tiles */}
+      {/* KPI tiles — click to drill into the underlying list. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         <Kpi label="Monitored" value={totalMonitored} />
-        <Kpi label="Hot prospects" value={hotCount} accent />
-        <Kpi label="Drafts pending" value={draftsPending} />
-        <Kpi label={`Sent today / ${dailyCap}`} value={data.healthToday.sent} accent />
-        <Kpi label="Sent total" value={sentCount} />
-        <Kpi label="Phone queue" value={phoneQueue} />
-        <Kpi label="Disqualified" value={disqualified} muted />
+        <Kpi
+          label="Hot prospects"
+          value={hotCount}
+          accent
+          onClick={() => openDrill({ type: "list", kind: "hot", title: "Hot prospects — qualified, in the 180-day window" })}
+        />
+        <Kpi
+          label="Drafts pending"
+          value={draftsPending}
+          onClick={() => openDrill({ type: "drafts" })}
+        />
+        <Kpi
+          label={`Sent today / ${dailyCap}`}
+          value={data.healthToday.sent}
+          accent
+          onClick={() => openDrill({ type: "sent" })}
+        />
+        <Kpi label="Sent total" value={sentCount} onClick={() => openDrill({ type: "sent" })} />
+        <Kpi
+          label="Phone queue"
+          value={phoneQueue}
+          onClick={() => openDrill({ type: "list", kind: "phone", title: "Phone queue — qualified, no usable email" })}
+        />
+        <Kpi
+          label="Disqualified"
+          value={disqualified}
+          muted
+          onClick={() => openDrill({ type: "list", kind: "disqualified", title: "Disqualified — with reasons" })}
+        />
       </div>
 
       {/* Sent emails — the live send log (what actually went out, to whom). */}
@@ -232,7 +276,12 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               </thead>
               <tbody>
                 {data.sentEmails.map((s) => (
-                  <tr key={s.id} className="border-t border-white/8">
+                  <tr
+                    key={s.id}
+                    onClick={() => openDrill({ type: "email", id: s.id })}
+                    className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
+                    title="Click for the full email + company audit"
+                  >
                     <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">
                       {relTime(s.sent_at)}
                     </td>
@@ -324,7 +373,12 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
                 </thead>
                 <tbody>
                   {data.hot.map((h) => (
-                    <tr key={h.id} className="border-t border-white/8">
+                    <tr
+                      key={h.id}
+                      onClick={() => openDrill({ type: "company", id: h.id })}
+                      className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
+                      title="Click for the full company audit"
+                    >
                       <td className="py-1.5 pr-3 text-white/90">
                         {h.legal_name ?? h.dba_name ?? `#${h.id}`}
                         <span className="text-white/35"> · {h.dot_number ?? "—"}</span>
@@ -430,6 +484,18 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
           </div>
         </Card>
       </div>
+
+      {/* Drill-down modal — keyed per view so each navigation remounts fresh. */}
+      {drill && (
+        <DrillModal
+          key={`${drillStack.length}:${JSON.stringify(drill)}`}
+          view={drill}
+          adminKey={data.adminKey}
+          onClose={closeDrill}
+          onBack={drillStack.length > 1 ? backDrill : null}
+          onOpen={openDrill}
+        />
+      )}
     </div>
   );
 }
@@ -455,21 +521,38 @@ function Kpi({
   value,
   accent,
   muted,
+  onClick,
 }: {
   label: string;
   value: number;
   accent?: boolean;
   muted?: boolean;
+  onClick?: () => void;
 }) {
-  return (
-    <div className="rounded-xl bg-white/[0.025] px-4 py-3 ring-1 ring-white/10">
+  const inner = (
+    <>
       <div className="text-[10px] uppercase tracking-[0.16em] text-white/45">{label}</div>
       <div
         className={`mt-1 text-2xl font-semibold ${accent ? "text-[#ffb371]" : muted ? "text-white/55" : "text-white"}`}
       >
         {value.toLocaleString("en-US")}
       </div>
-    </div>
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title="Click to open the list"
+        className="rounded-xl bg-white/[0.025] px-4 py-3 text-left ring-1 ring-white/10 transition hover:bg-white/[0.06] hover:ring-white/20"
+      >
+        {inner}
+      </button>
+    );
+  }
+  return (
+    <div className="rounded-xl bg-white/[0.025] px-4 py-3 ring-1 ring-white/10">{inner}</div>
   );
 }
 
@@ -570,6 +653,500 @@ function Empty({ children }: { children: React.ReactNode }) {
 
 function prettyKey(k: string): string {
   return k.replace(/_/g, " ").replace(/\(|\)/g, "");
+}
+
+// ── drill-down modal ────────────────────────────────────────────────────────
+
+type DetailPayload = {
+  rows?: unknown[];
+  company?: MonitorCompanyDetail;
+  email?: OutreachEmailDetail | null;
+  error?: string;
+};
+
+function DrillModal({
+  view,
+  adminKey,
+  onClose,
+  onBack,
+  onOpen,
+}: {
+  view: DrillView;
+  adminKey: string | null;
+  onClose: () => void;
+  onBack: (() => void) | null;
+  onOpen: (v: DrillView) => void;
+}) {
+  const [payload, setPayload] = useState<DetailPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // The parent remounts this component per view (key prop), so initial state
+  // already reflects "loading" — the effect only fetches (no sync setState).
+  useEffect(() => {
+    let cancelled = false;
+    const qs = new URLSearchParams();
+    if (view.type === "list") {
+      qs.set("view", "list");
+      qs.set("kind", view.kind);
+    } else if (view.type === "drafts") {
+      qs.set("view", "drafts");
+    } else if (view.type === "sent") {
+      qs.set("view", "sent");
+      qs.set("limit", "300");
+    } else {
+      qs.set("view", view.type);
+      qs.set("id", String(view.id));
+    }
+    if (adminKey) qs.set("key", adminKey);
+    fetch(`/api/admin/agent/detail?${qs.toString()}`)
+      .then((r) => r.json())
+      .then((j: DetailPayload) => {
+        if (!cancelled) setPayload(j);
+      })
+      .catch(() => {
+        if (!cancelled) setPayload({ error: "Failed to load." });
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [view, adminKey]);
+
+  const title =
+    view.type === "list"
+      ? view.title
+      : view.type === "drafts"
+        ? "Drafts pending approval / send"
+        : view.type === "sent"
+          ? "Sent emails"
+          : view.type === "email"
+            ? "Email + company audit"
+            : "Company audit";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm sm:p-8"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl rounded-2xl bg-[#121214] p-5 ring-1 ring-white/15 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-[12px] text-white/70 ring-1 ring-white/10 hover:bg-white/[0.1]"
+              >
+                ← Back
+              </button>
+            )}
+            <h2 className="text-[15px] font-semibold text-white/90">{title}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-white/[0.06] px-2.5 py-1 text-[12px] text-white/70 ring-1 ring-white/10 hover:bg-white/[0.1]"
+          >
+            ✕ Close
+          </button>
+        </div>
+
+        {loading ? (
+          <Empty>Loading…</Empty>
+        ) : payload?.error ? (
+          <Empty>{payload.error}</Empty>
+        ) : view.type === "company" || view.type === "email" ? (
+          <CompanyAndEmail
+            company={payload?.company ?? null}
+            email={payload?.email ?? null}
+          />
+        ) : view.type === "drafts" ? (
+          <DraftRows
+            rows={(payload?.rows ?? []) as unknown as OutreachDraftRow[]}
+            onOpen={onOpen}
+          />
+        ) : view.type === "sent" ? (
+          <SentRows
+            rows={(payload?.rows ?? []) as unknown as OutreachSentRow[]}
+            onOpen={onOpen}
+          />
+        ) : (
+          <CompanyRows
+            rows={(payload?.rows ?? []) as unknown as MonitorExportRow[]}
+            kind={view.kind}
+            onOpen={onOpen}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Full audit picture + the exact email (used for both company and email views).
+function CompanyAndEmail({
+  company,
+  email,
+}: {
+  company: MonitorCompanyDetail | null;
+  email: OutreachEmailDetail | null;
+}) {
+  if (!company) return <Empty>Company not found.</Empty>;
+  const addr = company.phy_address as
+    | { street?: string; city?: string; state?: string; zip?: string }
+    | null;
+  const findings = Array.isArray(company.safety_findings)
+    ? (company.safety_findings as string[])
+    : [];
+  const gaps = Array.isArray(company.insurance_gaps)
+    ? (company.insurance_gaps as unknown[])
+    : [];
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div>
+        <div className="text-lg font-semibold text-white">
+          {company.dba_name ?? company.legal_name ?? "(unnamed)"}
+          {company.dba_name && company.legal_name && (
+            <span className="ml-2 text-[13px] font-normal text-white/45">
+              ({company.legal_name})
+            </span>
+          )}
+        </div>
+        <div className="mt-0.5 text-[13px] text-white/55">
+          DOT {company.dot_number ?? "—"}
+          {company.mc_number ? ` · MC ${company.mc_number}` : ""}
+          {addr
+            ? ` · ${[addr.street, addr.city, addr.state, addr.zip].filter(Boolean).join(", ")}`
+            : ""}
+        </div>
+        <div className="mt-0.5 text-[13px] text-white/55">
+          {company.census_email ?? "no email"} · {company.telephone ?? "no phone"}
+        </div>
+      </div>
+
+      {/* Audit results grid */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <AuditStat label="Stage" value={prettyKey(company.monitor_stage ?? "—")} />
+        <AuditStat
+          label="Authority"
+          value={prettyKey(company.authority_status ?? "—")}
+          tone={company.authority_status === "active" ? "good" : "bad"}
+        />
+        <AuditStat
+          label="Eligibility"
+          value={prettyKey(company.eligibility_state ?? "—")}
+          tone={
+            company.eligibility_state === "eligible_now"
+              ? "good"
+              : company.eligibility_state === "approaching"
+                ? "warn"
+                : undefined
+          }
+        />
+        <AuditStat
+          label="Days to 180"
+          value={
+            company.days_to_180 == null
+              ? "—"
+              : company.days_to_180 <= 0
+                ? `eligible (${-company.days_to_180}d past)`
+                : `${company.days_to_180}d`
+          }
+        />
+        <AuditStat
+          label="Insured now"
+          value={company.insurance_current == null ? "—" : company.insurance_current ? "YES" : "NO"}
+          tone={company.insurance_current ? "good" : "bad"}
+        />
+        <AuditStat
+          label="Insurance history"
+          value={company.insurance_rating ?? "—"}
+          tone={
+            company.insurance_rating === "green"
+              ? "good"
+              : company.insurance_rating === "red"
+                ? "bad"
+                : company.insurance_rating === "amber"
+                  ? "warn"
+                  : undefined
+          }
+        />
+        <AuditStat
+          label="Insurance gaps"
+          value={gaps.length === 0 ? "none on record" : `${gaps.length} gap(s)`}
+          tone={gaps.length === 0 ? "good" : "warn"}
+        />
+        <AuditStat
+          label="Safety"
+          value={company.safety_status ?? "pending"}
+          tone={
+            company.safety_status === "pass"
+              ? "good"
+              : company.safety_status === "fail"
+                ? "bad"
+                : company.safety_status === "review"
+                  ? "warn"
+                  : undefined
+          }
+        />
+        <AuditStat
+          label="Driver OOS"
+          value={company.driver_oos_rate == null ? "no inspections" : `${company.driver_oos_rate}% (avg 5.5%)`}
+        />
+        <AuditStat
+          label="Vehicle OOS"
+          value={company.vehicle_oos_rate == null ? "no inspections" : `${company.vehicle_oos_rate}% (avg 20.7%)`}
+        />
+        <AuditStat
+          label="Crashes (24mo)"
+          value={company.crash_total == null ? "0 on record" : String(company.crash_total)}
+        />
+        <AuditStat label="FMCSA rating" value={company.safety_rating ?? "none (unrated)"} />
+        <AuditStat label="Trucks" value={company.power_units == null ? "—" : String(company.power_units)} />
+        <AuditStat
+          label="Authority age"
+          value={company.age_days == null ? "—" : `${company.age_days}d (since ${company.add_date ?? "?"})`}
+        />
+        <AuditStat label="Score" value={String(company.acquisition_score ?? "—")} />
+        <AuditStat label="UCC" value={`${company.ucc_status ?? "pending"} / ${company.ucc_rating ?? "unknown"}`} />
+      </div>
+
+      {(findings.length > 0 || company.disqualify_reason) && (
+        <div className="rounded-lg bg-white/[0.03] p-3 text-[13px] text-white/70 ring-1 ring-white/10">
+          {company.disqualify_reason && (
+            <div className="mb-1 font-semibold text-red-300">
+              Disqualified: {prettyKey(company.disqualify_reason)}
+            </div>
+          )}
+          {findings.map((f, i) => (
+            <div key={i}>• {f}</div>
+          ))}
+        </div>
+      )}
+
+      {/* The email itself */}
+      {email ? (
+        <div className="rounded-xl bg-white/[0.03] p-4 ring-1 ring-white/10">
+          <div className="mb-1 flex flex-wrap items-center gap-2 text-[12px] text-white/50">
+            <span
+              className={`rounded-full px-2 py-0.5 font-semibold ring-1 ${
+                email.stage === "sent"
+                  ? "bg-emerald-500/15 text-emerald-300 ring-emerald-400/25"
+                  : "bg-white/[0.06] text-white/60 ring-white/15"
+              }`}
+            >
+              {email.stage.toUpperCase()}
+            </span>
+            <span>to {email.recipient_email ?? "—"}</span>
+            <span>· persona {email.persona ?? "—"}</span>
+            <span>· {email.sent_at ? `sent ${relTime(email.sent_at)}` : `created ${relTime(email.created_at)}`}</span>
+          </div>
+          <div className="mb-2 text-[14px] font-semibold text-white/90">
+            {email.draft_subject ?? "(no subject)"}
+          </div>
+          <pre className="whitespace-pre-wrap break-words font-sans text-[13px] leading-relaxed text-white/80">
+            {email.draft_body_text ?? "(empty body)"}
+          </pre>
+          <p className="mt-3 text-[11px] text-white/35">
+            + the standard footer is appended on send: why they received it, the
+            postal address, and the one-click unsubscribe link.
+          </p>
+          {email.last_error && (
+            <p className="mt-2 text-[12px] text-red-300">Last error: {email.last_error}</p>
+          )}
+        </div>
+      ) : (
+        <Empty>No email drafted for this company yet.</Empty>
+      )}
+    </div>
+  );
+}
+
+function AuditStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "good" | "warn" | "bad";
+}) {
+  const color =
+    tone === "good"
+      ? "text-emerald-300"
+      : tone === "bad"
+        ? "text-red-300"
+        : tone === "warn"
+          ? "text-amber-300"
+          : "text-white/85";
+  return (
+    <div className="rounded-lg bg-white/[0.03] px-3 py-2 ring-1 ring-white/10">
+      <div className="text-[10px] uppercase tracking-[0.14em] text-white/40">{label}</div>
+      <div className={`mt-0.5 text-[13px] font-medium ${color}`}>{value}</div>
+    </div>
+  );
+}
+
+function CompanyRows({
+  rows,
+  kind,
+  onOpen,
+}: {
+  rows: MonitorExportRow[];
+  kind: "hot" | "phone" | "disqualified" | "review";
+  onOpen: (v: DrillView) => void;
+}) {
+  if (rows.length === 0) return <Empty>Nothing here right now.</Empty>;
+  return (
+    <div className="max-h-[70vh] overflow-y-auto">
+      <table className="min-w-full text-[13px]">
+        <thead className="sticky top-0 bg-[#121214] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
+          <tr>
+            <th className="py-1.5 pr-3">Company</th>
+            <th className="py-1.5 pr-3">ST</th>
+            <th className="py-1.5 pr-3">Trucks</th>
+            <th className="py-1.5 pr-3">→180</th>
+            <th className="py-1.5 pr-3">Ins.</th>
+            <th className="py-1.5 pr-3">Safety</th>
+            <th className="py-1.5 pr-3">Score</th>
+            <th className="py-1.5">{kind === "disqualified" ? "Reason" : "Contact"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const st =
+              (r.phy_address as { state?: string } | null)?.state ?? "—";
+            return (
+              <tr
+                key={r.id}
+                onClick={() => onOpen({ type: "company", id: r.id })}
+                className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
+                title="Click for the full company audit"
+              >
+                <td className="py-1.5 pr-3 text-white/90">
+                  {r.dba_name ?? r.legal_name ?? "—"}
+                  <span className="text-white/35"> · {r.dot_number ?? "—"}</span>
+                </td>
+                <td className="py-1.5 pr-3 text-white/60">{st}</td>
+                <td className="py-1.5 pr-3 text-white/60">{r.power_units ?? "—"}</td>
+                <td className="py-1.5 pr-3 text-white/70">
+                  {r.days_to_180 == null
+                    ? "—"
+                    : r.days_to_180 <= 0
+                      ? "eligible"
+                      : `${r.days_to_180}d`}
+                </td>
+                <td className="py-1.5 pr-3">
+                  <Dot color={colorFor(r.insurance_rating ?? "")} />
+                </td>
+                <td className="py-1.5 pr-3">
+                  <Dot color={colorFor(r.safety_status ?? "")} />
+                </td>
+                <td className="py-1.5 pr-3 font-semibold text-white/90">
+                  {r.acquisition_score ?? "—"}
+                </td>
+                <td className="max-w-[14rem] truncate py-1.5 text-white/55">
+                  {kind === "disqualified"
+                    ? prettyKey(r.disqualify_reason ?? "—")
+                    : (r.census_email ?? r.telephone ?? "—")}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function DraftRows({
+  rows,
+  onOpen,
+}: {
+  rows: OutreachDraftRow[];
+  onOpen: (v: DrillView) => void;
+}) {
+  if (rows.length === 0) return <Empty>No drafts pending.</Empty>;
+  return (
+    <div className="max-h-[70vh] overflow-y-auto">
+      <table className="min-w-full text-[13px]">
+        <thead className="sticky top-0 bg-[#121214] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
+          <tr>
+            <th className="py-1.5 pr-3">Stage</th>
+            <th className="py-1.5 pr-3">Company</th>
+            <th className="py-1.5 pr-3">To</th>
+            <th className="py-1.5">Subject</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr
+              key={r.id}
+              onClick={() => onOpen({ type: "email", id: r.id })}
+              className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
+              title="Click for the full email + company audit"
+            >
+              <td className="py-1.5 pr-3 text-white/60">{r.stage}</td>
+              <td className="py-1.5 pr-3 text-white/90">
+                {r.dba_name ?? r.legal_name ?? `#${r.valuation_id}`}
+              </td>
+              <td className="py-1.5 pr-3 text-white/70">{r.recipient_email ?? "—"}</td>
+              <td className="max-w-[22rem] truncate py-1.5 text-white/70">
+                {r.draft_subject ?? "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SentRows({
+  rows,
+  onOpen,
+}: {
+  rows: OutreachSentRow[];
+  onOpen: (v: DrillView) => void;
+}) {
+  if (rows.length === 0) return <Empty>Nothing sent yet.</Empty>;
+  return (
+    <div className="max-h-[70vh] overflow-y-auto">
+      <table className="min-w-full text-[13px]">
+        <thead className="sticky top-0 bg-[#121214] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
+          <tr>
+            <th className="py-1.5 pr-3">Sent</th>
+            <th className="py-1.5 pr-3">Company</th>
+            <th className="py-1.5 pr-3">To</th>
+            <th className="py-1.5">Subject</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((s) => (
+            <tr
+              key={s.id}
+              onClick={() => onOpen({ type: "email", id: s.id })}
+              className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
+              title="Click for the full email + company audit"
+            >
+              <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">{relTime(s.sent_at)}</td>
+              <td className="py-1.5 pr-3 text-white/90">
+                {s.dba_name ?? s.legal_name ?? "—"}
+                <span className="text-white/35"> · {s.dot_number ?? "—"}</span>
+              </td>
+              <td className="py-1.5 pr-3 text-white/70">{s.recipient_email ?? "—"}</td>
+              <td className="max-w-[22rem] truncate py-1.5 text-white/70">{s.draft_subject ?? "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 }
 
 function actionLabel(action: string): string {

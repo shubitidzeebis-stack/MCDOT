@@ -127,6 +127,8 @@ export default async function AgentPage({
       webhookSecret: !!process.env.RESEND_WEBHOOK_SECRET,
       anthropicOutreach: !!process.env.ANTHROPIC_API_KEY_OUTREACH,
     },
+    // Legacy ?key= access: forwarded so the drill-down API calls stay authed.
+    adminKey: okLegacyKey ? (key ?? null) : null,
     generatedAt: new Date().toISOString(),
   };
 

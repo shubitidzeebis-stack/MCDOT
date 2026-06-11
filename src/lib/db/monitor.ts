@@ -1296,6 +1296,189 @@ export async function listMonitorForExport(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Drill-down detail queries for the interactive dashboard.
+// ---------------------------------------------------------------------------
+
+// Everything we know about one monitor company — the full audit picture shown
+// when a dashboard row is clicked. Live eligibility, same CASE as the export.
+export type MonitorCompanyDetail = MonitorExportRow & {
+  contact_email: string | null;
+  drivers_count: number | null;
+  bipd_anchor_date: string | null;
+  insurance_gaps: unknown;
+  safety_checked_at: string | null;
+  safety_findings: unknown;
+  safety_penalty: number | null;
+  ucc_status: string | null;
+  ucc_rating: string | null;
+  outreach_channel: string | null;
+  updated_at: string | null;
+};
+
+export async function getMonitorCompanyDetail(
+  id: number,
+): Promise<MonitorCompanyDetail | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureValuationsSchema();
+    const rows = (await sql`
+      SELECT id, dot_number, mc_number, legal_name, dba_name, phy_address,
+             add_date::text AS add_date,
+             (CURRENT_DATE - add_date) AS age_days,
+             monitor_stage, authority_status,
+             eligible_at::text AS eligible_at,
+             (eligible_at - CURRENT_DATE) AS days_to_180,
+             CASE
+               WHEN authority_status = 'not_found' THEN 'not_in_fmcsa'
+               WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
+               WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+               WHEN insurance_current = false THEN 'continuity_broken'
+               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+               WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+               ELSE 'aged_out'
+             END AS eligibility_state,
+             insurance_current, insurance_rating, safety_status, safety_rating,
+             crash_total, driver_oos_rate, vehicle_oos_rate, audit_score,
+             acquisition_score, disqualify_reason, census_email, telephone,
+             power_units,
+             contact_email, drivers_count,
+             bipd_anchor_date::text AS bipd_anchor_date, insurance_gaps,
+             safety_checked_at::text AS safety_checked_at, safety_findings,
+             safety_penalty, ucc_status, ucc_rating, outreach_channel,
+             updated_at::text AS updated_at
+        FROM valuations
+       WHERE id = ${id} AND source = 'monitor'
+    `) as MonitorCompanyDetail[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[getMonitorCompanyDetail] error", err);
+    return null;
+  }
+}
+
+// The latest outreach email for a company (any stage) — full subject + body.
+export type OutreachEmailDetail = {
+  id: number;
+  valuation_id: number;
+  stage: string;
+  persona: string | null;
+  recipient_email: string | null;
+  draft_subject: string | null;
+  draft_body_text: string | null;
+  created_at: string | null;
+  sent_at: string | null;
+  attempts: number;
+  last_error: string | null;
+};
+
+export async function getLatestOutreachForValuation(
+  valuationId: number,
+): Promise<OutreachEmailDetail | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT id, valuation_id, stage, persona, recipient_email, draft_subject,
+             draft_body_text, created_at::text AS created_at,
+             sent_at::text AS sent_at, attempts, last_error
+        FROM outreach_queue
+       WHERE valuation_id = ${valuationId}
+       ORDER BY created_at DESC
+       LIMIT 1
+    `) as OutreachEmailDetail[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[getLatestOutreachForValuation] error", err);
+    return null;
+  }
+}
+
+export async function getOutreachEmailById(
+  id: number,
+): Promise<OutreachEmailDetail | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT id, valuation_id, stage, persona, recipient_email, draft_subject,
+             draft_body_text, created_at::text AS created_at,
+             sent_at::text AS sent_at, attempts, last_error
+        FROM outreach_queue
+       WHERE id = ${id}
+       LIMIT 1
+    `) as OutreachEmailDetail[];
+    return rows[0] ?? null;
+  } catch (err) {
+    console.error("[getOutreachEmailById] error", err);
+    return null;
+  }
+}
+
+// Card drill-down lists (same live-eligibility shape as the export rows).
+export type MonitorListKind = "hot" | "phone" | "disqualified" | "review";
+
+export async function listMonitorDetailRows(
+  kind: MonitorListKind,
+  limit = 200,
+): Promise<MonitorExportRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  try {
+    await ensureValuationsSchema();
+    // Single fully-parameterized query: `kind` is a plain VALUE (no SQL
+    // fragment composition — the neon template treats interpolations as
+    // parameters), so each card's filter is selected by comparing ${kind}.
+    const rows = (await sql`
+      SELECT id, dot_number, mc_number, legal_name, dba_name, phy_address,
+             add_date::text AS add_date,
+             (CURRENT_DATE - add_date) AS age_days,
+             monitor_stage, authority_status,
+             eligible_at::text AS eligible_at,
+             (eligible_at - CURRENT_DATE) AS days_to_180,
+             CASE
+               WHEN authority_status = 'not_found' THEN 'not_in_fmcsa'
+               WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
+               WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
+               WHEN insurance_current = false THEN 'continuity_broken'
+               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+               WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
+               ELSE 'aged_out'
+             END AS eligibility_state,
+             insurance_current, insurance_rating, safety_status, safety_rating,
+             crash_total, driver_oos_rate, vehicle_oos_rate, audit_score,
+             acquisition_score, disqualify_reason, census_email, telephone,
+             power_units
+        FROM valuations
+       WHERE source = 'monitor'
+         AND (
+               (${kind} = 'hot' AND monitor_stage = 'verified'
+                  AND authority_status = 'active' AND insurance_current = true
+                  AND eligible_at IS NOT NULL
+                  AND (eligible_at - CURRENT_DATE) <= 30
+                  AND (eligible_at - CURRENT_DATE) >= -185)
+            OR (${kind} = 'phone' AND monitor_stage = 'outreach_phone')
+            OR (${kind} = 'review' AND safety_status = 'review')
+            OR (${kind} = 'disqualified' AND monitor_stage = 'disqualified')
+         )
+       ORDER BY
+         CASE WHEN ${kind} = 'disqualified' THEN extract(epoch FROM updated_at) END DESC NULLS LAST,
+         (eligible_at - CURRENT_DATE) ASC NULLS LAST,
+         acquisition_score DESC NULLS LAST
+       LIMIT ${limit}
+    `) as MonitorExportRow[];
+    return rows;
+  } catch (err) {
+    console.error("[listMonitorDetailRows] error", err);
+    return [];
+  }
+}
+
 // Add_date age distribution across ALL monitor rows — the real measurement of
 // how the standing backlog splits around the 4-month floor and the 180-day
 // window (independent of whether a row has been verified yet).
