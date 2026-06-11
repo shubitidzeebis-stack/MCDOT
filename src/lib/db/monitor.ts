@@ -700,6 +700,42 @@ export async function listOutreachDrafts(limit = 200): Promise<OutreachDraftRow[
   }
 }
 
+// Sent-emails log for the dashboard: every delivered outreach email, newest
+// first, joined to the carrier it went to.
+export type OutreachSentRow = {
+  id: number;
+  sent_at: string | null;
+  recipient_email: string | null;
+  draft_subject: string | null;
+  persona: string | null;
+  legal_name: string | null;
+  dba_name: string | null;
+  dot_number: string | null;
+};
+
+export async function listOutreachSentRows(limit = 50): Promise<OutreachSentRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  // Never throw into the admin dashboard render — degrade to empty on any error.
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT oq.id, oq.sent_at::text AS sent_at, oq.recipient_email,
+             oq.draft_subject, oq.persona,
+             v.legal_name, v.dba_name, v.dot_number
+        FROM outreach_queue oq
+        LEFT JOIN valuations v ON v.id = oq.valuation_id
+       WHERE oq.stage = 'sent'
+       ORDER BY oq.sent_at DESC NULLS LAST
+       LIMIT ${limit}
+    `) as OutreachSentRow[];
+    return rows;
+  } catch (err) {
+    console.error("[listOutreachSentRows] error", err);
+    return [];
+  }
+}
+
 export async function updateDraftContent(
   id: number,
   subject: string,

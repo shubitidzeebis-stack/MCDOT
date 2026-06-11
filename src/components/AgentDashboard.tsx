@@ -6,6 +6,7 @@ import type {
   AgentActionRow,
   HotProspect,
   MonitorCursor,
+  OutreachSentRow,
 } from "@/lib/db/monitor";
 
 // Agent operations dashboard. All data is computed server-side and passed in;
@@ -15,18 +16,25 @@ export type AgentDashboardData = {
   stageCounts: Record<string, number>;
   eligibilityCounts: Record<string, number>;
   insuranceCounts: Record<string, number>;
+  safetyCounts: Record<string, number>;
   outreachCounts: Record<string, number>;
   actions: AgentActionRow[];
   cursors: MonitorCursor[];
   hot: HotProspect[];
+  sentEmails: OutreachSentRow[];
+  outreachControl: { paused: boolean; reason: string | null; updated_at: string | null };
+  healthToday: { sent: number; bounced: number; complained: number };
+  health7d: { sent: number; bounced: number; complained: number };
   flags: {
     monitorEnabled: boolean;
     discoveryEnabled: boolean;
     outreachDraftEnabled: boolean;
+    outreachSendEnabled: boolean;
     autoSendEnabled: boolean;
     smsOutreachEnabled: boolean;
     monitorDays: string;
     autoSendPersonas: string;
+    outreachDailyCap: string;
   };
   readiness: {
     database: boolean;
@@ -34,6 +42,7 @@ export type AgentDashboardData = {
     fmcsaApiKey: boolean;
     cronSecret: boolean;
     outreachSender: boolean;
+    webhookSecret: boolean;
     anthropicOutreach: boolean;
   };
   generatedAt: string;
@@ -71,6 +80,11 @@ const RATING_COLOR: Record<string, string> = {
   awaiting_authority: "#6b7280",
   authority_inactive: "#f87171",
   continuity_broken: "#fbbf24",
+  not_in_fmcsa: "#9ca3af",
+  "(unassessed)": "#6b7280",
+  pass: "#34d399",
+  review: "#fbbf24",
+  fail: "#f87171",
 };
 
 function colorFor(key: string): string {
@@ -81,6 +95,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
   const router = useRouter();
   const [auto, setAuto] = useState(true);
   const [tick, setTick] = useState(0);
+  const [resuming, setResuming] = useState(false);
 
   // Re-render the "updated Xs ago" label every second.
   useEffect(() => {
@@ -95,6 +110,16 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
     return () => clearInterval(id);
   }, [auto, router]);
 
+  async function resumeSending() {
+    setResuming(true);
+    try {
+      await fetch("/api/admin/outreach/resume", { method: "POST" });
+      router.refresh();
+    } finally {
+      setResuming(false);
+    }
+  }
+
   const stage = data.stageCounts;
   const totalMonitored = sum(stage);
   const draftsPending =
@@ -105,6 +130,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
   const disqualified = stage.disqualified ?? 0;
   const hotCount = (data.eligibilityCounts.approaching ?? 0) +
     (data.eligibilityCounts.eligible_now ?? 0);
+  const dailyCap = Number(data.flags.outreachDailyCap) || 20;
 
   // tick is read so the lint/compiler keeps the 1s re-render effect meaningful.
   void tick;
@@ -124,6 +150,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
           <StatusPill on={data.flags.monitorEnabled} label="Monitor" />
           <StatusPill on={data.flags.discoveryEnabled} label="Discovery" />
           <StatusPill on={data.flags.outreachDraftEnabled} label="Drafting" />
+          <StatusPill on={data.flags.outreachSendEnabled} label="Sending" />
           <StatusPill on={data.flags.autoSendEnabled} label="Auto-send" warn />
           <StatusPill on={data.readiness.outreachSender} label="Sender" />
           {dlq > 0 && (
@@ -149,18 +176,85 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </div>
       </div>
 
+      {/* Auto-pause breaker banner — the most important state on the page. */}
+      {data.outreachControl.paused && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-500/15 px-4 py-3 ring-1 ring-red-400/30">
+          <div className="text-[13px] text-red-200">
+            <span className="font-semibold">⛔ SENDING AUTO-PAUSED</span>
+            {data.outreachControl.reason && <> — {data.outreachControl.reason}</>}
+            <span className="text-red-300/70">
+              {" "}
+              ({relTime(data.outreachControl.updated_at)})
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled={resuming}
+            onClick={resumeSending}
+            className="rounded-lg bg-red-400/20 px-3 py-1.5 text-[12px] font-semibold text-red-100 ring-1 ring-red-300/40 hover:bg-red-400/30 disabled:opacity-50"
+          >
+            {resuming ? "Resuming…" : "Resume sending"}
+          </button>
+        </div>
+      )}
+
       {/* KPI tiles */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
         <Kpi label="Monitored" value={totalMonitored} />
         <Kpi label="Hot prospects" value={hotCount} accent />
         <Kpi label="Drafts pending" value={draftsPending} />
-        <Kpi label="Offers sent" value={sentCount} />
+        <Kpi label={`Sent today / ${dailyCap}`} value={data.healthToday.sent} accent />
+        <Kpi label="Sent total" value={sentCount} />
         <Kpi label="Phone queue" value={phoneQueue} />
         <Kpi label="Disqualified" value={disqualified} muted />
       </div>
 
+      {/* Sent emails — the live send log (what actually went out, to whom). */}
+      <Card
+        title={`Sent emails (${sentCount} total · last 7d: ${data.health7d.sent} sent, ${data.health7d.bounced} bounced, ${data.health7d.complained} complaints)`}
+      >
+        {data.sentEmails.length === 0 ? (
+          <Empty>
+            Nothing sent yet — emails fire every 15 minutes, 10am–6pm ET, once
+            Sending is on.
+          </Empty>
+        ) : (
+          <div className="max-h-96 overflow-x-auto overflow-y-auto">
+            <table className="min-w-full text-[13px]">
+              <thead className="sticky top-0 bg-[#101012] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
+                <tr>
+                  <th className="py-1.5 pr-3">Sent</th>
+                  <th className="py-1.5 pr-3">Company</th>
+                  <th className="py-1.5 pr-3">To</th>
+                  <th className="py-1.5 pr-3">Subject</th>
+                  <th className="py-1.5">Persona</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.sentEmails.map((s) => (
+                  <tr key={s.id} className="border-t border-white/8">
+                    <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">
+                      {relTime(s.sent_at)}
+                    </td>
+                    <td className="py-1.5 pr-3 text-white/90">
+                      {s.dba_name ?? s.legal_name ?? "—"}
+                      <span className="text-white/35"> · {s.dot_number ?? "—"}</span>
+                    </td>
+                    <td className="py-1.5 pr-3 text-white/70">{s.recipient_email ?? "—"}</td>
+                    <td className="max-w-[26rem] truncate py-1.5 pr-3 text-white/70">
+                      {s.draft_subject ?? "—"}
+                    </td>
+                    <td className="py-1.5 text-white/55">{s.persona ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
       {/* Pipeline + distributions */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-4">
         <Card title="Pipeline" className="lg:col-span-1">
           <BarList
             counts={stage}
@@ -184,10 +278,12 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               "eligible_now",
               "approaching",
               "too_new",
+              "(unassessed)",
               "awaiting_authority",
               "aged_out",
               "continuity_broken",
               "authority_inactive",
+              "not_in_fmcsa",
               "(pending)",
             ]}
             colorByKey
@@ -197,6 +293,13 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
           <BarList
             counts={data.insuranceCounts}
             order={["green", "amber", "red", "unknown", "(pending)"]}
+            colorByKey
+          />
+        </Card>
+        <Card title="Safety (in-window)" className="lg:col-span-1">
+          <BarList
+            counts={data.safetyCounts}
+            order={["pass", "review", "fail", "(pending)"]}
             colorByKey
           />
         </Card>
@@ -288,8 +391,10 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
             </ul>
           )}
           <p className="mt-3 text-[11px] text-white/40">
-            Schedule: weekdays [{data.flags.monitorDays || "every cron day"}] (UTC,
-            0=Sun). Auto-send personas: {data.flags.autoSendPersonas || "none"}.
+            Cadence: every 15 min, 10am–6pm ET · daily cap {dailyCap} (Edge
+            Config <code>outreachDailyCap</code>). Days: [
+            {data.flags.monitorDays || "all"}] (UTC, 0=Sun). Auto-send personas:{" "}
+            {data.flags.autoSendPersonas || "none"}.
           </p>
         </Card>
 
@@ -306,7 +411,12 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
             <ReadyRow
               ok={data.readiness.outreachSender}
               label="Outreach sender (OUTREACH_EMAIL_FROM + RESEND_OUTREACH_API_KEY)"
-              hint="separate subdomain — required to SEND"
+              hint="separate domain — required to SEND"
+            />
+            <ReadyRow
+              ok={data.readiness.webhookSecret}
+              label="Bounce/complaint webhook (RESEND_WEBHOOK_SECRET)"
+              hint="auto-pause protection"
             />
             <ReadyRow
               ok={data.readiness.anthropicOutreach}
@@ -315,6 +425,8 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
             />
             <ReadyRow on label="Master switch: monitorEnabled" value={data.flags.monitorEnabled} />
             <ReadyRow on label="Drafting: outreachDraftEnabled" value={data.flags.outreachDraftEnabled} />
+            <ReadyRow on label="Sending: outreachSendEnabled" value={data.flags.outreachSendEnabled} />
+            <ReadyRow on label="Auto-send: autoSendEnabled" value={data.flags.autoSendEnabled} />
           </div>
         </Card>
       </div>
@@ -468,6 +580,9 @@ function actionLabel(action: string): string {
     outreach_approved: "Draft approved",
     outreach_auto_approved: "Auto-approved",
     outreach_discarded: "Draft discarded",
+    outreach_bounced: "Email bounced",
+    outreach_complained: "⚠ Spam complaint",
+    outreach_resumed: "Sending resumed",
   };
   return map[action] ?? action;
 }
