@@ -10,7 +10,6 @@ export function AdminHeader({
 }: {
   currentUser: { name: string | null; email: string };
   stats: {
-    leads: number;
     valuations: number;
     withEmail: number;
     relay: number;
@@ -36,7 +35,7 @@ export function AdminHeader({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Veritor — Admin</h1>
         <p className="mt-1 text-[13px] text-white/55">
-          {stats.leads} leads · {stats.valuations} valuations ({stats.withEmail} w/ email
+          {stats.valuations} valuations ({stats.withEmail} w/ email
           · {stats.relay} active Relay) · {stats.partials} active partials
         </p>
       </div>
