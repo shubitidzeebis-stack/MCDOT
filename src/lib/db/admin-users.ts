@@ -92,6 +92,19 @@ export async function findUserByEmail(email: string): Promise<
   return rows[0] ?? null;
 }
 
+// Existence check used by the auth guard so a deleted account loses access
+// immediately, despite stateless session cookies. Returns null when no DB is
+// configured (dev) — the caller then trusts the signed cookie.
+export async function userExists(userId: number): Promise<boolean | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureTable(sql);
+  const rows = (await sql`
+    SELECT 1 FROM admin_users WHERE id = ${userId} LIMIT 1
+  `) as unknown[];
+  return rows.length > 0;
+}
+
 export async function attemptLogin(
   email: string,
   password: string,

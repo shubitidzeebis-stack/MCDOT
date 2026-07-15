@@ -40,7 +40,7 @@ function isLookupBody(x: unknown): x is LookupBody {
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req);
-    const limit = rateLimit(`valuation:lookup:${ip}`, LIMIT, WINDOW_MS);
+    const limit = await rateLimit(`valuation:lookup:${ip}`, LIMIT, WINDOW_MS);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many lookups from this network. Try again shortly." },

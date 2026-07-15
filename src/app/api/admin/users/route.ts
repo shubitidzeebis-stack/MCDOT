@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   createUser,
   deleteUser,
@@ -18,8 +17,7 @@ import {
 export const dynamic = "force-dynamic";
 
 async function requireSession() {
-  const cookieStore = await cookies();
-  return verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
+  return requireAdmin();
 }
 
 export async function GET() {

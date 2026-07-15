@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { findUserByEmail, changePassword } from "@/lib/db/admin-users";
 import { verifyPassword } from "@/lib/auth/passwords";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
@@ -17,14 +16,13 @@ type Body = { currentPassword?: unknown; newPassword?: unknown };
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
+    const session = await requireAdmin();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const ip = getClientIp(req);
-    const rl = rateLimit(`admin-pw:${session.email}:${ip}`, LIMIT, WINDOW_MS);
+    const rl = await rateLimit(`admin-pw:${session.email}:${ip}`, LIMIT, WINDOW_MS);
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Too many attempts. Try again later." },

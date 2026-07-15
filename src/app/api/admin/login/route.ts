@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     // Brute-force guard — 10 attempts per IP per 15 minutes. Tightens
     // any password-spray attack against the seeded shared password.
     const ip = getClientIp(req);
-    const rl = rateLimit(`admin-login:${ip}`, LIMIT, WINDOW_MS);
+    const rl = await rateLimit(`admin-login:${ip}`, LIMIT, WINDOW_MS);
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Too many login attempts. Please try again shortly." },

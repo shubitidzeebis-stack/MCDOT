@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   getMonitorAuditInputs,
   logAgentAction,
@@ -24,7 +23,6 @@ export const dynamic = "force-dynamic";
 const UCC_RATINGS: UccRating[] = ["green", "amber", "red", "unknown"];
 
 type Body = {
-  key?: string;
   id: number;
   liensFound: boolean;
   lienCount?: number | null;
@@ -55,14 +53,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-    let authorized = !!session;
-    if (!authorized) {
-      const expected = process.env.ADMIN_KEY ?? "";
-      authorized = expected.length > 0 && raw.key === expected;
-    }
-    if (!authorized) {
+    const session = await requireAdmin();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
@@ -100,7 +92,7 @@ export async function POST(req: Request) {
     });
     const score = Math.max(0, baseScore - (inputs?.safety_penalty ?? 0));
 
-    const auditedBy = session?.email ?? "legacy-key";
+    const auditedBy = session.email;
     const result = await recordUccFindings(raw.id, {
       uccStatus,
       uccRating,

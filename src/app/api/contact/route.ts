@@ -18,7 +18,7 @@ const WINDOW_MS = 10 * 60 * 1000;
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req);
-    const limit = rateLimit(`contact:${ip}`, LIMIT, WINDOW_MS);
+    const limit = await rateLimit(`contact:${ip}`, LIMIT, WINDOW_MS);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many submissions from this network. Please try again shortly." },

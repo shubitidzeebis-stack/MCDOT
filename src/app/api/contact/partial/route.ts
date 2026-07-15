@@ -23,7 +23,7 @@ const WINDOW_MS = 60 * 1000;
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req);
-    const limit = rateLimit(`partial:${ip}`, LIMIT, WINDOW_MS);
+    const limit = await rateLimit(`partial:${ip}`, LIMIT, WINDOW_MS);
     if (!limit.ok) {
       // Quietly succeed — don't tip off scrapers that we throttle.
       return NextResponse.json({ ok: true });

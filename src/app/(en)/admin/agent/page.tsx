@@ -4,8 +4,7 @@
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { getConfigValue, getFlag } from "@/lib/flags";
 import {
   getEligibilityCounts,
@@ -29,20 +28,8 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function AgentPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ key?: string }>;
-}) {
-  const expected = process.env.ADMIN_KEY ?? "";
-  const { key } = await searchParams;
-
-  const cookieStore = await cookies();
-  const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-  const okSession = !!session;
-  const okLegacyKey = expected.length > 0 && key === expected;
-  const okInDev = expected.length === 0 && process.env.NODE_ENV !== "production";
-  if (!okSession && !okLegacyKey && !okInDev) {
+export default async function AgentPage() {
+  if (!(await requireAdmin())) {
     redirect("/admin/login");
   }
 
@@ -127,8 +114,8 @@ export default async function AgentPage({
       webhookSecret: !!process.env.RESEND_WEBHOOK_SECRET,
       anthropicOutreach: !!process.env.ANTHROPIC_API_KEY_OUTREACH,
     },
-    // Legacy ?key= access: forwarded so the drill-down API calls stay authed.
-    adminKey: okLegacyKey ? (key ?? null) : null,
+    // Drill-down API calls are authed by the session cookie now.
+    adminKey: null,
     generatedAt: new Date().toISOString(),
   };
 
@@ -136,7 +123,7 @@ export default async function AgentPage({
     <main className="min-h-screen bg-[#0a0a0b] p-6 text-white md:p-10">
       <div className="mb-6">
         <a
-          href={okSession ? "/admin" : `/admin?key=${key ?? ""}`}
+          href="/admin"
           className="text-[13px] text-white/55 hover:text-white"
         >
           ← Back to admin

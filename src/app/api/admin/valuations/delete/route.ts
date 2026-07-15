@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { adminDeleteValuation } from "@/lib/db/valuations";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 // Hard-delete a valuation row. Auth: session cookie OR legacy
 // ADMIN_KEY in body. Used for clearing test rows from /admin.
 
 export const dynamic = "force-dynamic";
 
-type Body = { id: number; key?: string };
+type Body = { id: number };
 
 function isBody(x: unknown): x is Body {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
-  return typeof o.id === "number" && (o.key === undefined || typeof o.key === "string");
+  return typeof o.id === "number";
 }
 
 export async function POST(req: Request) {
@@ -23,14 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-    let authorized = !!session;
-    if (!authorized) {
-      const expected = process.env.ADMIN_KEY ?? "";
-      authorized = expected.length > 0 && raw.key === expected;
-    }
-    if (!authorized) {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 

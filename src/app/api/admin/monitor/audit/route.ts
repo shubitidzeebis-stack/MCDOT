@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { lookupCarrier } from "@/lib/fmcsa";
 import { verifyCandidate } from "@/lib/monitor/verify";
 import { buildUccHandoff } from "@/lib/audit/ucc";
@@ -15,7 +14,7 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { key?: string; number: string; kind: "mc" | "dot" };
+type Body = { number: string; kind: "mc" | "dot" };
 
 function isBody(x: unknown): x is Body {
   if (!x || typeof x !== "object") return false;
@@ -32,20 +31,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Enter an MC or DOT number." }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-    let authorized = !!session;
-    if (!authorized) {
-      const expected = process.env.ADMIN_KEY ?? "";
-      authorized = expected.length > 0 && raw.key === expected;
-    }
-    if (!authorized) {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     // Each audit fires live SAFER/QCMobile + Socrata lookups — cap per IP so a
     // logged-in user can't burn the FMCSA daily quota.
-    const rl = rateLimit(`monitor-audit:${getClientIp(req)}`, 20, 5 * 60 * 1000);
+    const rl = await rateLimit(`monitor-audit:${getClientIp(req)}`, 20, 5 * 60 * 1000);
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Too many audits — try again shortly." },

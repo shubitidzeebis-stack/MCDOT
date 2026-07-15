@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { listUsers } from "@/lib/db/admin-users";
 import { AccountPanel } from "@/components/admin/AccountPanel";
 
@@ -14,8 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminAccountPage() {
-  const cookieStore = await cookies();
-  const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
+  const session = await requireAdmin();
   if (!session) {
     redirect("/admin/login?next=/admin/account");
   }

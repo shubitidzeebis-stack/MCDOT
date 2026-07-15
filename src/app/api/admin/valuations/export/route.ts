@@ -1,6 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { ensureValuationsSchema } from "@/lib/db/valuations";
 
 // CSV export of all valuations. Auth precedence:
@@ -46,17 +45,8 @@ function csvEscape(v: unknown): string {
   return s;
 }
 
-export async function GET(req: Request) {
-  const cookieStore = await cookies();
-  const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-  let authorized = !!session;
-  if (!authorized) {
-    const expected = process.env.ADMIN_KEY ?? "";
-    const { searchParams } = new URL(req.url);
-    const key = searchParams.get("key") ?? "";
-    authorized = expected.length > 0 && key === expected;
-  }
-  if (!authorized) {
+export async function GET() {
+  if (!(await requireAdmin())) {
     return new Response("Unauthorized.", { status: 401 });
   }
 

@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import {
   adminUpdateValuation,
   VALUATION_STATUSES,
   type ValuationStatus,
 } from "@/lib/db/valuations";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 // Admin mutation endpoint. Auth precedence:
 //   1. Session cookie (preferred)
@@ -17,7 +16,6 @@ import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
 export const dynamic = "force-dynamic";
 
 type Body = {
-  key?: string;
   id: number;
   status?: ValuationStatus;
   notesInternal?: string;
@@ -27,7 +25,6 @@ function isBody(x: unknown): x is Body {
   if (!x || typeof x !== "object") return false;
   const o = x as Record<string, unknown>;
   if (typeof o.id !== "number") return false;
-  if (o.key !== undefined && typeof o.key !== "string") return false;
   if (
     o.status !== undefined &&
     !VALUATION_STATUSES.includes(o.status as ValuationStatus)
@@ -47,19 +44,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    // Try session cookie first.
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-
-    let authorized = !!session;
-
-    // Fallback: legacy ADMIN_KEY in body.
-    if (!authorized) {
-      const expected = process.env.ADMIN_KEY ?? "";
-      authorized = expected.length > 0 && raw.key === expected;
-    }
-
-    if (!authorized) {
+    if (!(await requireAdmin())) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 

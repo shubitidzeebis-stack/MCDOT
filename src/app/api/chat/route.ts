@@ -95,7 +95,7 @@ export async function POST(req: Request) {
   // 3. Rate limit — per hashed IP.
   const ip = getClientIp(req);
   const ipHashed = hashIp(ip);
-  const limit = rateLimit(`chat:${ipHashed}`, RATE_LIMIT, RATE_WINDOW_MS);
+  const limit = await rateLimit(`chat:${ipHashed}`, RATE_LIMIT, RATE_WINDOW_MS);
   if (!limit.ok) {
     return new Response(JSON.stringify({ error: "Rate limit" }), {
       status: 429,

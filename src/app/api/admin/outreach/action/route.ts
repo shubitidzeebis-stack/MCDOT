@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   approveOutreach,
   discardOutreach,
@@ -23,7 +22,6 @@ type Action = "save" | "approve" | "send_now" | "discard";
 const ACTIONS: Action[] = ["save", "approve", "send_now", "discard"];
 
 type Body = {
-  key?: string;
   id: number;
   action: Action;
   subject?: string;
@@ -45,18 +43,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-    let authorized = !!session;
-    if (!authorized) {
-      const expected = process.env.ADMIN_KEY ?? "";
-      authorized = expected.length > 0 && raw.key === expected;
-    }
-    if (!authorized) {
+    const session = await requireAdmin();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    const who = session?.email ?? "legacy-key";
+    const who = session.email;
 
     // Persist any edits first (save / approve / send_now may carry them).
     if (

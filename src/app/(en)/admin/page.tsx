@@ -1,22 +1,16 @@
-// Password-gated lead admin. Lives at /admin?key=<ADMIN_KEY>.
-// Shows recent leads + partials in a table, sortable by submission
-// time, with priority badges so the team can triage at a glance.
+// Lead admin dashboard. Shows recent leads + partials in a table,
+// sortable by submission time, with priority badges so the team can
+// triage at a glance.
 //
-// Security model: HTTP basic-style query-string auth. Nothing fancy
-// because:
-//   - It's behind robots.txt disallow + noindex
-//   - The data is already in Vercel Storage (admin can always go there)
-//   - The /admin page is purely read-only — no destructive actions
-// If you ever want stronger auth (Vercel Auth, magic-link login, etc.)
-// it's an easy upgrade path; this exists for fast daily triage.
+// Auth: session-cookie login only (see requireAdmin). The old
+// ?key=ADMIN_KEY query-string bypass has been removed.
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { neon } from "@neondatabase/serverless";
 import { AdminValuationsPanel } from "@/components/AdminValuationsPanel";
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { ensureValuationsSchema } from "@/lib/db/valuations";
 import { AdminMonitorPanel } from "@/components/AdminMonitorPanel";
 import { OutreachDraftsPanel } from "@/components/OutreachDraftsPanel";
@@ -170,28 +164,9 @@ function priorityBadge(p: Lead["priority"]) {
   );
 }
 
-export default async function AdminPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ key?: string }>;
-}) {
-  const expected = process.env.ADMIN_KEY ?? "";
-  const { key } = await searchParams;
-
-  // Auth precedence:
-  //   1. Session cookie (preferred — proper login flow)
-  //   2. Legacy ?key=ADMIN_KEY URL parameter (emergency fallback)
-  //   3. Dev no-config (only when ADMIN_KEY env is unset locally)
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(ADMIN_COOKIE)?.value;
-  const session = verifySession(sessionCookie);
-
-  const okSession = !!session;
-  const okLegacyKey = expected.length > 0 && key === expected;
-  const okInDev =
-    expected.length === 0 && process.env.NODE_ENV !== "production";
-
-  if (!okSession && !okLegacyKey && !okInDev) {
+export default async function AdminPage() {
+  const session = await requireAdmin();
+  if (!session) {
     redirect("/admin/login");
   }
 
@@ -200,11 +175,7 @@ export default async function AdminPage({
   const outreachDrafts = await listOutreachDrafts();
   const valuationsWithEmail = valuations.filter((v) => v.contact_email);
   const relayValuations = valuations.filter((v) => v.has_amazon_relay === true);
-  const currentUser = session
-    ? { name: session.name, email: session.email }
-    : okLegacyKey
-      ? { name: "Legacy access", email: "?key=…" }
-      : { name: "Dev", email: "(no auth)" };
+  const currentUser = { name: session.name, email: session.email };
 
   return (
     <main className="min-h-screen bg-[#0a0a0b] p-6 text-white md:p-10">
@@ -290,35 +261,32 @@ export default async function AdminPage({
         </div>
       </section>
 
-      <AdminValuationsPanel
-        initial={valuations}
-        adminKey={okSession ? undefined : (key ?? undefined)}
-      />
+      <AdminValuationsPanel initial={valuations} />
 
       <div className="mt-12 flex items-center justify-end gap-2">
         <a
-          href={okSession ? "/admin/agent" : `/admin/agent?key=${key ?? ""}`}
+          href="/admin/agent"
           className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
         >
           Agent dashboard →
         </a>
         <a
-          href={okSession ? "/admin/audit" : `/admin/audit?key=${key ?? ""}`}
+          href="/admin/audit"
           className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
         >
           On-demand audit tool →
         </a>
+        <a
+          href="/admin/bill-of-sale"
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          Bill of Sale generator →
+        </a>
       </div>
 
-      <AdminMonitorPanel
-        initial={monitor}
-        adminKey={okSession ? undefined : (key ?? undefined)}
-      />
+      <AdminMonitorPanel initial={monitor} />
 
-      <OutreachDraftsPanel
-        initial={outreachDrafts}
-        adminKey={okSession ? undefined : (key ?? undefined)}
-      />
+      <OutreachDraftsPanel initial={outreachDrafts} />
 
       {partials.length > 0 && (
         <section className="mt-12">

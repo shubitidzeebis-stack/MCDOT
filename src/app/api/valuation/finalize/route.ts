@@ -58,7 +58,7 @@ function isEmailLikeValid(email: string): boolean {
 export async function POST(req: Request) {
   try {
     const ip = getClientIp(req);
-    const limit = rateLimit(`valuation:finalize:${ip}`, LIMIT, WINDOW_MS);
+    const limit = await rateLimit(`valuation:finalize:${ip}`, LIMIT, WINDOW_MS);
     if (!limit.ok) {
       return NextResponse.json(
         { error: "Too many submissions. Try again shortly." },

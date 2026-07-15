@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { Resend } from "resend";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { emailShell } from "@/lib/email/shell";
 import { unsubscribeUrl } from "@/lib/email/queue";
@@ -59,14 +58,13 @@ function escapeHtml(s: string): string {
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
+    const session = await requireAdmin();
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const ip = getClientIp(req);
-    const rl = rateLimit(`admin-email:${session.email}:${ip}`, LIMIT, WINDOW_MS);
+    const rl = await rateLimit(`admin-email:${session.email}:${ip}`, LIMIT, WINDOW_MS);
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Send limit hit. Try again later." },

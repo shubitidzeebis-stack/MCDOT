@@ -8,8 +8,7 @@
 //   ?view=sent&limit=N               → sent emails log (more rows than the card)
 
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE, verifySession } from "@/lib/auth/sessions";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import {
   getLatestOutreachForValuation,
   getMonitorCompanyDetail,
@@ -29,12 +28,7 @@ const LIST_KINDS = new Set(["hot", "phone", "disqualified", "review"]);
 export async function GET(req: Request) {
   const url = new URL(req.url);
 
-  const cookieStore = await cookies();
-  const session = verifySession(cookieStore.get(ADMIN_COOKIE)?.value);
-  const expected = process.env.ADMIN_KEY ?? "";
-  const okLegacyKey =
-    expected.length > 0 && url.searchParams.get("key") === expected;
-  if (!session && !okLegacyKey) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

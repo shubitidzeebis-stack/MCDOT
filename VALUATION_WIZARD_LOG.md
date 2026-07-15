@@ -79,7 +79,7 @@ go to `/contact` (wizard not yet localized).
   (`new` → `contacted` → `diligence` → `offer_sent` → `closed_won` /
   `closed_lost`). Defaults to `new` on insert.
 - ✅ **Internal notes** — `notes_internal` column for admin-side notes.
-- ✅ **Admin panel rebuilt** — `/admin?key=Luka20Gio22` loads. New
+- ✅ **Admin panel rebuilt** — `/admin?key=«redacted — see ADMIN_KEY in Vercel env»` loads. New
   features:
   - KPI cards (total / Relay / email-captured / closed-won + value)
   - Filter bar (status / Relay / email / search)
@@ -89,15 +89,15 @@ go to `/contact` (wizard not yet localized).
   - Pipeline-value calc across contacted/diligence/offer-sent
 
 ### Admin login
-- URL: `https://groupveritor.com/admin?key=Luka20Gio22`
-- Password is `Luka20Gio22` — set as `ADMIN_KEY` on Vercel (production
+- URL: `https://groupveritor.com/admin?key=«redacted — see ADMIN_KEY in Vercel env»`
+- Password is `«redacted — see ADMIN_KEY in Vercel env»` — set as `ADMIN_KEY` on Vercel (production
   + development envs) and in local `.env.local`.
 
 ### Phase 4 — shipped 2026-05-07
 
 - ✅ **Multi-user auth** — proper per-user login flow at `/admin/login`.
   - 4 seeded accounts: `luka@`, `lisa@`, `keira@`, `giorgi@groupveritor.com`
-  - Initial shared password = `Luka20Gio22` (the existing ADMIN_KEY value).
+  - Initial shared password = `«redacted — see ADMIN_KEY in Vercel env»` (the existing ADMIN_KEY value).
     Each user is expected to change it post-first-login.
   - Passwords hashed with scrypt (Node built-in, no deps).
   - Sessions: stateless HMAC-signed cookie (`veritor_admin`), 7-day TTL.
