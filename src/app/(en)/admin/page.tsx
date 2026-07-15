@@ -190,6 +190,27 @@ export default async function AdminPage() {
         }}
       />
 
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <a
+          href="/admin/agent"
+          className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+        >
+          Agent dashboard →
+        </a>
+        <a
+          href="/admin/audit"
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          On-demand audit tool →
+        </a>
+        <a
+          href="/admin/bill-of-sale"
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          Bill of Sale generator →
+        </a>
+      </div>
+
       <section className="mt-8">
         <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
           Submitted leads
@@ -262,27 +283,6 @@ export default async function AdminPage() {
       </section>
 
       <AdminValuationsPanel initial={valuations} />
-
-      <div className="mt-12 flex items-center justify-end gap-2">
-        <a
-          href="/admin/agent"
-          className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
-        >
-          Agent dashboard →
-        </a>
-        <a
-          href="/admin/audit"
-          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
-        >
-          On-demand audit tool →
-        </a>
-        <a
-          href="/admin/bill-of-sale"
-          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
-        >
-          Bill of Sale generator →
-        </a>
-      </div>
 
       <AdminMonitorPanel initial={monitor} />
 

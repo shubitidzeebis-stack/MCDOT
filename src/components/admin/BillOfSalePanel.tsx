@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildBillOfSale,
   DEFAULT_DELIVERABLES,
   type BillOfSaleData,
 } from "@/lib/bos/bill-of-sale-pdf";
+import { takeBosPrefill } from "@/lib/bos/prefill";
 
 const inputClass =
   "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50";
@@ -88,7 +89,25 @@ export function BillOfSalePanel() {
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState("");
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
   const prevUrl = useRef<string | null>(null);
+
+  // Arriving from a lead's "BoS" button: absorb the stashed lead details.
+  useEffect(() => {
+    const p = takeBosPrefill();
+    if (!p) return;
+    setForm((f) => ({
+      ...f,
+      companyName: p.companyName ?? f.companyName,
+      companyDba: p.companyDba ?? f.companyDba,
+      sellerName: p.sellerName ?? f.sellerName,
+      mcNumber: p.mcNumber ?? f.mcNumber,
+      usdotNumber: p.usdotNumber ?? f.usdotNumber,
+      companyAddress: p.companyAddress ?? f.companyAddress,
+      companyPhone: p.companyPhone ?? f.companyPhone,
+    }));
+    if (p.companyName) setPrefilledFrom(p.companyName);
+  }, []);
 
   const set = (key: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -166,6 +185,13 @@ export function BillOfSalePanel() {
   return (
     <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <form onSubmit={generate} className="space-y-8">
+        {prefilledFrom && (
+          <p className="rounded-lg bg-[#1f5fa8]/15 px-3 py-2 text-[12px] text-blue-300 ring-1 ring-blue-400/20">
+            Prefilled from lead: <b>{prefilledFrom}</b>. Review each field —
+            FMCSA data can be stale — then add the deal specifics (price, date,
+            buyer, wire info).
+          </p>
+        )}
         <Fieldset title="Deal">
           <Field label="Effective / closing date">
             <input

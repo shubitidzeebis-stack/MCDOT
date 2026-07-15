@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { stashBosPrefill } from "@/lib/bos/prefill";
 
 // Interactive admin panel for the valuations table. Reads initial rows
 // from the server, then supports filtering, status updates, and notes
@@ -649,6 +650,37 @@ function Row({
               className="rounded-md px-2 py-1 text-[11px] text-white/60 hover:bg-white/[0.06] hover:text-white"
             >
               {expanded ? "Close" : "Detail"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                stashBosPrefill({
+                  companyName: v.legal_name ?? undefined,
+                  companyDba: v.dba_name ?? undefined,
+                  sellerName: v.contact_name ?? undefined,
+                  mcNumber: v.mc_number
+                    ? v.mc_number.toUpperCase().startsWith("MC")
+                      ? v.mc_number
+                      : `MC-${v.mc_number}`
+                    : undefined,
+                  usdotNumber: v.dot_number ?? undefined,
+                  companyAddress:
+                    [
+                      v.phy_address?.street,
+                      v.phy_address?.city,
+                      v.phy_address?.state,
+                      v.phy_address?.zip,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || undefined,
+                  companyPhone: v.contact_phone ?? v.telephone ?? undefined,
+                });
+                window.location.href = "/admin/bill-of-sale";
+              }}
+              title="Draft a Bill of Sale prefilled from this lead"
+              className="rounded-md px-2 py-1 text-[11px] text-[#ffb371]/80 hover:bg-[#ff8a1a]/[0.08] hover:text-[#ffb371]"
+            >
+              BoS
             </button>
             <button
               type="button"
