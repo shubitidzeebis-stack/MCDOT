@@ -2,10 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { AnalyticsGate } from "@/components/AnalyticsGate";
 import { AttributionCapture } from "@/components/AttributionCapture";
-import { ChatWidget } from "@/components/ChatWidget";
 import { CookieBanner } from "@/components/CookieBanner";
 import { WhatsAppFAB } from "@/components/WhatsAppFAB";
-import { getFlag } from "@/lib/flags";
 import {
   LocalBusinessSchema,
   OrganizationSchema,
@@ -116,11 +114,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Chat widget kill switch — defaults to false in flags.ts, so the
-  // widget doesn't render until you flip chatWidgetEnabled=true in
-  // Vercel Edge Config. EN-only at launch; ES/RU layouts intentionally
-  // don't mount the widget until their system prompts are reviewed.
-  const chatEnabled = await getFlag("chatWidgetEnabled");
+  // Jarvis chat widget removed at owner's request 2026-07-16 — it kept
+  // reappearing because the Edge Config flag chatWidgetEnabled could
+  // re-enable it without a deploy. Unmounted in code so no flag flip can
+  // bring it back; ChatWidget.tsx and /api/chat remain in the repo if it's
+  // ever deliberately re-launched.
 
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
@@ -134,7 +132,6 @@ export default async function RootLayout({
         <AttributionCapture />
         {children}
         <WhatsAppFAB locale="en" />
-        <ChatWidget enabled={chatEnabled} locale="en" />
         <CookieBanner />
         <AnalyticsGate />
       </body>
