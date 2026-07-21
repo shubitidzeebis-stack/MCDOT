@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { stashBosPrefill } from "@/lib/bos/prefill";
 
 // On-demand audit: enter any MC/DOT → full audit + rating + UCC handoff,
 // reusing the monitor engine via /api/admin/monitor/audit.
@@ -14,8 +15,10 @@ type AuditResponse = {
     dbaName: string | null;
     dotNumber: number;
     mcNumbers: string[];
+    street: string | null;
     state: string | null;
     city: string | null;
+    zip: string | null;
     telephone: string | null;
     powerUnits: number | null;
     drivers: number | null;
@@ -106,22 +109,50 @@ export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
 
       {result && (
         <div className="mt-6 space-y-4 rounded-xl bg-white/[0.025] p-5 ring-1 ring-white/10">
-          <div>
-            <h3 className="text-lg font-semibold text-white">
-              {result.carrier.legalName}
-              {result.carrier.dbaName && (
-                <span className="text-white/40"> · {result.carrier.dbaName}</span>
-              )}
-            </h3>
-            <p className="text-[13px] text-white/55">
-              DOT {result.carrier.dotNumber}
-              {result.carrier.mcNumbers.length > 0 &&
-                ` · MC ${result.carrier.mcNumbers.join(", ")}`}
-              {" · "}
-              {result.carrier.city ?? ""} {result.carrier.state ?? ""}
-              {result.carrier.telephone ? ` · ${result.carrier.telephone}` : ""}
-              {` · ${result.carrier.powerUnits ?? "—"} units`}
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-white">
+                {result.carrier.legalName}
+                {result.carrier.dbaName && (
+                  <span className="text-white/40"> · {result.carrier.dbaName}</span>
+                )}
+              </h3>
+              <p className="text-[13px] text-white/55">
+                DOT {result.carrier.dotNumber}
+                {result.carrier.mcNumbers.length > 0 &&
+                  ` · MC ${result.carrier.mcNumbers.join(", ")}`}
+                {" · "}
+                {result.carrier.city ?? ""} {result.carrier.state ?? ""}
+                {result.carrier.telephone ? ` · ${result.carrier.telephone}` : ""}
+                {` · ${result.carrier.powerUnits ?? "—"} units`}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const c = result.carrier;
+                const mc = c.mcNumbers[0];
+                stashBosPrefill({
+                  companyName: c.legalName || undefined,
+                  companyDba: c.dbaName ?? undefined,
+                  mcNumber: mc
+                    ? mc.toUpperCase().startsWith("MC")
+                      ? mc
+                      : `MC-${mc}`
+                    : undefined,
+                  usdotNumber: String(c.dotNumber),
+                  companyAddress:
+                    [c.street, c.city, c.state, c.zip].filter(Boolean).join(", ") ||
+                    undefined,
+                  companyPhone: c.telephone ?? undefined,
+                });
+                window.location.href = "/admin/bill-of-sale";
+              }}
+              title="Draft a Bill of Sale prefilled from this audit"
+              className="rounded-lg bg-[#ff8a1a]/15 px-3 py-1.5 text-[12px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+            >
+              Draft Bill of Sale
+            </button>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">

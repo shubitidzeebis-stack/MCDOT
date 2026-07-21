@@ -92,6 +92,57 @@ export function BillOfSalePanel() {
   const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
   const prevUrl = useRef<string | null>(null);
 
+  // FMCSA lookup bar: MC/DOT → auto-fill the Company fieldset.
+  const [lookupKind, setLookupKind] = useState<"mc" | "dot">("mc");
+  const [lookupNumber, setLookupNumber] = useState("");
+  const [lookupBusy, setLookupBusy] = useState(false);
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
+  async function lookup() {
+    if (!lookupNumber.trim() || lookupBusy) return;
+    setLookupBusy(true);
+    setLookupError(null);
+    try {
+      const res = await fetch("/api/admin/bos/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ number: lookupNumber, kind: lookupKind }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLookupError(data.error ?? "Lookup failed.");
+        return;
+      }
+      const c = data.company as {
+        legalName: string;
+        dbaName: string | null;
+        dotNumber: string;
+        mcNumbers: string[];
+        address: string | null;
+        telephone: string | null;
+      };
+      const mc = c.mcNumbers[0];
+      setForm((f) => ({
+        ...f,
+        companyName: c.legalName || f.companyName,
+        companyDba: c.dbaName ?? f.companyDba,
+        usdotNumber: c.dotNumber || f.usdotNumber,
+        mcNumber: mc
+          ? mc.toUpperCase().startsWith("MC")
+            ? mc
+            : `MC-${mc}`
+          : f.mcNumber,
+        companyAddress: c.address ?? f.companyAddress,
+        companyPhone: c.telephone ?? f.companyPhone,
+      }));
+      if (c.legalName) setPrefilledFrom(c.legalName);
+    } catch {
+      setLookupError("Lookup failed.");
+    } finally {
+      setLookupBusy(false);
+    }
+  }
+
   // Arriving from a lead's "BoS" button: absorb the stashed lead details.
   useEffect(() => {
     const p = takeBosPrefill();
@@ -185,9 +236,50 @@ export function BillOfSalePanel() {
   return (
     <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <form onSubmit={generate} className="space-y-8">
+        <div>
+          <p className={`${labelClass} mb-1.5`}>
+            Look up by MC / DOT (fills the company fields)
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={lookupKind}
+              onChange={(e) => setLookupKind(e.target.value as "mc" | "dot")}
+              className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50"
+            >
+              <option value="mc" className="bg-[#0a0a0b]">MC</option>
+              <option value="dot" className="bg-[#0a0a0b]">DOT</option>
+            </select>
+            <input
+              value={lookupNumber}
+              onChange={(e) => setLookupNumber(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  lookup();
+                }
+              }}
+              placeholder="Enter MC or DOT number"
+              className={`${inputClass} flex-1`}
+            />
+            <button
+              type="button"
+              onClick={lookup}
+              disabled={lookupBusy || !lookupNumber.trim()}
+              className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08] disabled:opacity-50"
+            >
+              {lookupBusy ? "Looking up…" : "Look up & fill"}
+            </button>
+          </div>
+          {lookupError && (
+            <p className="mt-2 rounded-lg bg-red-500/10 px-3 py-2 text-[12px] text-red-300 ring-1 ring-red-500/20">
+              {lookupError}
+            </p>
+          )}
+        </div>
+
         {prefilledFrom && (
           <p className="rounded-lg bg-[#1f5fa8]/15 px-3 py-2 text-[12px] text-blue-300 ring-1 ring-blue-400/20">
-            Prefilled from lead: <b>{prefilledFrom}</b>. Review each field —
+            Prefilled from: <b>{prefilledFrom}</b>. Review each field —
             FMCSA data can be stale — then add the deal specifics (price, date,
             buyer, wire info).
           </p>
