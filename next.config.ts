@@ -40,14 +40,21 @@ const SECURITY_HEADERS = [
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://googleads.g.doubleclick.net https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
-      "frame-src https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com https://www.cal.eu https://www.cal.com",
+      // blob: lets the admin Bill of Sale preview render its locally
+      // generated PDF in an iframe (blob URLs are same-origin only).
+      "frame-src blob: https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com https://www.cal.eu https://www.cal.com",
       // worker-src + child-src don't fall back cleanly to script-src
       // in all browsers — declare them explicitly so blob workers and
       // Vercel preview iframes work without breaking the page.
       "worker-src 'self' blob:",
       "child-src 'self' blob: https://challenges.cloudflare.com",
       "manifest-src 'self'",
-      "frame-ancestors 'none'",
+      // 'self' (not 'none') because blob: documents inherit this CSP —
+      // the admin Bill of Sale PDF preview frames a same-origin blob and
+      // 'none' makes the PDF block itself. Cross-origin framing is still
+      // denied by 'self', and X-Frame-Options: DENY above still blocks
+      // ALL framing of real pages (it doesn't apply to blob documents).
+      "frame-ancestors 'self'",
       "form-action 'self'",
       "base-uri 'self'",
       "object-src 'none'",
