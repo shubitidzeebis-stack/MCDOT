@@ -62,6 +62,10 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    // Sending email as the company is full-admin only.
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
 
     const ip = getClientIp(req);
     const rl = await rateLimit(`admin-email:${session.email}:${ip}`, LIMIT, WINDOW_MS);

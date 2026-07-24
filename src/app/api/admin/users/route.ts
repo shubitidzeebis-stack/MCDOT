@@ -16,8 +16,13 @@ import {
 
 export const dynamic = "force-dynamic";
 
+// User management is full-admin only. Agent-role users must not be able to
+// list accounts, create logins, reset other people's passwords, or delete
+// admins (self-service password change lives at /api/admin/password).
 async function requireSession() {
-  return requireAdmin();
+  const session = await requireAdmin();
+  if (!session || session.role !== "admin") return null;
+  return session;
 }
 
 export async function GET() {

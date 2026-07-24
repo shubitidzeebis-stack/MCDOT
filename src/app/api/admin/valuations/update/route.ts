@@ -44,8 +44,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    if (!(await requireAdmin())) {
+    const session = await requireAdmin();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    // Agents may move a lead through statuses but not rewrite the freeform
+    // internal notes — their channel is the attributed comment thread
+    // (/api/admin/valuations/comment), which keeps every entry signed.
+    if (raw.notesInternal !== undefined && session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
     const result = await adminUpdateValuation(raw.id, {

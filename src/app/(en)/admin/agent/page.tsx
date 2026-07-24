@@ -29,8 +29,14 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AgentPage() {
-  if (!(await requireAdmin())) {
+  const session = await requireAdmin();
+  if (!session) {
     redirect("/admin/login");
+  }
+  // Outbound-agent controls are full-admin only; agent-role users get the
+  // leads dashboard instead.
+  if (session.role !== "admin") {
+    redirect("/admin");
   }
 
   const [

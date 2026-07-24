@@ -13,6 +13,10 @@ export async function POST() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
+  // Outreach controls are full-admin only.
+  if (session.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   await resumeOutreach();
   await logAgentAction("outreach_resumed", `admin:${session.email}`, null, {});

@@ -68,6 +68,7 @@ type Valuation = {
     zip: string | null;
     country: string | null;
   } | null;
+  comments: { author: string; text: string; at: string }[] | null;
 };
 
 async function loadLeads(): Promise<{
@@ -104,7 +105,7 @@ async function loadLeads(): Promise<{
                contact_phone, contact_provided_at::text AS contact_provided_at,
                power_units, drivers_count, vehicle_oos_pct, driver_oos_pct,
                crashes_24mo, safety_rating, notes_internal, insurance_status,
-               telephone, phy_address
+               telephone, phy_address, comments
           FROM valuations
          WHERE source = 'inbound'
          ORDER BY created_at DESC
@@ -126,9 +127,14 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
+  // Agent-role users (e.g. Donnie) get the leads pipeline only: no monitor
+  // roster, no outreach drafts, no partials, no agent-dashboard nav. The
+  // API routes enforce the same boundary server-side.
+  const isFullAdmin = session.role === "admin";
+
   const { partials, valuations } = await loadLeads();
-  const monitor = await listMonitorCandidates();
-  const outreachDrafts = await listOutreachDrafts();
+  const monitor = isFullAdmin ? await listMonitorCandidates() : [];
+  const outreachDrafts = isFullAdmin ? await listOutreachDrafts() : [];
   const valuationsWithEmail = valuations.filter((v) => v.contact_email);
   const relayValuations = valuations.filter((v) => v.has_amazon_relay === true);
   const currentUser = { name: session.name, email: session.email };
@@ -146,12 +152,14 @@ export default async function AdminPage() {
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
-        <a
-          href="/admin/agent"
-          className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
-        >
-          Agent dashboard →
-        </a>
+        {isFullAdmin && (
+          <a
+            href="/admin/agent"
+            className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+          >
+            Agent dashboard →
+          </a>
+        )}
         <a
           href="/admin/audit"
           className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
@@ -166,13 +174,13 @@ export default async function AdminPage() {
         </a>
       </div>
 
-      <AdminValuationsPanel initial={valuations} />
+      <AdminValuationsPanel initial={valuations} role={session.role} />
 
-      <AdminMonitorPanel initial={monitor} />
+      {isFullAdmin && <AdminMonitorPanel initial={monitor} />}
 
-      <OutreachDraftsPanel initial={outreachDrafts} />
+      {isFullAdmin && <OutreachDraftsPanel initial={outreachDrafts} />}
 
-      {partials.length > 0 && (
+      {isFullAdmin && partials.length > 0 && (
         <section className="mt-12">
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
             Unconverted partials (last seen)

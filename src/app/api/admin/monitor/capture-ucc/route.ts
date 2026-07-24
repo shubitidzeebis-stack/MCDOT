@@ -57,6 +57,10 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
+    // Mutates monitor rows — full-admin only.
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
 
     const findings: UccFindings = {
       liensFound: raw.liensFound,

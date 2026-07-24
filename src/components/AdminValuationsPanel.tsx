@@ -40,6 +40,7 @@ export type AdminValuationRow = {
     zip: string | null;
     country: string | null;
   } | null;
+  comments: { author: string; text: string; at: string }[] | null;
 };
 
 const STATUSES = [
@@ -92,11 +93,15 @@ function fmtLocation(addr: AdminValuationRow["phy_address"]): string {
 export function AdminValuationsPanel({
   initial,
   adminKey,
+  role = "admin",
 }: {
   initial: AdminValuationRow[];
   /** Legacy fallback. When empty, the API uses the session cookie. */
   adminKey?: string;
+  /** Session role. "agent" hides delete/notes/email-send (server enforces too). */
+  role?: string;
 }) {
+  const canManage = role === "admin";
   const [rows, setRows] = useState(initial);
   const [filterStatus, setFilterStatus] = useState<"all" | StatusValue>("all");
   const [filterRelay, setFilterRelay] = useState<"all" | "yes" | "no">("all");
@@ -178,6 +183,26 @@ export function AdminValuationsPanel({
       console.error(err);
       setRows(prev);
       alert("Delete failed — the row was restored.");
+    }
+  }
+
+  async function commentRow(id: number, text: string): Promise<boolean> {
+    try {
+      const res = await fetch("/api/admin/valuations/comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "comment failed");
+      setRows((rs) =>
+        rs.map((r) => (r.id === id ? { ...r, comments: data.comments } : r)),
+      );
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("Comment failed — it was not saved.");
+      return false;
     }
   }
 
@@ -324,9 +349,11 @@ export function AdminValuationsPanel({
                 key={v.id}
                 v={v}
                 expanded={expandedId === v.id}
+                canManage={canManage}
                 onToggle={() => setExpandedId(expandedId === v.id ? null : v.id)}
                 onUpdate={(patch) => updateRow(v.id, patch)}
                 onDelete={() => deleteRow(v.id)}
+                onComment={(text) => commentRow(v.id, text)}
               />
             ))}
           </tbody>
@@ -438,18 +465,25 @@ function fillTemplate(text: string, ctx: { name: string; range: string }): strin
 function Row({
   v,
   expanded,
+  canManage,
   onToggle,
   onUpdate,
   onDelete,
+  onComment,
 }: {
   v: AdminValuationRow;
   expanded: boolean;
+  /** false for agent-role users: no delete, no notes editing, no email send. */
+  canManage: boolean;
   onToggle: () => void;
   onUpdate: (patch: { status?: StatusValue; notesInternal?: string }) => void;
   onDelete: () => void;
+  onComment: (text: string) => Promise<boolean>;
 }) {
   const [notesDraft, setNotesDraft] = useState(v.notes_internal ?? "");
   const [savingNotes, setSavingNotes] = useState(false);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [savingComment, setSavingComment] = useState(false);
   const status = (v.status ?? "new") as StatusValue;
 
   // Email composer state — local to this row.
@@ -682,14 +716,16 @@ function Row({
             >
               BoS
             </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              title="Delete this valuation"
-              className="rounded-md px-2 py-1 text-[11px] text-red-400/70 hover:bg-red-500/[0.08] hover:text-red-300"
-            >
-              Del
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                onClick={onDelete}
+                title="Delete this valuation"
+                className="rounded-md px-2 py-1 text-[11px] text-red-400/70 hover:bg-red-500/[0.08] hover:text-red-300"
+              >
+                Del
+              </button>
+            )}
           </div>
         </td>
       </tr>
@@ -754,28 +790,84 @@ function Row({
                     </p>
                   </div>
                 )}
+                {canManage && (
+                  <>
+                    <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
+                      Internal notes
+                    </p>
+                    <textarea
+                      value={notesDraft}
+                      onChange={(e) => setNotesDraft(e.target.value)}
+                      rows={6}
+                      placeholder="Call notes, follow-up plan, blockers…"
+                      className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-[#ff8a1a]/50"
+                    />
+                    <div className="mt-3 flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setSavingNotes(true);
+                          await onUpdate({ notesInternal: notesDraft });
+                          setSavingNotes(false);
+                        }}
+                        disabled={savingNotes || notesDraft === (v.notes_internal ?? "")}
+                        className="rounded-full bg-[#ff8a1a] px-4 py-1.5 text-[12px] font-semibold text-[#0a0a0b] transition-colors hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {savingNotes ? "Saving…" : "Save notes"}
+                      </button>
+                    </div>
+                  </>
+                )}
+
                 <p className="mt-6 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
-                  Internal notes
+                  Comments
                 </p>
+                {v.comments && v.comments.length > 0 ? (
+                  <ul className="mt-3 space-y-2">
+                    {v.comments.map((c, i) => (
+                      <li
+                        key={i}
+                        className="rounded-lg bg-white/[0.025] p-3 ring-1 ring-white/8"
+                      >
+                        <p className="whitespace-pre-wrap text-[13px] text-white/80">
+                          {c.text}
+                        </p>
+                        <p className="mt-1.5 text-[10px] text-white/40">
+                          {c.author} ·{" "}
+                          {new Date(c.at).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-[12px] text-white/40">No comments yet.</p>
+                )}
                 <textarea
-                  value={notesDraft}
-                  onChange={(e) => setNotesDraft(e.target.value)}
-                  rows={6}
-                  placeholder="Call notes, follow-up plan, blockers…"
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Add a comment — it will be signed with your name…"
                   className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white placeholder:text-white/35 outline-none focus:border-[#ff8a1a]/50"
                 />
-                <div className="mt-3 flex items-center justify-end gap-3">
+                <div className="mt-3 flex items-center justify-end">
                   <button
                     type="button"
                     onClick={async () => {
-                      setSavingNotes(true);
-                      await onUpdate({ notesInternal: notesDraft });
-                      setSavingNotes(false);
+                      setSavingComment(true);
+                      const ok = await onComment(commentDraft.trim());
+                      if (ok) setCommentDraft("");
+                      setSavingComment(false);
                     }}
-                    disabled={savingNotes || notesDraft === (v.notes_internal ?? "")}
-                    className="rounded-full bg-[#ff8a1a] px-4 py-1.5 text-[12px] font-semibold text-[#0a0a0b] transition-colors hover:bg-[#ffb371] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={savingComment || commentDraft.trim().length === 0}
+                    className="rounded-full bg-white/[0.06] px-4 py-1.5 text-[12px] font-semibold text-white/85 ring-1 ring-white/10 transition-colors hover:bg-white/[0.1] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {savingNotes ? "Saving…" : "Save notes"}
+                    {savingComment ? "Posting…" : "Add comment"}
                   </button>
                 </div>
               </div>
@@ -825,6 +917,8 @@ function Row({
                   <p className="mt-2 text-[12px] text-white/40">No emails sent yet.</p>
                 )}
 
+                {canManage && (
+                <>
                 <div className="mt-6 flex items-center justify-between">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
                     Send email
@@ -932,6 +1026,8 @@ function Row({
                       </button>
                     </div>
                   </div>
+                )}
+                </>
                 )}
               </div>
             </div>

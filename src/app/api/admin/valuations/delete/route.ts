@@ -22,8 +22,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
     }
 
-    if (!(await requireAdmin())) {
+    const session = await requireAdmin();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+    // Hard delete is full-admin only — agent-role users work leads but
+    // can't destroy them.
+    if (session.role !== "admin") {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
     const result = await adminDeleteValuation(raw.id);

@@ -114,6 +114,10 @@ async function ensureTable(sql: Sql) {
   // Why a monitor row was disqualified (broker_only / authority_inactive /
   // safety_fail). Lets the roster explain rejections instead of a bare stage.
   await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS disqualify_reason TEXT`;
+  // Attributed comment thread shown in the lead detail drawer. Each entry:
+  // { author, text, at }. Author comes from the session server-side, so
+  // agent-role users (who can't edit the freeform notes) leave a signed trail.
+  await sql`ALTER TABLE valuations ADD COLUMN IF NOT EXISTS comments JSONB NOT NULL DEFAULT '[]'::jsonb`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_mc_idx ON valuations (mc_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_dot_idx ON valuations (dot_number)`;
   await sql`CREATE INDEX IF NOT EXISTS valuations_session_idx ON valuations (session_id)`;
@@ -160,6 +164,39 @@ export const VALUATION_STATUSES: ValuationStatus[] = [
   "closed_won",
   "closed_lost",
 ];
+
+export type ValuationComment = { author: string; text: string; at: string };
+
+// Append an attributed comment to a valuation. Author is supplied by the
+// caller FROM THE SESSION (never from the request body).
+export async function addValuationComment(
+  id: number,
+  author: string,
+  text: string,
+): Promise<{ ok: boolean; comments?: ValuationComment[] }> {
+  const sql = getSql();
+  if (!sql) return { ok: false };
+  try {
+    await ensureTable(sql);
+    const entry: ValuationComment = {
+      author,
+      text,
+      at: new Date().toISOString(),
+    };
+    const rows = (await sql`
+      UPDATE valuations
+         SET comments = COALESCE(comments, '[]'::jsonb) || ${JSON.stringify([entry])}::jsonb,
+             updated_at = now()
+       WHERE id = ${id}
+       RETURNING comments
+    `) as Array<{ comments: ValuationComment[] }>;
+    if (rows.length === 0) return { ok: false };
+    return { ok: true, comments: rows[0].comments };
+  } catch (err) {
+    console.error("[addValuationComment] error", err);
+    return { ok: false };
+  }
+}
 
 // Admin-side hard delete. Caller is responsible for verifying auth
 // upstream. Used to clear test rows from the admin panel.
