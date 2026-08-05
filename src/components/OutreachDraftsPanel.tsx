@@ -86,15 +86,35 @@ function DraftCard({
       } else if (action === "save") {
         setMsg("Saved.");
         onPatch({ draft_subject: subject, draft_body_text: body });
+      } else if (action === "send_now") {
+        // Honest result: the sender can skip for four different reasons, and a
+        // skip must never read as "Sent." — the owner would believe an email
+        // reached a prospect when the breaker or the cap blocked it.
+        const SKIP_MSG: Record<string, string> = {
+          no_sender: "Approved, but NOT sent — the outreach sender isn't configured.",
+          disabled: "Approved, but NOT sent — sending is switched off (outreachSendEnabled).",
+          paused:
+            "Approved, but NOT sent — sending is stopped by the safety breaker. Resume it on the Agent dashboard first.",
+          daily_cap:
+            "Approved, but NOT sent — today's send cap is already used up. It goes out in the next window.",
+        };
+        const r = data.result as
+          | { skipped?: string; sent?: number; failed?: number }
+          | undefined;
+        if (r?.skipped) {
+          setMsg(SKIP_MSG[r.skipped] ?? "Approved, but the sender skipped this run.");
+        } else if ((r?.sent ?? 0) > 0) {
+          setMsg(
+            `Sent — ${r?.sent} email(s) went out just now${r?.failed ? `, ${r.failed} failed` : ""}.`,
+          );
+        } else {
+          setMsg(
+            "Approved and queued — the sender ran but this row wasn't picked up yet; it goes out within the next slots.",
+          );
+        }
+        onPatch({ stage: "approved", draft_subject: subject, draft_body_text: body });
       } else {
-        const noSender = data.result?.skipped === "no_sender";
-        setMsg(
-          action === "send_now"
-            ? noSender
-              ? "Approved — sender not yet configured (will send once outreach domain is set)."
-              : "Sent."
-            : "Approved — will send on next run.",
-        );
+        setMsg("Approved — goes out in an upcoming 15-minute slot (10am–6pm ET).");
         onPatch({ stage: "approved", draft_subject: subject, draft_body_text: body });
       }
     } catch {

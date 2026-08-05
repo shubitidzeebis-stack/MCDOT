@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   AgentActionRow,
+  AgentPulse,
+  FailedSendCounts,
   HotProspect,
   MonitorCompanyDetail,
   MonitorCursor,
@@ -11,7 +13,16 @@ import type {
   OutreachDraftRow,
   OutreachEmailDetail,
   OutreachSentRow,
+  ReadyStats,
 } from "@/lib/db/monitor";
+import {
+  DISQUALIFY_LABEL,
+  ELIGIBILITY_LABEL,
+  INSURANCE_LABEL,
+  SAFETY_LABEL,
+  STAGE_LABEL,
+  labelFor,
+} from "@/lib/monitor/labels";
 
 // Agent operations dashboard. All data is computed server-side and passed in;
 // this component renders it and offers manual + 30s auto-refresh (router.refresh).
@@ -29,6 +40,10 @@ export type AgentDashboardData = {
   outreachControl: { paused: boolean; reason: string | null; updated_at: string | null };
   healthToday: { sent: number; bounced: number; complained: number };
   health7d: { sent: number; bounced: number; complained: number };
+  ready: ReadyStats;
+  pulse: AgentPulse;
+  failedSends: FailedSendCounts;
+  dataOk: boolean;
   flags: {
     monitorEnabled: boolean;
     discoveryEnabled: boolean;
@@ -65,21 +80,61 @@ function sum(rec: Record<string, number>): number {
   return Object.values(rec).reduce((a, b) => a + b, 0);
 }
 
-function relTime(iso: string | null): string {
-  if (!iso) return "never";
-  // Postgres ::text timestamps look like "2026-06-07 12:34:56.123+00"; ISO uses
-  // "T" + "Z". Normalize a bare "+00" offset to "+00:00", and assume UTC when no
-  // zone is present, so Date.parse succeeds either way.
+// Postgres ::text timestamps look like "2026-06-07 12:34:56.123+00"; ISO uses
+// "T" + "Z". Normalize a bare "+00" offset to "+00:00", and assume UTC when no
+// zone is present, so Date.parse succeeds either way.
+function parseTs(iso: string | null): number | null {
+  if (!iso) return null;
   let norm = iso.trim().replace(" ", "T");
   if (/[+-]\d{2}$/.test(norm)) norm += ":00";
   else if (!/(z|[+-]\d{2}:?\d{2})$/i.test(norm)) norm += "Z";
   const t = new Date(norm).getTime();
-  if (Number.isNaN(t)) return iso;
+  return Number.isNaN(t) ? null : t;
+}
+
+function relTime(iso: string | null): string {
+  const t = parseTs(iso);
+  if (t == null) return iso ?? "never";
   const s = Math.max(0, Math.floor((Date.now() - t) / 1000));
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
+}
+
+// Absolute local time for hover titles — "2h ago" can't answer "did it stop
+// this afternoon?", so every relative timestamp carries the real one.
+function absTime(iso: string | null): string {
+  const t = parseTs(iso);
+  if (t == null) return iso ?? "";
+  return new Date(t).toLocaleString();
+}
+
+// Relative timestamp with the absolute local time on hover.
+function Rel({ iso }: { iso: string | null }) {
+  return <span title={absTime(iso)}>{relTime(iso)}</span>;
+}
+
+// Stale when the last heartbeat is more than ~one missed daily window old.
+function isSweepStale(iso: string | null): boolean {
+  const t = parseTs(iso);
+  return t == null || Date.now() - t > 26 * 3600_000;
+}
+
+// When the next 15-minute send slot fires — the cron runs 14:00–21:45 UTC
+// (10:00am–5:45pm ET), one batch per quarter hour.
+function nextSlotText(now = new Date()): string {
+  const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const open = 14 * 60;
+  const lastSlot = 21 * 60 + 45;
+  if (mins < open) {
+    return `next batch when the send window opens at 10:00am ET (~${Math.ceil((open - mins) / 60)}h)`;
+  }
+  if (mins >= lastSlot) {
+    return "send window closed for today — resumes 10:00am ET tomorrow";
+  }
+  const wait = 15 - (mins % 15);
+  return `next batch in ~${wait} min`;
 }
 
 const RATING_COLOR: Record<string, string> = {
@@ -109,6 +164,8 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
   const [auto, setAuto] = useState(true);
   const [tick, setTick] = useState(0);
   const [resuming, setResuming] = useState(false);
+  const [stopping, setStopping] = useState(false);
+  const [confirmStop, setConfirmStop] = useState(false);
 
   // Re-render the "updated Xs ago" label every second.
   useEffect(() => {
@@ -133,6 +190,19 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
     }
   }
 
+  // The "Stop sending" control — trips the same breaker the webhook uses, so
+  // the sender refuses every send until Resume is pressed. Two-click confirm.
+  async function stopSending() {
+    setStopping(true);
+    try {
+      await fetch("/api/admin/outreach/pause", { method: "POST" });
+      router.refresh();
+    } finally {
+      setStopping(false);
+      setConfirmStop(false);
+    }
+  }
+
   // ── Drill-down modal state ────────────────────────────────────────────────
   // A small history stack so list → company navigation has a Back button.
   const [drillStack, setDrillStack] = useState<DrillView[]>([]);
@@ -146,12 +216,74 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
   const draftsPending =
     (data.outreachCounts.draft ?? 0) + (data.outreachCounts.approved ?? 0);
   const sentCount = data.outreachCounts.sent ?? 0;
-  const dlq = data.outreachCounts.dead ?? 0;
   const phoneQueue = stage.outreach_phone ?? 0;
   const disqualified = stage.disqualified ?? 0;
-  const hotCount = (data.eligibilityCounts.approaching ?? 0) +
-    (data.eligibilityCounts.eligible_now ?? 0);
   const dailyCap = Number(data.flags.outreachDailyCap) || 20;
+
+  // Sends that need a human look — deliberate discards/suppressions excluded.
+  const failedSendsN = data.failedSends.failed + data.failedSends.deadAfterRetries;
+  const paused = data.outreachControl.paused;
+  const personaCount = data.flags.autoSendPersonas
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean).length;
+  const bounceRate7d =
+    data.health7d.sent > 0 ? data.health7d.bounced / data.health7d.sent : 0;
+  const readyEmail = data.ready.readyEmail;
+  const runwayDays = dailyCap > 0 ? Math.round(readyEmail / dailyCap) : 0;
+  const safetyTotal = sum(data.safetyCounts);
+  const sweepStale = isSweepStale(data.pulse.lastSweepAt);
+
+  // ── The "Right now" strip: every owner question, one sentence each. ────────
+  type Tone = "good" | "warn" | "bad";
+  const now: Array<{ tone: Tone; text: string }> = [
+    !data.flags.monitorEnabled
+      ? { tone: "bad", text: "Agent is switched OFF (monitorEnabled) — nothing runs." }
+      : sweepStale
+        ? {
+            tone: "warn",
+            text: `Agent enabled but quiet — last activity ${relTime(data.pulse.lastSweepAt)}.`,
+          }
+        : {
+            tone: "good",
+            text: `Agent running — last activity ${relTime(data.pulse.lastSweepAt)}.`,
+          },
+    paused
+      ? {
+          tone: "bad",
+          text: `Sending STOPPED — ${data.outreachControl.reason ?? "manually paused"}. Press Resume when investigated.`,
+        }
+      : !data.flags.outreachSendEnabled
+        ? { tone: "bad", text: "Sending is switched OFF (outreachSendEnabled) — approved emails will NOT go out." }
+        : !data.readiness.outreachSender
+          ? { tone: "bad", text: "Email sender not configured — nothing can send." }
+          : {
+              tone: "good",
+              text: `Sending on — ${data.healthToday.sent} of ${dailyCap} in the last 24h · ${nextSlotText()}.`,
+            },
+    {
+      tone:
+        bounceRate7d >= 0.04 || data.health7d.complained > 0
+          ? "bad"
+          : bounceRate7d >= 0.025
+            ? "warn"
+            : "good",
+      text: `Deliverability — bounce rate ${(bounceRate7d * 100).toFixed(1)}% (auto-stop at 5%) · spam complaints ${data.health7d.complained} this week (auto-stop at 3).`,
+    },
+    data.flags.discoveryEnabled
+      ? {
+          tone: data.pulse.discovered7d > 0 ? "good" : "warn",
+          text:
+            data.pulse.discovered7d > 0
+              ? `Discovery ON — ${data.pulse.discovered7d.toLocaleString("en-US")} new companies found this week.`
+              : "Discovery ON — no new companies found yet this week (first scan runs in the 10am–6pm ET window).",
+        }
+      : { tone: "warn", text: "Discovery OFF — no new companies are being added to the pipeline." },
+    {
+      tone: runwayDays > 21 ? "good" : runwayDays > 7 ? "warn" : "bad",
+      text: `${readyEmail.toLocaleString("en-US")} companies ready to email ≈ ${runwayDays} days of sending at ${dailyCap}/day.`,
+    },
+  ];
 
   // tick is read so the lint/compiler keeps the 1s re-render effect meaningful.
   void tick;
@@ -164,28 +296,83 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
           <h1 className="text-2xl font-semibold tracking-tight">Agent operations</h1>
           <p className="text-[13px] text-white/50">
             FMCSA new-authority monitoring &amp; acquisition pipeline · updated{" "}
-            {relTime(data.generatedAt)}
+            <Rel iso={data.generatedAt} />
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill on={data.flags.monitorEnabled} label="Monitor" />
           <StatusPill on={data.flags.discoveryEnabled} label="Discovery" />
           <StatusPill on={data.flags.outreachDraftEnabled} label="Drafting" />
-          <StatusPill on={data.flags.outreachSendEnabled} label="Sending" />
-          <StatusPill on={data.flags.autoSendEnabled} label="Auto-send" warn />
-          <StatusPill on={data.readiness.outreachSender} label="Sender" />
-          {dlq > 0 && (
+          {paused ? (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 ring-1 ring-red-400/25">
-              ⚠ {dlq} dead-letter
+              ⛔ Sending paused
             </span>
+          ) : (
+            <StatusPill on={data.flags.outreachSendEnabled} label="Sending" />
           )}
+          {data.flags.autoSendEnabled && personaCount === 0 ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 ring-1 ring-red-400/25"
+              title="autoSendEnabled is on but autoSendPersonas is empty — nothing will ever auto-send"
+            >
+              Auto-send on — no personas!
+            </span>
+          ) : (
+            <StatusPill
+              on={data.flags.autoSendEnabled}
+              label="Auto-send"
+              detail={data.flags.autoSendEnabled ? `(${personaCount})` : undefined}
+              warn
+            />
+          )}
+          <StatusPill on={data.readiness.outreachSender} label="Sender" />
+          {failedSendsN > 0 && (
+            <button
+              type="button"
+              onClick={() => openDrill({ type: "drafts" })}
+              className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 ring-1 ring-red-400/25 hover:bg-red-500/25"
+              title="Sends that errored or were stranded mid-send — the email MAY have gone out; check Resend before re-approving"
+            >
+              ⚠ {failedSendsN} failed send{failedSendsN === 1 ? "" : "s"}
+            </button>
+          )}
+          {!paused &&
+            (confirmStop ? (
+              <span className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={stopping}
+                  onClick={stopSending}
+                  className="rounded-lg bg-red-500/25 px-3 py-1.5 text-[12px] font-semibold text-red-100 ring-1 ring-red-300/40 hover:bg-red-500/35 disabled:opacity-50"
+                >
+                  {stopping ? "Stopping…" : "Confirm stop"}
+                </button>
+                <button
+                  type="button"
+                  disabled={stopping}
+                  onClick={() => setConfirmStop(false)}
+                  className="rounded-lg bg-white/[0.05] px-2.5 py-1.5 text-[12px] text-white/70 ring-1 ring-white/10 hover:bg-white/[0.08]"
+                >
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmStop(true)}
+                title="Trips the safety breaker — every send halts instantly until you press Resume"
+                className="rounded-lg bg-red-500/10 px-3 py-1.5 text-[12px] font-semibold text-red-300 ring-1 ring-red-400/25 hover:bg-red-500/20"
+              >
+                ■ Stop sending
+              </button>
+            ))}
           <label className="ml-1 flex cursor-pointer items-center gap-1.5 text-[12px] text-white/55">
             <input
               type="checkbox"
               checked={auto}
               onChange={(e) => setAuto(e.target.checked)}
             />
-            Auto
+            Auto-refresh (30s)
           </label>
           <button
             type="button"
@@ -197,15 +384,46 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </div>
       </div>
 
+      {/* Data-outage strip — a dead DB must not render as a healthy page of zeros. */}
+      {!data.dataOk && (
+        <div className="rounded-xl bg-amber-500/15 px-4 py-3 text-[13px] text-amber-200 ring-1 ring-amber-400/30">
+          ⚠ Live data unavailable — the database didn&apos;t respond, so the numbers
+          below may be stale or zero. This is a data problem, not the agent
+          stopping. Refresh in a minute.
+        </div>
+      )}
+
+      {/* Right now — the whole system in plain English, one line per question. */}
+      <div className="rounded-xl bg-white/[0.025] px-4 py-3.5 ring-1 ring-white/10">
+        <div className="space-y-2">
+          {now.map((l, i) => (
+            <div key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug">
+              <span
+                className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                  l.tone === "good"
+                    ? "bg-emerald-400"
+                    : l.tone === "warn"
+                      ? "bg-amber-400"
+                      : "bg-red-400"
+                }`}
+              />
+              <span className={l.tone === "bad" ? "text-red-200" : "text-white/85"}>
+                {l.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Auto-pause breaker banner — the most important state on the page. */}
       {data.outreachControl.paused && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-500/15 px-4 py-3 ring-1 ring-red-400/30">
           <div className="text-[13px] text-red-200">
-            <span className="font-semibold">⛔ SENDING AUTO-PAUSED</span>
+            <span className="font-semibold">⛔ SENDING STOPPED</span>
             {data.outreachControl.reason && <> — {data.outreachControl.reason}</>}
             <span className="text-red-300/70">
               {" "}
-              ({relTime(data.outreachControl.updated_at)})
+              (<Rel iso={data.outreachControl.updated_at} />)
             </span>
           </div>
           <button
@@ -221,28 +439,32 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
 
       {/* KPI tiles — click to drill into the underlying list. */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        <Kpi label="Monitored" value={totalMonitored} />
+        <Kpi label="Monitored" value={totalMonitored} title="Every company the agent tracks, in any stage" />
         <Kpi
-          label="Hot prospects"
-          value={hotCount}
+          label="Ready to email"
+          value={readyEmail}
           accent
-          onClick={() => openDrill({ type: "list", kind: "hot", title: "Hot prospects — qualified, in the 180-day window" })}
+          title="Passes every gate: in the 180-day window, insured now, clean safety, has a usable email. The same number the runway line uses."
+          onClick={() => openDrill({ type: "list", kind: "hot", title: `Ready to email — passes every gate (${data.ready.ready.toLocaleString("en-US")} qualified)` })}
         />
         <Kpi
-          label="Drafts pending"
+          label="Drafts queued"
           value={draftsPending}
+          title="Intentionally holds about 2 days of sends (2× the daily cap) so timing lines stay fresh — a full queue is by design, not a stall"
           onClick={() => openDrill({ type: "drafts" })}
         />
         <Kpi
-          label={`Sent today / ${dailyCap}`}
+          label={`Sent (24h) / ${dailyCap}`}
           value={data.healthToday.sent}
           accent
+          title="Rolling 24 hours — the same window the sender's cap uses, so at 9am this still counts yesterday afternoon"
           onClick={() => openDrill({ type: "sent" })}
         />
         <Kpi label="Sent total" value={sentCount} onClick={() => openDrill({ type: "sent" })} />
         <Kpi
           label="Phone queue"
           value={phoneQueue}
+          title="Qualified but no usable email — call list"
           onClick={() => openDrill({ type: "list", kind: "phone", title: "Phone queue — qualified, no usable email" })}
         />
         <Kpi
@@ -255,7 +477,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
 
       {/* Sent emails — the live send log (what actually went out, to whom). */}
       <Card
-        title={`Sent emails (${sentCount} total · last 7d: ${data.health7d.sent} sent, ${data.health7d.bounced} bounced, ${data.health7d.complained} complaints)`}
+        title={`Sent emails (${sentCount} total · last 7d: ${data.health7d.sent} sent, ${data.health7d.bounced} bounced = ${(bounceRate7d * 100).toFixed(1)}%, ${data.health7d.complained} complaints)`}
       >
         {data.sentEmails.length === 0 ? (
           <Empty>
@@ -283,7 +505,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
                     title="Click for the full email + company audit"
                   >
                     <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">
-                      {relTime(s.sent_at)}
+                      <Rel iso={s.sent_at} />
                     </td>
                     <td className="py-1.5 pr-3 text-white/90">
                       {s.dba_name ?? s.legal_name ?? "—"}
@@ -298,13 +520,19 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
                 ))}
               </tbody>
             </table>
+            {data.sentEmails.length >= 50 && (
+              <p className="mt-2 text-[11px] text-white/40">
+                Showing the latest 50 — click &quot;Sent total&quot; for more.
+              </p>
+            )}
           </div>
         )}
       </Card>
 
-      {/* Pipeline + distributions */}
+      {/* Pipeline + distributions. Each card names its own denominator — the
+          four cards count DIFFERENT populations and used to look contradictory. */}
       <div className="grid gap-4 lg:grid-cols-4">
-        <Card title="Pipeline" className="lg:col-span-1">
+        <Card title={`Pipeline (all ${totalMonitored.toLocaleString("en-US")})`} className="lg:col-span-1">
           <BarList
             counts={stage}
             order={[
@@ -318,9 +546,10 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               "(unprocessed)",
             ]}
             max={totalMonitored}
+            labels={STAGE_LABEL}
           />
         </Card>
-        <Card title="Eligibility (180-day clock)" className="lg:col-span-1">
+        <Card title={`180-day clock (all ${totalMonitored.toLocaleString("en-US")})`} className="lg:col-span-1">
           <BarList
             counts={data.eligibilityCounts}
             order={[
@@ -336,27 +565,45 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               "(pending)",
             ]}
             colorByKey
+            labels={ELIGIBILITY_LABEL}
           />
         </Card>
-        <Card title="Insurance quality" className="lg:col-span-1">
+        <Card title={`Insurance history (all ${totalMonitored.toLocaleString("en-US")})`} className="lg:col-span-1">
           <BarList
             counts={data.insuranceCounts}
             order={["green", "amber", "red", "unknown", "(pending)"]}
             colorByKey
+            labels={INSURANCE_LABEL}
           />
         </Card>
-        <Card title="Safety (in-window)" className="lg:col-span-1">
+        <Card title={`Safety (${safetyTotal.toLocaleString("en-US")} in-window only)`} className="lg:col-span-1">
           <BarList
             counts={data.safetyCounts}
             order={["pass", "review", "fail", "(pending)"]}
             colorByKey
+            labels={SAFETY_LABEL}
           />
+          {(data.safetyCounts.review ?? 0) > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                openDrill({
+                  type: "list",
+                  kind: "review",
+                  title: "Needs review — conditional rating or elevated crashes, human look",
+                })
+              }
+              className="mt-3 text-[12px] font-medium text-amber-300 hover:text-amber-200"
+            >
+              Open needs-review list →
+            </button>
+          )}
         </Card>
       </div>
 
       {/* Hot prospects + activity */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title={`Hot prospects (${data.hot.length})`}>
+        <Card title={`Top prospects (best ${data.hot.length} of ${data.ready.ready.toLocaleString("en-US")} qualified)`}>
           {data.hot.length === 0 ? (
             <Empty>No carriers in the pre-warm / eligible window yet.</Empty>
           ) : (
@@ -413,11 +660,14 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               {data.actions.map((a, i) => (
                 <li key={i} className="flex items-center gap-2 text-[13px]">
                   <span className="text-white/80">{actionLabel(a.action)}</span>
-                  <span className="text-white/45">
-                    {a.legal_name ?? (a.valuation_id ? `#${a.valuation_id}` : "")}
+                  <span className="truncate text-white/45">
+                    {sweepDetail(a) ?? a.legal_name ?? (a.valuation_id ? `#${a.valuation_id}` : "")}
                   </span>
                   <span className="ml-auto whitespace-nowrap text-[11px] text-white/35">
-                    {a.actor.startsWith("admin:") ? "👤" : "🤖"} {relTime(a.created_at)}
+                    <span title={a.actor.startsWith("admin:") ? `human (${a.actor.slice(6)})` : "the agent"}>
+                      {a.actor.startsWith("admin:") ? "👤" : "🤖"}
+                    </span>{" "}
+                    <Rel iso={a.created_at} />
                   </span>
                 </li>
               ))}
@@ -426,62 +676,74 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </Card>
       </div>
 
-      {/* Last sweep + readiness */}
+      {/* Agent work log + system health */}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title="Sweep runs">
-          {data.cursors.length === 0 ? (
-            <Empty>The sweep hasn&apos;t run yet (or monitorEnabled is off).</Empty>
-          ) : (
-            <ul className="space-y-2 text-[13px]">
-              {data.cursors.map((c) => (
-                <li key={c.id} className="flex items-center justify-between gap-3">
-                  <span className="font-medium text-white/85">{c.id}</span>
-                  <span className="text-white/55">
-                    last run {relTime(c.last_run_at)} · cursor{" "}
-                    {c.last_processed_day ?? "—"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-[11px] text-white/40">
-            Cadence: every 15 min, 10am–6pm ET · daily cap {dailyCap} (Edge
-            Config <code>outreachDailyCap</code>). Days: [
-            {data.flags.monitorDays || "all"}] (UTC, 0=Sun). Auto-send personas:{" "}
-            {data.flags.autoSendPersonas || "none"}.
+        <Card title="Agent work — what it actually did">
+          <ul className="space-y-2 text-[13px] text-white/80">
+            <li>
+              <span className="text-white/45">Last 24h:</span>{" "}
+              re-checked {data.pulse.verified24h.toLocaleString("en-US")} companies ·{" "}
+              {data.pulse.enriched24h.toLocaleString("en-US")} safety checks ·{" "}
+              {data.pulse.drafted24h.toLocaleString("en-US")} emails drafted
+            </li>
+            <li>
+              <span className="text-white/45">This week:</span>{" "}
+              {data.pulse.discovered7d.toLocaleString("en-US")} new companies discovered
+              {data.pulse.newRows7d > 0 &&
+                ` (${data.pulse.newRows7d.toLocaleString("en-US")} added to the pipeline)`}
+            </li>
+            {data.cursors.map((c) => (
+              <li key={c.id}>
+                <span className="text-white/45">
+                  {c.id === "discover" ? "New-company scan:" : `${c.id}:`}
+                </span>{" "}
+                last ran <Rel iso={c.last_run_at} /> · caught up through{" "}
+                {c.last_processed_day ?? "—"}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] leading-relaxed text-white/40">
+            Emails go out every 15 minutes, 10am–5:45pm ET, up to {dailyCap}/day.
+            Auto-send personas: {data.flags.autoSendPersonas || "none"}.
           </p>
         </Card>
 
-        <Card title="Readiness — what's needed to go live">
+        <Card title="System health">
           <div className="space-y-1.5">
-            <ReadyRow ok={data.readiness.database} label="Database (DATABASE_URL)" />
+            <ReadyRow ok={data.readiness.database} label="Database connected" />
             <ReadyRow
               ok={data.readiness.fmcsaSocrataToken}
-              label="FMCSA Socrata token (FMCSA_SOCRATA_TOKEN)"
-              hint="discovery rate limit"
+              label="FMCSA data feed (discovery + verification)"
             />
-            <ReadyRow ok={data.readiness.fmcsaApiKey} label="FMCSA API key (on-demand audit)" />
-            <ReadyRow ok={data.readiness.cronSecret} label="Cron secret (scheduled runs)" />
+            <ReadyRow ok={data.readiness.fmcsaApiKey} label="FMCSA safety-check access" />
+            <ReadyRow ok={data.readiness.cronSecret} label="Scheduled runs secured" />
             <ReadyRow
               ok={data.readiness.outreachSender}
-              label="Outreach sender (OUTREACH_EMAIL_FROM + RESEND_OUTREACH_API_KEY)"
-              hint="separate domain — required to SEND"
+              label="Outreach email sender"
+              hint="separate domain — required to send"
             />
             <ReadyRow
               ok={data.readiness.webhookSecret}
-              label="Bounce/complaint webhook (RESEND_WEBHOOK_SECRET)"
-              hint="auto-pause protection"
+              label="Bounce/complaint protection"
+              hint="auto-pause breaker armed"
             />
             <ReadyRow
               ok={data.readiness.anthropicOutreach}
-              label="Outreach LLM key (ANTHROPIC_API_KEY_OUTREACH)"
-              hint="optional — falls back to template"
+              label="AI drafting key"
+              hint="optional — emails use your approved template"
             />
-            <ReadyRow on label="Master switch: monitorEnabled" value={data.flags.monitorEnabled} />
-            <ReadyRow on label="Drafting: outreachDraftEnabled" value={data.flags.outreachDraftEnabled} />
-            <ReadyRow on label="Sending: outreachSendEnabled" value={data.flags.outreachSendEnabled} />
-            <ReadyRow on label="Auto-send: autoSendEnabled" value={data.flags.autoSendEnabled} />
+            <div className="my-2 border-t border-white/10" />
+            <ReadyRow on label="Agent (monitorEnabled)" value={data.flags.monitorEnabled} />
+            <ReadyRow on label="Discovery of new companies (discoveryEnabled)" value={data.flags.discoveryEnabled} />
+            <ReadyRow on label="Email drafting (outreachDraftEnabled)" value={data.flags.outreachDraftEnabled} />
+            <ReadyRow on label="Sending (outreachSendEnabled)" value={data.flags.outreachSendEnabled} />
+            <ReadyRow on label="Auto-send without approval (autoSendEnabled)" value={data.flags.autoSendEnabled} />
           </div>
+          <p className="mt-3 text-[11px] text-white/40">
+            The switches above and the daily cap ({dailyCap}) are changed in
+            Vercel → Storage → Edge Config — not from this page. The Stop
+            sending button up top works instantly from here.
+          </p>
         </Card>
       </div>
 
@@ -502,7 +764,17 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
 
 // ── small presentational helpers ──────────────────────────────────────────
 
-function StatusPill({ on, label, warn }: { on: boolean; label: string; warn?: boolean }) {
+function StatusPill({
+  on,
+  label,
+  warn,
+  detail,
+}: {
+  on: boolean;
+  label: string;
+  warn?: boolean;
+  detail?: string;
+}) {
   const tone = on
     ? warn
       ? "bg-amber-500/15 text-amber-300 ring-amber-400/25"
@@ -512,6 +784,7 @@ function StatusPill({ on, label, warn }: { on: boolean; label: string; warn?: bo
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ${tone}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${on ? "bg-current" : "bg-white/30"}`} />
       {label} {on ? "on" : "off"}
+      {detail ? ` ${detail}` : ""}
     </span>
   );
 }
@@ -521,12 +794,14 @@ function Kpi({
   value,
   accent,
   muted,
+  title,
   onClick,
 }: {
   label: string;
   value: number;
   accent?: boolean;
   muted?: boolean;
+  title?: string;
   onClick?: () => void;
 }) {
   const inner = (
@@ -544,7 +819,7 @@ function Kpi({
       <button
         type="button"
         onClick={onClick}
-        title="Click to open the list"
+        title={title ? `${title} — click to open the list` : "Click to open the list"}
         className="rounded-xl bg-white/[0.025] px-4 py-3 text-left ring-1 ring-white/10 transition hover:bg-white/[0.06] hover:ring-white/20"
       >
         {inner}
@@ -552,7 +827,7 @@ function Kpi({
     );
   }
   return (
-    <div className="rounded-xl bg-white/[0.025] px-4 py-3 ring-1 ring-white/10">{inner}</div>
+    <div title={title} className="rounded-xl bg-white/[0.025] px-4 py-3 ring-1 ring-white/10">{inner}</div>
   );
 }
 
@@ -580,11 +855,13 @@ function BarList({
   order,
   max,
   colorByKey,
+  labels,
 }: {
   counts: Record<string, number>;
   order: string[];
   max?: number;
   colorByKey?: boolean;
+  labels?: Record<string, string>;
 }) {
   const keys = [
     ...order.filter((k) => counts[k] != null),
@@ -598,9 +875,12 @@ function BarList({
         const n = counts[k] ?? 0;
         const pct = peak > 0 ? Math.round((n / peak) * 100) : 0;
         const color = colorByKey ? colorFor(k) : "#ff8a1a";
+        const label = labels ? labelFor(labels, k) : prettyKey(k);
         return (
           <div key={k} className="flex items-center gap-2 text-[12px]">
-            <span className="w-36 shrink-0 truncate text-white/60">{prettyKey(k)}</span>
+            <span title={label} className="w-36 shrink-0 truncate text-white/60">
+              {label}
+            </span>
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/[0.05]">
               <div
                 className="h-full rounded-full"
@@ -831,7 +1111,7 @@ function CompanyAndEmail({
 
       {/* Audit results grid */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        <AuditStat label="Stage" value={prettyKey(company.monitor_stage ?? "—")} />
+        <AuditStat label="Stage" value={labelFor(STAGE_LABEL, company.monitor_stage)} />
         <AuditStat
           label="Authority"
           value={prettyKey(company.authority_status ?? "—")}
@@ -839,7 +1119,7 @@ function CompanyAndEmail({
         />
         <AuditStat
           label="Eligibility"
-          value={prettyKey(company.eligibility_state ?? "—")}
+          value={labelFor(ELIGIBILITY_LABEL, company.eligibility_state)}
           tone={
             company.eligibility_state === "eligible_now"
               ? "good"
@@ -865,7 +1145,7 @@ function CompanyAndEmail({
         />
         <AuditStat
           label="Insurance history"
-          value={company.insurance_rating ?? "—"}
+          value={labelFor(INSURANCE_LABEL, company.insurance_rating)}
           tone={
             company.insurance_rating === "green"
               ? "good"
@@ -920,7 +1200,7 @@ function CompanyAndEmail({
         <div className="rounded-lg bg-white/[0.03] p-3 text-[13px] text-white/70 ring-1 ring-white/10">
           {company.disqualify_reason && (
             <div className="mb-1 font-semibold text-red-300">
-              Disqualified: {prettyKey(company.disqualify_reason)}
+              Disqualified: {labelFor(DISQUALIFY_LABEL, company.disqualify_reason)}
             </div>
           )}
           {findings.map((f, i) => (
@@ -1052,7 +1332,7 @@ function CompanyRows({
                 </td>
                 <td className="max-w-[14rem] truncate py-1.5 text-white/55">
                   {kind === "disqualified"
-                    ? prettyKey(r.disqualify_reason ?? "—")
+                    ? labelFor(DISQUALIFY_LABEL, r.disqualify_reason)
                     : (r.census_email ?? r.telephone ?? "—")}
                 </td>
               </tr>
@@ -1060,27 +1340,79 @@ function CompanyRows({
           })}
         </tbody>
       </table>
+      {rows.length >= 200 && (
+        <p className="mt-2 text-[11px] text-white/40">
+          Showing the first 200 rows of the full list, hottest first.
+        </p>
+      )}
     </div>
   );
 }
 
+const DRAFT_STAGE_LABEL: Record<string, string> = {
+  draft: "Awaiting approval",
+  approved: "Approved — queued",
+  failed: "FAILED — check",
+};
+
 function DraftRows({
-  rows,
+  rows: initialRows,
   onOpen,
 }: {
   rows: OutreachDraftRow[];
   onOpen: (v: DrillView) => void;
 }) {
+  // Local copy so Approve/Discard update the list without a full reload.
+  const [rows, setRows] = useState<OutreachDraftRow[]>(initialRows);
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function act(row: OutreachDraftRow, action: "approve" | "discard") {
+    setBusyId(row.id);
+    setNote(null);
+    try {
+      const res = await fetch("/api/admin/outreach/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: row.id, action }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setNote(data.error ?? "Action failed.");
+        return;
+      }
+      if (action === "discard") {
+        setRows((prev) => prev.filter((r) => r.id !== row.id));
+        setNote("Draft discarded — the company goes back to the pool and can be re-drafted later.");
+      } else {
+        setRows((prev) =>
+          prev.map((r) => (r.id === row.id ? { ...r, stage: "approved" } : r)),
+        );
+        setNote("Approved — it goes out in an upcoming 15-minute slot inside the 10am–6pm ET window.");
+      }
+    } catch {
+      setNote("Action failed — check your connection and try again.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   if (rows.length === 0) return <Empty>No drafts pending.</Empty>;
   return (
     <div className="max-h-[70vh] overflow-y-auto">
+      {note && (
+        <p className="mb-2 rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-white/75 ring-1 ring-white/10">
+          {note}
+        </p>
+      )}
       <table className="min-w-full text-[13px]">
         <thead className="sticky top-0 bg-[#121214] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
           <tr>
-            <th className="py-1.5 pr-3">Stage</th>
+            <th className="py-1.5 pr-3">Status</th>
             <th className="py-1.5 pr-3">Company</th>
             <th className="py-1.5 pr-3">To</th>
-            <th className="py-1.5">Subject</th>
+            <th className="py-1.5 pr-3">Subject</th>
+            <th className="py-1.5">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -1091,18 +1423,58 @@ function DraftRows({
               className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
               title="Click for the full email + company audit"
             >
-              <td className="py-1.5 pr-3 text-white/60">{r.stage}</td>
+              <td
+                className={`whitespace-nowrap py-1.5 pr-3 ${
+                  r.stage === "failed" ? "font-semibold text-red-300" : "text-white/60"
+                }`}
+              >
+                {DRAFT_STAGE_LABEL[r.stage] ?? r.stage}
+              </td>
               <td className="py-1.5 pr-3 text-white/90">
                 {r.dba_name ?? r.legal_name ?? `#${r.valuation_id}`}
               </td>
               <td className="py-1.5 pr-3 text-white/70">{r.recipient_email ?? "—"}</td>
-              <td className="max-w-[22rem] truncate py-1.5 text-white/70">
+              <td className="max-w-[16rem] truncate py-1.5 pr-3 text-white/70">
                 {r.draft_subject ?? "—"}
+              </td>
+              <td className="whitespace-nowrap py-1.5">
+                <span className="flex items-center gap-1.5">
+                  {r.stage !== "approved" && (
+                    <button
+                      type="button"
+                      disabled={busyId === r.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void act(r, "approve");
+                      }}
+                      className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 ring-1 ring-emerald-400/25 hover:bg-emerald-500/25 disabled:opacity-50"
+                    >
+                      {r.stage === "failed" ? "Re-approve" : "Approve"}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={busyId === r.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void act(r, "discard");
+                    }}
+                    className="rounded-md bg-red-500/10 px-2 py-0.5 text-[11px] text-red-300 ring-1 ring-red-400/20 hover:bg-red-500/20 disabled:opacity-50"
+                  >
+                    Discard
+                  </button>
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      <p className="mt-2 text-[11px] text-white/40">
+        {rows.length >= 200 ? "Showing the first 200. " : ""}
+        To edit an email&apos;s text before approving, use the Outreach drafts
+        section on the main admin page. Failed rows: the email MAY have gone out
+        — check the Resend dashboard before re-approving.
+      </p>
     </div>
   );
 }
@@ -1134,7 +1506,9 @@ function SentRows({
               className="cursor-pointer border-t border-white/8 hover:bg-white/[0.04]"
               title="Click for the full email + company audit"
             >
-              <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">{relTime(s.sent_at)}</td>
+              <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">
+                <Rel iso={s.sent_at} />
+              </td>
               <td className="py-1.5 pr-3 text-white/90">
                 {s.dba_name ?? s.legal_name ?? "—"}
                 <span className="text-white/35"> · {s.dot_number ?? "—"}</span>
@@ -1145,6 +1519,9 @@ function SentRows({
           ))}
         </tbody>
       </table>
+      {rows.length >= 300 && (
+        <p className="mt-2 text-[11px] text-white/40">Showing the latest 300 sends.</p>
+      )}
     </div>
   );
 }
@@ -1160,6 +1537,27 @@ function actionLabel(action: string): string {
     outreach_bounced: "Email bounced",
     outreach_complained: "⚠ Spam complaint",
     outreach_resumed: "Sending resumed",
+    outreach_paused: "⛔ Sending stopped",
   };
   return map[action] ?? action;
+}
+
+// The per-pass work a sweep heartbeat carries — previously logged and never
+// shown, which made the feed twenty identical "Sweep completed" lines.
+function sweepDetail(a: AgentActionRow): string | null {
+  if (a.action !== "sweep_completed") return null;
+  const d = a.detail as {
+    discovered?: number;
+    verified?: number;
+    enriched?: number;
+    drafted?: number;
+  } | null;
+  if (!d) return null;
+  const parts = [
+    d.discovered ? `${d.discovered} found` : null,
+    d.verified ? `${d.verified} checked` : null,
+    d.enriched ? `${d.enriched} safety` : null,
+    d.drafted ? `${d.drafted} drafted` : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? `— ${parts.join(" · ")}` : null;
 }

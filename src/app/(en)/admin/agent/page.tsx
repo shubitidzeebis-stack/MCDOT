@@ -7,17 +7,21 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { getConfigValue, getFlag } from "@/lib/flags";
 import {
+  getAgentPulse,
   getEligibilityCounts,
+  getFailedSendCounts,
   getInsuranceRatingCounts,
   getMonitorStageCounts,
   getOutreachControl,
   getOutreachHealth,
   getOutreachStageCounts,
+  getReadyToEmailStats,
   getRecentAgentActions,
   getSafetyStatusCounts,
   listAllCursors,
   listHotProspects,
   listOutreachSentRows,
+  pingDb,
 } from "@/lib/db/monitor";
 import { AgentDashboard } from "@/components/AgentDashboard";
 
@@ -52,6 +56,10 @@ export default async function AgentPage() {
     outreachControl,
     healthToday,
     health7d,
+    ready,
+    pulse,
+    failedSends,
+    dataOk,
     monitorEnabled,
     discoveryEnabled,
     outreachDraftEnabled,
@@ -74,6 +82,10 @@ export default async function AgentPage() {
     getOutreachControl(),
     getOutreachHealth(1),
     getOutreachHealth(7),
+    getReadyToEmailStats(),
+    getAgentPulse(),
+    getFailedSendCounts(),
+    pingDb(),
     getFlag("monitorEnabled"),
     getFlag("discoveryEnabled"),
     getFlag("outreachDraftEnabled"),
@@ -98,6 +110,10 @@ export default async function AgentPage() {
     outreachControl,
     healthToday,
     health7d,
+    ready,
+    pulse,
+    failedSends,
+    dataOk,
     flags: {
       monitorEnabled,
       discoveryEnabled,

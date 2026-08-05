@@ -470,6 +470,7 @@ export type MonitorDraftTarget = {
   power_units: number | null;
   days_to_180: number | null;
   eligibility_state: string | null;
+  eligible_at: string | null;
 };
 
 export async function listMonitorForDrafting(
@@ -492,7 +493,8 @@ export async function listMonitorForDrafting(
            CASE
              WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
              ELSE 'eligible_now'
-           END AS eligibility_state
+           END AS eligibility_state,
+           eligible_at::text AS eligible_at
       FROM valuations
      WHERE source = 'monitor'
        AND monitor_stage = 'verified'
@@ -1064,6 +1066,150 @@ export async function getOutreachHealth(
 // agent dashboard can never 500.
 // ---------------------------------------------------------------------------
 
+// DB canary so the dashboard can tell "genuinely empty" from "unreachable" —
+// without it, an outage renders as a healthy-looking page full of zeros.
+export async function pingDb(): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  try {
+    await sql`SELECT 1`;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// THE canonical "ready to email" number — the exact listMonitorForDrafting gate
+// (verified + in-window + insured now + acceptable history + safety pass),
+// split by usable email. Every dashboard surface that talks about the ready
+// backlog must use this so the numbers agree.
+export type ReadyStats = { ready: number; readyEmail: number };
+
+export async function getReadyToEmailStats(): Promise<ReadyStats> {
+  const sql = getSql();
+  if (!sql) return { ready: 0, readyEmail: 0 };
+  try {
+    await ensureValuationsSchema();
+    const rows = (await sql`
+      SELECT count(*)::int AS ready,
+             count(*) FILTER (
+               WHERE census_email ~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]{2,}$'
+             )::int AS ready_email
+        FROM valuations
+       WHERE source = 'monitor'
+         AND monitor_stage = 'verified'
+         AND eligible_at IS NOT NULL
+         AND (eligible_at - CURRENT_DATE) <= 30
+         AND (eligible_at - CURRENT_DATE) >= -185
+         AND insurance_current = true
+         AND insurance_rating IN ('green', 'amber', 'unknown')
+         AND safety_status = 'pass'
+    `) as Array<{ ready: number; ready_email: number }>;
+    const r = rows[0];
+    return { ready: Number(r?.ready ?? 0), readyEmail: Number(r?.ready_email ?? 0) };
+  } catch (err) {
+    console.error("[getReadyToEmailStats] error", err);
+    return { ready: 0, readyEmail: 0 };
+  }
+}
+
+// Rolled-up sweep activity for the dashboard's plain-English pulse: when the
+// agent last did anything, and how much work each pass did recently. The
+// per-pass numbers come from the sweep heartbeats (agent_actions.detail) that
+// were previously logged but never shown anywhere.
+export type AgentPulse = {
+  lastSweepAt: string | null;
+  discovered7d: number;
+  newRows7d: number;
+  verified24h: number;
+  enriched24h: number;
+  drafted24h: number;
+};
+
+export async function getAgentPulse(): Promise<AgentPulse> {
+  const empty: AgentPulse = {
+    lastSweepAt: null,
+    discovered7d: 0,
+    newRows7d: 0,
+    verified24h: 0,
+    enriched24h: 0,
+    drafted24h: 0,
+  };
+  const sql = getSql();
+  if (!sql) return empty;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT
+        (SELECT max(created_at)::text FROM agent_actions
+          WHERE action = 'sweep_completed') AS last_sweep_at,
+        COALESCE((SELECT sum((detail->>'discovered')::int) FROM agent_actions
+          WHERE action = 'sweep_completed'
+            AND created_at > now() - interval '7 days'), 0)::int AS discovered_7d,
+        (SELECT count(*) FROM valuations
+          WHERE source = 'monitor'
+            AND created_at > now() - interval '7 days')::int AS new_rows_7d,
+        COALESCE((SELECT sum((detail->>'verified')::int) FROM agent_actions
+          WHERE action = 'sweep_completed'
+            AND created_at > now() - interval '1 day'), 0)::int AS verified_24h,
+        COALESCE((SELECT sum((detail->>'enriched')::int) FROM agent_actions
+          WHERE action = 'sweep_completed'
+            AND created_at > now() - interval '1 day'), 0)::int AS enriched_24h,
+        COALESCE((SELECT sum((detail->>'drafted')::int) FROM agent_actions
+          WHERE action = 'sweep_completed'
+            AND created_at > now() - interval '1 day'), 0)::int AS drafted_24h
+    `) as Array<{
+      last_sweep_at: string | null;
+      discovered_7d: number;
+      new_rows_7d: number;
+      verified_24h: number;
+      enriched_24h: number;
+      drafted_24h: number;
+    }>;
+    const r = rows[0];
+    if (!r) return empty;
+    return {
+      lastSweepAt: r.last_sweep_at,
+      discovered7d: Number(r.discovered_7d),
+      newRows7d: Number(r.new_rows_7d),
+      verified24h: Number(r.verified_24h),
+      enriched24h: Number(r.enriched_24h),
+      drafted24h: Number(r.drafted_24h),
+    };
+  } catch (err) {
+    console.error("[getAgentPulse] error", err);
+    return empty;
+  }
+}
+
+// Sends that genuinely need a human: failed rows (send error / stale-claim
+// reaper — the email may or may not have gone out) and rows dead-lettered after
+// exhausting retries. Deliberate discards and unsubscribe suppressions are NOT
+// attention items and are excluded — counting them made the old dead-letter
+// badge a permanent false alarm.
+export type FailedSendCounts = { failed: number; deadAfterRetries: number };
+
+export async function getFailedSendCounts(): Promise<FailedSendCounts> {
+  const sql = getSql();
+  if (!sql) return { failed: 0, deadAfterRetries: 0 };
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT count(*) FILTER (WHERE stage = 'failed')::int AS failed,
+             count(*) FILTER (WHERE stage = 'dead' AND attempts >= 5)::int AS dead_after_retries
+        FROM outreach_queue
+    `) as Array<{ failed: number; dead_after_retries: number }>;
+    const r = rows[0];
+    return {
+      failed: Number(r?.failed ?? 0),
+      deadAfterRetries: Number(r?.dead_after_retries ?? 0),
+    };
+  } catch (err) {
+    console.error("[getFailedSendCounts] error", err);
+    return { failed: 0, deadAfterRetries: 0 };
+  }
+}
+
 async function groupCounts(
   sql: Sql,
   query: Promise<unknown>,
@@ -1481,6 +1627,8 @@ export async function listMonitorDetailRows(
          AND (
                (${kind} = 'hot' AND monitor_stage = 'verified'
                   AND authority_status = 'active' AND insurance_current = true
+                  AND insurance_rating IN ('green', 'amber', 'unknown')
+                  AND safety_status = 'pass'
                   AND eligible_at IS NOT NULL
                   AND (eligible_at - CURRENT_DATE) <= 30
                   AND (eligible_at - CURRENT_DATE) >= -185)

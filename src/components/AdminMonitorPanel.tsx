@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import { buildUccHandoff } from "@/lib/audit/ucc";
 import type { MonitorRow } from "@/lib/db/monitor";
 import type { UccRating } from "@/lib/monitor/types";
+import { ELIGIBILITY_LABEL } from "@/lib/monitor/labels";
 
 // Read-only work queue for the outbound monitoring agent (source='monitor'),
 // hottest-first by days-to-180. Expand a row for the insurance-history audit and
@@ -40,15 +41,8 @@ function ratingPill(r: string | null): string {
   }
 }
 
-const ELIGIBILITY_LABEL: Record<string, string> = {
-  too_new: "Too new",
-  approaching: "Approaching",
-  eligible_now: "Eligible now",
-  aged_out: "Aged out",
-  awaiting_authority: "Awaiting authority",
-  authority_inactive: "Authority inactive",
-  continuity_broken: "Insurance gap",
-};
+// Eligibility labels come from the shared map so the agent dashboard and this
+// panel never show two different names for the same state.
 
 function daysBadge(d: number | null): string {
   if (d === null) return "—";

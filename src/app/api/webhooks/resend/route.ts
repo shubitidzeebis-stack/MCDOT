@@ -12,6 +12,8 @@
 
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { Resend } from "resend";
+import { SITE } from "@/lib/site";
 import { unsubscribe } from "@/lib/db/email-followups";
 import {
   getOutreachHealth,
@@ -74,6 +76,25 @@ async function slack(text: string): Promise<void> {
   }
 }
 
+// Critical breaker events must reach a human even with no Slack webhook set
+// (it isn't, in prod) — so they also go to the notification inbox via the
+// transactional Resend key. Best-effort: an alert failure never blocks the
+// webhook ack.
+async function opsEmail(subject: string, text: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  try {
+    await new Resend(apiKey).emails.send({
+      from: SITE.emailFrom,
+      to: SITE.email,
+      subject,
+      text,
+    });
+  } catch (err) {
+    console.error("[resend-webhook] ops alert email failed", err);
+  }
+}
+
 // Trip the breaker if complaints/bounces have crossed the ceiling.
 async function maybePause(): Promise<void> {
   if (await isOutreachPaused()) return;
@@ -92,6 +113,13 @@ async function maybePause(): Promise<void> {
   await setOutreachPaused(reason);
   await slack(
     `:octagonal_sign: OUTREACH AUTO-PAUSED — ${reason}. All sending halted. Resume from /admin/agent once investigated.`,
+  );
+  await opsEmail(
+    `⛔ Outreach AUTO-PAUSED — ${reason}`,
+    `The cold-outreach safety breaker just tripped and ALL sending is halted.\n\n` +
+      `Reason: ${reason}\n(ceilings: bounces 5% of trailing 7 days, complaints 3 or 0.3%)\n\n` +
+      `Nothing more will send until you press "Resume sending" on\n` +
+      `https://groupveritor.com/admin/agent — investigate the bounces/complaints there first.`,
   );
 }
 
@@ -133,6 +161,13 @@ export async function POST(req: Request) {
       await unsubscribe(email, "spam_complaint");
       await logAgentAction("outreach_complained", "resend-webhook", null, { email });
       await slack(`:rotating_light: Outreach SPAM COMPLAINT from ${email} — address suppressed.`);
+      await opsEmail(
+        `🚨 Outreach spam complaint from ${email}`,
+        `A cold-outreach recipient marked the email as spam: ${email}\n` +
+          `The address is suppressed forever. Complaints are the one metric that kills the\n` +
+          `sending domain — the breaker auto-pauses at 3 in a week.\n\n` +
+          `Dashboard: https://groupveritor.com/admin/agent`,
+      );
       await maybePause();
     } else if (email && type === "email.bounced") {
       // Only a PERMANENT bounce (bad address) suppresses forever. A transient
