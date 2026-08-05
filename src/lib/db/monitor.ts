@@ -366,7 +366,7 @@ export async function listMonitorCandidates(limit = 500): Promise<MonitorRow[]> 
                WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
                WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
                WHEN insurance_current = false THEN 'continuity_broken'
-               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
                WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
                WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
                ELSE 'aged_out'
@@ -413,7 +413,7 @@ export async function getMonitorAuditInputs(
              WHEN eligible_at IS NULL THEN eligibility_state
              WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
              WHEN insurance_current = false THEN 'continuity_broken'
-             WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+             WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
              WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
              WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
              ELSE 'aged_out'
@@ -486,7 +486,10 @@ export async function listMonitorForDrafting(
   await ensureValuationsSchema();
   // "Ready to email" gate. In-window is computed LIVE from eligible_at (so a
   // carrier that aged into the window since its last verify is picked up without
-  // a re-verify): days_to_180 in [-185, 30] = approaching ∪ eligible_now.
+  // a re-verify): days_to_180 in [-185, 60] = approaching ∪ eligible_now.
+  // The window opens 60 days before the 180 mark (widened from 30 on
+  // 2026-08-05 per Lukas — reach first; the intro email carries the exact
+  // date they cross, so early contact stays accurate).
   // Insurance: CURRENT insurance is the hard gate; history is soft — a carrier
   // insured now with green/amber/unknown history qualifies ('unknown' is the
   // normal state for a healthy new carrier that never cancelled a policy, so
@@ -504,7 +507,7 @@ export async function listMonitorForDrafting(
      WHERE source = 'monitor'
        AND monitor_stage = 'verified'
        AND eligible_at IS NOT NULL
-       AND (eligible_at - CURRENT_DATE) <= 30
+       AND (eligible_at - CURRENT_DATE) <= 60
        AND (eligible_at - CURRENT_DATE) >= -185
        AND insurance_current = true
        AND insurance_rating IN ('green', 'amber', 'unknown')
@@ -624,7 +627,7 @@ export async function listMonitorForSafetyEnrich(
   const sql = getSql();
   if (!sql) return [];
   await ensureValuationsSchema();
-  // In-window computed LIVE from eligible_at (days_to_180 in [-185, 30]) so a
+  // In-window computed LIVE from eligible_at (days_to_180 in [-185, 60]) so a
   // carrier that just aged into the window is enriched without waiting for a
   // re-verify. Hottest (closest to/just past 180) first.
   const rows = (await sql`
@@ -634,7 +637,7 @@ export async function listMonitorForSafetyEnrich(
        AND monitor_stage = 'verified'
        AND dot_number IS NOT NULL
        AND eligible_at IS NOT NULL
-       AND (eligible_at - CURRENT_DATE) <= 30
+       AND (eligible_at - CURRENT_DATE) <= 60
        AND (eligible_at - CURRENT_DATE) >= -185
        AND safety_checked_at IS NULL
      ORDER BY (eligible_at - CURRENT_DATE) ASC NULLS LAST
@@ -693,7 +696,7 @@ export async function getSafetyStatusCounts(): Promise<Record<string, number>> {
             FROM valuations
            WHERE source = 'monitor'
              AND eligible_at IS NOT NULL
-             AND (eligible_at - CURRENT_DATE) <= 30
+             AND (eligible_at - CURRENT_DATE) <= 60
              AND (eligible_at - CURRENT_DATE) >= -185
            GROUP BY 1`,
     );
@@ -1216,7 +1219,7 @@ export async function getReadyToEmailStats(): Promise<ReadyStats> {
        WHERE source = 'monitor'
          AND monitor_stage = 'verified'
          AND eligible_at IS NOT NULL
-         AND (eligible_at - CURRENT_DATE) <= 30
+         AND (eligible_at - CURRENT_DATE) <= 60
          AND (eligible_at - CURRENT_DATE) >= -185
          AND insurance_current = true
          AND insurance_rating IN ('green', 'amber', 'unknown')
@@ -1370,7 +1373,7 @@ export async function getEligibilityCounts(): Promise<Record<string, number>> {
               WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
               WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
               WHEN insurance_current = false THEN 'continuity_broken'
-              WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+              WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
               WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
               WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
               ELSE 'aged_out'
@@ -1494,7 +1497,7 @@ export async function listHotProspects(limit = 10): Promise<HotProspect[]> {
          AND authority_status = 'active'
          AND insurance_current = true
          AND eligible_at IS NOT NULL
-         AND (eligible_at - CURRENT_DATE) <= 30
+         AND (eligible_at - CURRENT_DATE) <= 60
          AND (eligible_at - CURRENT_DATE) >= -185
        ORDER BY acquisition_score DESC NULLS LAST, eligible_at ASC NULLS LAST
        LIMIT ${limit}
@@ -1560,7 +1563,7 @@ export async function listMonitorForExport(
                WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
                WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
                WHEN insurance_current = false THEN 'continuity_broken'
-               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
                WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
                WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
                ELSE 'aged_out'
@@ -1621,7 +1624,7 @@ export async function getMonitorCompanyDetail(
                WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
                WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
                WHEN insurance_current = false THEN 'continuity_broken'
-               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
                WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
                WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
                ELSE 'aged_out'
@@ -1731,7 +1734,7 @@ export async function listMonitorDetailRows(
                WHEN eligible_at IS NULL THEN COALESCE(eligibility_state, '(unassessed)')
                WHEN authority_status IN ('inactive', 'broker_only') THEN 'authority_inactive'
                WHEN insurance_current = false THEN 'continuity_broken'
-               WHEN (eligible_at - CURRENT_DATE) > 30 THEN 'too_new'
+               WHEN (eligible_at - CURRENT_DATE) > 60 THEN 'too_new'
                WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
                WHEN (eligible_at - CURRENT_DATE) >= -185 THEN 'eligible_now'
                ELSE 'aged_out'
@@ -1748,7 +1751,7 @@ export async function listMonitorDetailRows(
                   AND insurance_rating IN ('green', 'amber', 'unknown')
                   AND safety_status = 'pass'
                   AND eligible_at IS NOT NULL
-                  AND (eligible_at - CURRENT_DATE) <= 30
+                  AND (eligible_at - CURRENT_DATE) <= 60
                   AND (eligible_at - CURRENT_DATE) >= -185)
             OR (${kind} = 'phone' AND monitor_stage = 'outreach_phone')
             OR (${kind} = 'review' AND safety_status = 'review')

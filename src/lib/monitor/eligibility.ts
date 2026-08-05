@@ -43,7 +43,10 @@ import type {
 
 const MS_PER_DAY = 86_400_000;
 const ELIGIBLE_DAYS = 180;
-const APPROACHING_FROM = 150;
+// Contact window opens 60 days before the 180 mark (widened from 30 on
+// 2026-08-05 — reach-first; must stay in sync with the SQL gates in
+// db/monitor.ts that compare (eligible_at - CURRENT_DATE) <= 60).
+const APPROACHING_FROM = 120;
 const PRIME_MAX_DAYS = 365;
 
 // When we fall back to the Census add_date proxy (no BIPD effective date on

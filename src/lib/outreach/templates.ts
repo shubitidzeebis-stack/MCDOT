@@ -271,7 +271,9 @@ function milestoneLine(track: TrackKey, f: DraftFacts): string {
           ? "about two weeks"
           : f.daysTo180 <= 25
             ? "about three weeks"
-            : "about a month";
+            : f.daysTo180 <= 40
+              ? "about a month"
+              : "about two months";
     return `Your MC authority hits the 180-day mark in ${bucket}. ${tail}`;
   }
   return `Your MC authority is approaching the 180-day mark. ${tail}`;

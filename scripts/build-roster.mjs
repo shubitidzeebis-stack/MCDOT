@@ -65,11 +65,11 @@ for (const r of disqualified) {
   dqReasons[k] = (dqReasons[k] ?? 0) + 1;
 }
 
-// Parked: when do they enter the contact window (window opens at days_to_180=30)?
+// Parked: when do they enter the contact window (window opens at days_to_180=60)?
 const monthBuckets = {};
 for (const r of parkedAssessed) {
   if (r.days_to_180 == null) continue;
-  const daysUntilWindow = r.days_to_180 - 30;
+  const daysUntilWindow = r.days_to_180 - 60;
   const d = new Date(Date.now() + Math.max(0, daysUntilWindow) * 86400000);
   const k = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
   monthBuckets[k] = (monthBuckets[k] ?? 0) + 1;
