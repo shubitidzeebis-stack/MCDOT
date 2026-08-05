@@ -32,9 +32,11 @@ function bodyToHtml(text: string): string {
 }
 
 // CAN-SPAM-honest reason line for cold outreach (no false "you contacted us").
+// The closing sentence is the §7704(a)(5) advertisement identification.
 const REASON =
   "You received this because your company holds active interstate operating " +
-  "authority on file with the FMCSA and we believe it may be a fit for acquisition.";
+  "authority on file with the FMCSA and we believe it may be a fit for acquisition. " +
+  "This is a commercial message.";
 
 export function renderOutreachEmail(input: {
   subject: string;

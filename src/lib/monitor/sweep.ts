@@ -329,6 +329,7 @@ export async function monitorSweep(
               powerUnits: t.power_units,
               daysTo180: t.days_to_180,
               eligibilityState: t.eligibility_state,
+              eligibleAt: t.eligible_at,
               offerLow: null,
               offerHigh: null,
             },

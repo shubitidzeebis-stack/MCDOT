@@ -47,21 +47,35 @@ export type OutreachTemplate = {
 
 // One straightforward copy set shared by every persona (the persona structure
 // stays so per-segment tuning later is a one-line change).
+//
+// COPY v3 — approved by Lukas 2026-08-05. Changes vs v2: milestone paragraph
+// leads (their situation first, not our intro); "companies like {company}"
+// merge-tell removed (the name lives in the subject only); "closing is fast"
+// replaced with the real 3–5 business days; "We're the buyer, not a broker."
+// added; deferral-inviting intro CTA rewritten; P.S. explains WHY 180 days
+// matters (Amazon Relay's 180-day active-authority minimum — verified current
+// 2026-08-05; nominative mention only, never implied affiliation, never in the
+// subject line); em dashes stripped (ASCII subjects render everywhere).
+const PS_LINE =
+  "P.S. 180 days matters because that's when your authority clears the age minimum the large shippers set. Amazon Relay's is the one everybody knows.";
+
 const INTRO_COPY: TrackCopy = {
-  subject: "We buy trucking companies — intro for {company}",
+  subject: "We buy trucking companies: intro for {company}",
   subjectFallback: "We buy trucking and transport companies",
   body: `Hi,
 
-I'm Luka with Veritor Group. We buy trucking and transport companies with active MC authority — companies like {company}.
+{milestone}I'm Luka with Veritor Group. We buy trucking and transport companies that hold active MC authority.
 
-{milestone}The process is simple: we look up your DOT, value the company, and make an offer. Closing is fast, in person or fully online.
+How it works: we look up your DOT, value the company, and come back with a number. Most closings take 3 to 5 business days, in person or fully online.
 
-What we look for and how it works: {website}
+We're the buyer, not a broker. What we look for: {website}
 
-If selling could interest you once you cross that mark — or you want to know what your company is worth — reply to this email. Confidential, no obligation.
+If you want to know what it's worth, reply here. Even if you're not selling yet. Confidential, no obligation.
 
 Luka
-Veritor Group`,
+Veritor Group
+
+${PS_LINE}`,
 };
 
 const OFFER_COPY: TrackCopy = {
@@ -69,20 +83,22 @@ const OFFER_COPY: TrackCopy = {
   subjectFallback: "Are you open to selling your trucking company?",
   body: `Hi,
 
-I'm Luka with Veritor Group. We buy trucking and transport companies with active MC authority — companies like {company}.
+{milestone}I'm Luka with Veritor Group. We buy trucking and transport companies that hold active MC authority.
 
-{milestone}The process is simple: we look up your DOT, value the company, and make you an offer. If you accept, closing is fast — in person or fully online.
+How it works: we look up your DOT, value the company, and come back with a number. Most closings take 3 to 5 business days, in person or fully online.
 
-What we look for and how it works: {website}
+We're the buyer, not a broker. What we look for: {website}
 
-If you'd consider selling, reply to this email and I'll take it from there. Confidential, no obligation.
+If you'd consider it, reply here and I'll take it from there. Confidential, no obligation.
 
 Luka
-Veritor Group`,
+Veritor Group
+
+${PS_LINE}`,
 };
 
 const SHARED_ANGLE =
-  "Straightforward, zero fluff, no flattery. State plainly: we buy trucking and transport companies with active MC authority; the process is simple (DOT lookup, valuation, offer); closing is fast, in person or fully online; requirements on the website; reply to get in touch; confidential, no obligation. NEVER state a dollar figure. INTRO track (approaching 180d): brief introduction + the milestone + invite contact. OFFER track (past 180d): direct interest — if they'd consider selling, get in touch.";
+  "Straightforward, zero fluff, no flattery, no em dashes. Lead with THEIR situation (the 180-day milestone paragraph), then: I'm Luka with Veritor Group; we buy trucking and transport companies that hold active MC authority; how it works (DOT lookup, valuation, come back with a number); most closings take 3 to 5 business days, in person or fully online; we're the buyer, not a broker; website for what we look for; reply-here CTA; confidential, no obligation; P.S. explaining 180 days = the age minimum large shippers set (Amazon Relay as the known example — a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): invite a reply even if not selling yet. OFFER track (past 180d): direct interest.";
 
 export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
@@ -172,14 +188,43 @@ export type DraftFacts = {
   powerUnits: number | null;
   daysTo180: number | null;
   eligibilityState: string | null;
+  /** ISO yyyy-mm-dd the carrier crosses 180 days — lets the timing line be a
+   *  DATE, which can never go stale while a draft waits in the send queue. */
+  eligibleAt: string | null;
   offerLow: number | null;
   offerHigh: number | null;
 };
 
+// Words that mark a registry name as a BUSINESS name. Sole proprietors often
+// register under their own legal name, and "Are you open to selling John
+// Smith?" is the single highest complaint risk in the whole system — a name
+// with none of these tokens is treated as a person and replaced by the
+// generic fallback (subject AND body), same as a missing name.
+const COMPANY_TOKENS = new Set([
+  "LLC", "L.L.C.", "INC", "INC.", "CORP", "CORP.", "LTD", "LTD.", "CO", "CO.",
+  "LP", "LLP", "PLLC", "PC", "DBA", "COMPANY", "GROUP", "ENTERPRISE",
+  "ENTERPRISES", "SERVICES", "SERVICE", "SONS", "BROTHERS", "BROS",
+  "TRUCKING", "TRUCK", "TRUCKS", "TRANSPORT", "TRANSPORTATION", "TRANS",
+  "LOGISTICS", "LOGISTIC", "FREIGHT", "EXPRESS", "CARRIER", "CARRIERS",
+  "HAULING", "HAULERS", "HAUL", "HOTSHOT", "TOWING", "DELIVERY", "DELIVERIES",
+  "DISPATCH", "CARGO", "SHIPPING", "MOVING", "MOVERS", "LINES", "LEASING",
+  "INTERMODAL", "AUTO", "VAN",
+]);
+
+function looksLikeCompanyName(cleaned: string): boolean {
+  const upper = cleaned.toUpperCase();
+  if (upper.split(" ").some((w) => COMPANY_TOKENS.has(w.replace(/[.,]+$/, "")))) {
+    return true;
+  }
+  // Glued suffixes ("TOMARLLLC") still mark a business.
+  return /(LLC|INC|CORP|LTD)\.?$/.test(upper.replace(/\s+/g, ""));
+}
+
 function companyName(f: DraftFacts): string {
-  return (
-    cleanCompanyName(f.dbaName) ?? cleanCompanyName(f.legalName) ?? "your company"
-  );
+  const cleaned =
+    cleanCompanyName(f.dbaName) ?? cleanCompanyName(f.legalName);
+  if (!cleaned || !looksLikeCompanyName(cleaned)) return "your company";
+  return cleaned;
 }
 
 function offerLine(f: DraftFacts): string {
@@ -189,15 +234,47 @@ function offerLine(f: DraftFacts): string {
   return "";
 }
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June", "July",
+  "August", "September", "October", "November", "December",
+];
+
+// "2026-09-14" -> "September 14". String parsing on purpose — no Date object,
+// no timezone drift.
+function formatMonthDay(iso: string | null): string | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
+  if (!m) return null;
+  const month = MONTHS[Number(m[2]) - 1];
+  const day = Number(m[3]);
+  if (!month || !day) return null;
+  return `${month} ${day}`;
+}
+
 // The timing paragraph (own paragraph; ends with a blank line when present).
+// It leads the email, so it must never be wrong: prefer the exact DATE the
+// carrier crosses 180 days (immune to queue delay); fall back to a rounded
+// bucket, never a raw day count that drifts stale while a draft waits.
 function milestoneLine(track: TrackKey, f: DraftFacts): string {
   if (track === "offer") {
-    return "Your authority is past the 180-day mark — the point where it's worth the most to a buyer.\n\n";
+    return "Your MC authority is past the 180-day mark. That's the point where it's worth the most to a buyer, and it's why I'm writing.\n\n";
+  }
+  const tail = "That's the point where it's worth the most to a buyer.\n\n";
+  const date = formatMonthDay(f.eligibleAt);
+  if (date) {
+    return `Your MC authority hits the 180-day mark on ${date}. ${tail}`;
   }
   if (f.daysTo180 != null && f.daysTo180 > 0) {
-    return `Your authority reaches the 180-day mark in about ${f.daysTo180} days. That's when companies like yours are worth the most to buyers, and when we make offers.\n\n`;
+    const bucket =
+      f.daysTo180 <= 10
+        ? "about a week"
+        : f.daysTo180 <= 18
+          ? "about two weeks"
+          : f.daysTo180 <= 25
+            ? "about three weeks"
+            : "about a month";
+    return `Your MC authority hits the 180-day mark in ${bucket}. ${tail}`;
   }
-  return "Your authority is approaching the 180-day mark. That's when companies like yours are worth the most to buyers, and when we make offers.\n\n";
+  return `Your MC authority is approaching the 180-day mark. ${tail}`;
 }
 
 // Build the system + user prompt for the LLM. Pure — no I/O.
