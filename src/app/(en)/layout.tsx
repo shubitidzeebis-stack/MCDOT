@@ -9,7 +9,7 @@ import {
   OrganizationSchema,
   WebSiteSchema,
 } from "@/components/seo/Schema";
-import { SITE } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, SITE } from "@/lib/site";
 import "../globals.css";
 
 // English root layout. Hardcoded `lang="en"` — no `headers()` call,
@@ -67,6 +67,7 @@ export const metadata: Metadata = {
     title: `${SITE.name} — We buy US logistics LLCs & Amazon Relay carriers`,
     description:
       "Veritor Group acquires US logistics LLCs — written offers, closed in 3–5 business days. 400+ LLCs closed.",
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
@@ -101,6 +102,11 @@ export const metadata: Metadata = {
     google: "bQWOKwbXkSkIDHuV2KBtyYnXA6KsPmvGYrOoAdDkXJI",
     other: {
       "msvalidate.01": "EC004A9D9176E1CB6ECF98E9FC295C4E",
+      // Meta domain verification. Required before Aggregated Event
+      // Measurement will let us rank event priorities, which is what keeps
+      // iOS conversions attributable. Meta scrapes the root URL, so this
+      // must stay in the EN layout specifically — that's what serves "/".
+      "facebook-domain-verification": "jwpk5vsl2ou4xdlf823u2ni6nz9fjs",
     },
   },
 };

@@ -58,6 +58,22 @@ export const SITE = {
 
 export type Site = typeof SITE;
 
+// Fallback Open Graph card, rendered by src/app/opengraph-image.tsx.
+// Next resolves `openGraph` by replacement, not by merge: the moment a page
+// declares its own `openGraph` block it drops everything the layout set,
+// images included. So this is spread into the (en)/(es)/(ru) layouts *and*
+// into every page that overrides `openGraph` without shipping its own
+// opengraph-image.tsx. Pages that do ship one must NOT set it — an explicit
+// `images` key makes Next skip the file-based image.
+// `twitter.images` is left alone on purpose: Next auto-fills it from the
+// resolved openGraph images when twitter doesn't declare its own.
+export const DEFAULT_OG_IMAGE = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Veritor Group — We buy US logistics LLCs. Closed in 3–5 business days.",
+};
+
 // Single-line address for use in legal-doc footers, CAN-SPAM blocks, etc.
 // Returns a placeholder string if the address is still empty, so missing
 // data is loud rather than silent. Cast to string because SITE is `as const`

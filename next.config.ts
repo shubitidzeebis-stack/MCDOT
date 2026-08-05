@@ -35,11 +35,17 @@ const SECURITY_HEADERS = [
       //                                       /rmkt/collect (remarketing)
       //   googleads.g.doubleclick.net      — legacy remarketing pixel
       // GA4 alone doesn't need these — AW-* does.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com https://www.clarity.ms https://*.clarity.ms https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://app.cal.eu https://app.cal.com",
+      // Meta Pixel: connect.facebook.net serves fbevents.js (script-src);
+      // the pixel then beacons to www.facebook.com/tr (img-src, already
+      // covered by https:) and opens a fetch/XHR channel to
+      // connect.facebook.net + www.facebook.com (connect-src). Miss any of
+      // these and the pixel fails silently — no console error the user
+      // would notice, just zero events in Events Manager.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://challenges.cloudflare.com https://va.vercel-scripts.com https://vercel-scripts.com https://www.clarity.ms https://*.clarity.ms https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://connect.facebook.net https://app.cal.eu https://app.cal.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://googleads.g.doubleclick.net https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
+      "connect-src 'self' https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com https://vercel.live wss://*.vercel.live https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://googleads.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com",
       // blob: lets the admin Bill of Sale preview render its locally
       // generated PDF in an iframe (blob URLs are same-origin only).
       "frame-src blob: https://challenges.cloudflare.com https://vercel.live https://app.cal.eu https://app.cal.com https://cal.eu https://cal.com https://www.cal.eu https://www.cal.com",

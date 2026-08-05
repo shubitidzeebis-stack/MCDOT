@@ -5,6 +5,7 @@ import { ExitIntent } from "@/components/ExitIntent";
 import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 import { BreadcrumbSchema } from "@/components/seo/Schema";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Contact — Get a free LLC valuation",
@@ -31,6 +32,7 @@ export const metadata: Metadata = {
     description:
       "Send LLC details, receive a written valuation within hours. Phone, email, WhatsApp.",
     url: "/contact",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

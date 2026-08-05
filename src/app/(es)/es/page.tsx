@@ -8,9 +8,13 @@ import { WhyVeritor } from "@/components/WhyVeritor";
 import { ContactForm } from "@/components/ContactForm";
 import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Veritor Group — Compramos LLCs de logística en EE. UU.",
+  // `absolute` bypasses the layout's "%s · Veritor Group" template — the
+  // brand is already in this title, and letting the template run appends
+  // it a second time.
+  title: { absolute: "Veritor Group — Compramos LLCs de logística en EE. UU." },
   description:
     "Veritor Group adquiere LLCs de logística en EE. UU., incluyendo aquellas con contrato activo de Amazon Relay. Cierre rápido y oferta justa. Más de 40 adquisiciones completadas.",
   alternates: {
@@ -22,7 +26,7 @@ export const metadata: Metadata = {
       "x-default": "/",
     },
   },
-  openGraph: { locale: "es_US" },
+  openGraph: { locale: "es_US", images: [DEFAULT_OG_IMAGE] },
 };
 
 export default function HomeES() {

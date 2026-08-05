@@ -6,6 +6,7 @@ import { MobileCTA } from "@/components/MobileCTA";
 import { PageHero } from "@/components/PageHero";
 import { ContactForm } from "@/components/ContactForm";
 import { ALL_STATES, getCity, getState } from "@/lib/areas";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 import { AreasFAQAccordion } from "@/components/areas/AreasFAQAccordion";
 import { NearbyAreasBar } from "@/components/areas/NearbyAreasBar";
 import { AreaServiceSchema, AreaFAQSchema, AreaBreadcrumbSchema } from "@/components/seo/AreaSchema";
@@ -29,7 +30,9 @@ export async function generateMetadata({
   const stateData = getState(stateSlug);
   if (!cityData || !stateData) return {};
   return {
-    title: cityData.metaTitle,
+    // `absolute` bypasses the layout's "%s · Veritor Group" template — every
+    // metaTitle in src/content/areas already ends in "| Veritor".
+    title: { absolute: cityData.metaTitle },
     description: cityData.metaDescription,
     keywords: cityData.keywords,
     alternates: { canonical: `/areas/${stateSlug}/${citySlug}` },
@@ -37,6 +40,7 @@ export async function generateMetadata({
       title: cityData.metaTitle,
       description: cityData.metaDescription,
       url: `/areas/${stateSlug}/${citySlug}`,
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }

@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 import { CheckIcon } from "@/components/Icons";
 import { BreadcrumbSchema, FAQPageSchema } from "@/components/seo/Schema";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Sell your trucking LLC: operators vs brokers",
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
     description:
       "The structural difference between an operator-buyer and a broker-buyer changes everything about how a trucking LLC sale closes.",
     url: "/operators-vs-brokers",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

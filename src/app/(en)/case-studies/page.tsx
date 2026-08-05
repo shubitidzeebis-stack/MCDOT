@@ -4,6 +4,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 import { BreadcrumbSchema } from "@/components/seo/Schema";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 import { TESTIMONIALS } from "@/lib/testimonials";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
     description:
       "What sellers say after closing. Specific scenarios, specific outcomes.",
     url: "/case-studies",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

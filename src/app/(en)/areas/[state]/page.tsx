@@ -7,6 +7,7 @@ import { PageHero } from "@/components/PageHero";
 import { ContactForm } from "@/components/ContactForm";
 import { BreadcrumbSchema } from "@/components/seo/Schema";
 import { ALL_STATES, getState } from "@/lib/areas";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 import { GlassCityCard } from "@/components/areas/GlassCityCard";
 import { AreasFAQAccordion } from "@/components/areas/AreasFAQAccordion";
 
@@ -23,7 +24,9 @@ export async function generateMetadata({
   const state = getState(stateSlug);
   if (!state) return {};
   return {
-    title: state.metaTitle,
+    // `absolute` bypasses the layout's "%s · Veritor Group" template — every
+    // metaTitle in src/content/areas already ends in "| Veritor Group".
+    title: { absolute: state.metaTitle },
     description: state.metaDescription,
     keywords: state.keywords,
     alternates: { canonical: `/areas/${stateSlug}` },
@@ -31,6 +34,7 @@ export async function generateMetadata({
       title: state.metaTitle,
       description: state.metaDescription,
       url: `/areas/${stateSlug}`,
+      images: [DEFAULT_OG_IMAGE],
     },
   };
 }

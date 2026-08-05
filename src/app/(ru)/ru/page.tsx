@@ -8,9 +8,13 @@ import { WhyVeritor } from "@/components/WhyVeritor";
 import { ContactForm } from "@/components/ContactForm";
 import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Veritor Group — Выкупаем логистические LLC в США",
+  // `absolute` bypasses the layout's "%s · Veritor Group" template — the
+  // brand is already in this title, and letting the template run appends
+  // it a second time.
+  title: { absolute: "Veritor Group — Выкупаем логистические LLC в США" },
   description:
     "Veritor Group покупает логистические LLC в США, в том числе с действующим контрактом Amazon Relay. Быстрое закрытие, честная цена. Более 40 успешных сделок.",
   alternates: {
@@ -22,7 +26,7 @@ export const metadata: Metadata = {
       "x-default": "/",
     },
   },
-  openGraph: { locale: "ru_RU" },
+  openGraph: { locale: "ru_RU", images: [DEFAULT_OG_IMAGE] },
 };
 
 export default function HomeRU() {

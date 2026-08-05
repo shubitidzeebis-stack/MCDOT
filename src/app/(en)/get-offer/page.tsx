@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ValuationWizard } from "@/components/ValuationWizard";
 import { BreadcrumbSchema, ServiceSchema } from "@/components/seo/Schema";
-import { SITE } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Get a written offer on your trucking LLC",
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     description:
       "Enter your MC or DOT. We pull FMCSA and return a value range. Written offer in 48 hours, in-person close in 3–5 business days.",
     url: "/get-offer",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

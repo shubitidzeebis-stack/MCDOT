@@ -9,6 +9,7 @@
 
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 import { isTestMode } from "@/lib/test-mode";
+import { fireMetaConversion, rememberMetaUserData } from "@/lib/meta";
 
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "";
 
@@ -36,15 +37,20 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}): 
   window.gtag!("event", name, params);
 }
 
-// Fire both the GA4 event AND the matching Google Ads conversion (if a
-// send_to ID is configured for this event name). One call from the UI,
-// two pings out.
+// Fire the GA4 event, the matching Google Ads conversion (if a send_to ID
+// is configured for this event name), AND the Meta browser+server pair.
+// One call from the UI, every destination covered — so new conversion call
+// sites can't silently miss a platform.
+//
+// Each destination guards itself (consent, env vars, test mode), so this
+// stays a plain unconditional fan-out.
 export function fireConversion(eventName: string, params: Record<string, unknown> = {}): void {
   trackEvent(eventName, params);
   const sendTo = GOOGLE_ADS_CONVERSIONS[eventName];
   if (sendTo) {
     trackEvent("conversion", { ...params, send_to: sendTo });
   }
+  fireMetaConversion(eventName, params);
 }
 
 async function sha256Hex(s: string): Promise<string | null> {
@@ -80,6 +86,11 @@ export async function setEnhancedUserData(input: {
 }): Promise<void> {
   // Internal test mode: never hash/send a tester's PII to Google.
   if (isTestMode()) return;
+  // Stash the raw values for Meta advanced matching before the gtag guard
+  // below — Meta's pair is hashed server-side and must still be populated
+  // on pages where gtag never loaded (analytics consent declined but
+  // advertising accepted).
+  rememberMetaUserData(input);
   if (!gtagAvailable()) return;
   const data: Record<string, string> = {};
   if (input.email) {

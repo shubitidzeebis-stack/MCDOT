@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 import { CheckIcon } from "@/components/Icons";
 import { BreadcrumbSchema, ServiceSchema } from "@/components/seo/Schema";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Why sell to Veritor — operators, not brokers",
@@ -38,6 +39,7 @@ export const metadata: Metadata = {
     description:
       "Operators buying from operators. Written offers, close in 3–5 business days, full transfer handled, complete confidentiality.",
     url: "/why-veritor",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 

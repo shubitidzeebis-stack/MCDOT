@@ -9,7 +9,7 @@ import {
   OrganizationSchema,
   WebSiteSchema,
 } from "@/components/seo/Schema";
-import { SITE } from "@/lib/site";
+import { DEFAULT_OG_IMAGE, SITE } from "@/lib/site";
 import "../globals.css";
 
 // Russian root layout. Hardcoded `lang="ru"`. Inter loads Cyrillic
@@ -41,6 +41,7 @@ export const metadata: Metadata = {
     locale: "ru_RU",
     alternateLocale: ["en_US", "es"],
     url: `${SITE_URL}/ru`,
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: { card: "summary_large_image" },
   robots: {
@@ -58,6 +59,10 @@ export const metadata: Metadata = {
     google: "bQWOKwbXkSkIDHuV2KBtyYnXA6KsPmvGYrOoAdDkXJI",
     other: {
       "msvalidate.01": "EC004A9D9176E1CB6ECF98E9FC295C4E",
+      // Same Meta domain-verification token as the EN layout. Verification
+      // is per-domain, not per-page, so carrying it on every locale root
+      // just means Meta's crawler finds it wherever it lands.
+      "facebook-domain-verification": "jwpk5vsl2ou4xdlf823u2ni6nz9fjs",
     },
   },
 };

@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 import { BreadcrumbSchema } from "@/components/seo/Schema";
 import { ALL_STATES } from "@/lib/areas";
+import { DEFAULT_OG_IMAGE } from "@/lib/site";
 import { GlassStateCard } from "@/components/areas/GlassStateCard";
 import { AreasHeroText } from "@/components/areas/AreasHeroText";
 
@@ -25,6 +26,7 @@ export const metadata: Metadata = {
     title: "Areas We Cover | Veritor Group",
     description: "All 50 states. 300+ cities. Direct buyer — not a broker. Wire transfer at your bank.",
     url: "/areas",
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 
