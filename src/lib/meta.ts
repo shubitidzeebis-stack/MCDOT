@@ -18,6 +18,7 @@
 // events for iOS attribution.
 
 import { isTestMode } from "@/lib/test-mode";
+import { readConsent } from "@/lib/consent";
 
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID ?? "";
 
@@ -49,6 +50,24 @@ function fbqAvailable(): boolean {
   return typeof window !== "undefined" && typeof window.fbq === "function";
 }
 
+// The advertising consent gate for EVERYTHING in this module.
+//
+// Checking `fbqAvailable()` is NOT sufficient on its own, for two reasons:
+//   1. the server-side CAPI call doesn't touch fbq at all — it would happily
+//      forward a declining visitor's IP, user agent and hashed contact
+//      details to Meta;
+//   2. `window.fbq` survives a mid-session consent revoke. AnalyticsGate
+//      unmounts <MetaPixel>, but the already-injected fbq function stays on
+//      window, so browser events would keep firing too.
+//
+// Both matter because the conversion call sites (ContactForm,
+// ValuationWizard) render on every page regardless of consent — unlike
+// ClickTracker, which AnalyticsGate only mounts post-consent.
+function advertisingAllowed(): boolean {
+  if (typeof window === "undefined") return false;
+  return readConsent().advertising;
+}
+
 // Sticky first-party identifiers for advanced matching, set by
 // rememberMetaUserData() as soon as the visitor gives us a valid email or
 // phone. Held in module scope (not state) so a conversion firing from an
@@ -63,12 +82,32 @@ let stickyUserData: { email?: string; phone?: string } = {};
 
 export function rememberMetaUserData(input: { email?: string; phone?: string }): void {
   if (isTestMode()) return;
+  // Don't retain contact details for a visitor who declined advertising —
+  // nothing may be sent for them, so there is nothing to remember.
+  if (!advertisingAllowed()) return;
   if (input.email) stickyUserData.email = input.email;
   if (input.phone) stickyUserData.phone = input.phone;
 }
 
 export function clearMetaUserData(): void {
   stickyUserData = {};
+}
+
+// Event params that identify a specific carrier. The valuation wizard
+// attaches these for GA4 reporting, but they must not ride along to Meta:
+// `custom_data` is an unhashed field, and for a small authority the FMCSA
+// legal name is very often the owner's own name ("JOHN SMITH TRUCKING", or
+// literally "JOHN SMITH"). Paired with an MC number that is a direct
+// personal identifier, which Meta's Business Tools terms prohibit sending
+// in the clear. Identity belongs in `user_data`, hashed, and nowhere else.
+const IDENTIFYING_PARAMS = new Set(["legal_name", "mc_number", "dot_number"]);
+
+function stripIdentifiers(params: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (!IDENTIFYING_PARAMS.has(k)) out[k] = v;
+  }
+  return out;
 }
 
 // Random per-event ID shared by the browser ping and the server ping.
@@ -93,6 +132,9 @@ export function fireMetaConversion(
 ): void {
   // Internal test mode: emit nothing to Meta, same guard as GA4/Ads.
   if (isTestMode()) return;
+  // Advertising consent gate. Must come before the CAPI call below —
+  // that request reaches Meta whether or not the browser pixel loaded.
+  if (!advertisingAllowed()) return;
   const eventName = META_EVENT_MAP[internalEventName];
   if (!eventName) return;
   if (!META_PIXEL_ID) return;
@@ -100,7 +142,7 @@ export function fireMetaConversion(
   const eventId = newEventId();
   // `content_name` keeps the two Lead sources separable in reporting even
   // though they share one Meta event name.
-  const customData = { ...params, content_name: internalEventName };
+  const customData = { ...stripIdentifiers(params), content_name: internalEventName };
 
   if (fbqAvailable()) {
     window.fbq!("track", eventName, customData, { eventID: eventId });
@@ -134,6 +176,7 @@ export function fireMetaConversion(
 // client-side route change (see components/MetaPixel).
 export function trackMetaPageView(): void {
   if (isTestMode()) return;
+  if (!advertisingAllowed()) return;
   if (!fbqAvailable()) return;
   window.fbq!("track", "PageView");
 }

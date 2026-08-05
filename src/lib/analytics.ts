@@ -10,6 +10,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 import { isTestMode } from "@/lib/test-mode";
 import { fireMetaConversion, rememberMetaUserData } from "@/lib/meta";
+import { readConsent } from "@/lib/consent";
 
 export const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "";
 
@@ -23,8 +24,16 @@ export const GOOGLE_ADS_CONVERSIONS: Record<string, string> = {
   whatsapp_click: process.env.NEXT_PUBLIC_GOOGLE_ADS_CONVERSION_WHATSAPP ?? "",
 };
 
+// `window.gtag` existing is NOT the same as consent still being granted.
+// Unmounting <GoogleAnalytics> does not unload gtag.js or delete the global
+// it created, so a visitor who accepts and then withdraws analytics in the
+// cookie preferences would otherwise keep emitting GA4 events and Ads
+// conversions for the rest of the page session. Re-read the live consent
+// state on every call.
 function gtagAvailable(): boolean {
-  return typeof window !== "undefined" && typeof window.gtag === "function";
+  if (typeof window === "undefined") return false;
+  if (typeof window.gtag !== "function") return false;
+  return readConsent().analytics;
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
@@ -44,13 +53,25 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}): 
 //
 // Each destination guards itself (consent, env vars, test mode), so this
 // stays a plain unconditional fan-out.
+// MUST NEVER THROW. Both call sites that matter (ContactForm submit,
+// ValuationWizard finalize) invoke this inside the same try block as their
+// API call and before their success navigation. A throw here would land in
+// their catch and show "something went wrong" for a lead that was already
+// saved server-side — the visitor resubmits, and we get a duplicate lead, a
+// duplicate notification and a duplicate conversion. A third-party
+// extension wrapping window.fbq or window.gtag is enough to trigger it, so
+// this is contained here rather than trusting every call site.
 export function fireConversion(eventName: string, params: Record<string, unknown> = {}): void {
-  trackEvent(eventName, params);
-  const sendTo = GOOGLE_ADS_CONVERSIONS[eventName];
-  if (sendTo) {
-    trackEvent("conversion", { ...params, send_to: sendTo });
+  try {
+    trackEvent(eventName, params);
+    const sendTo = GOOGLE_ADS_CONVERSIONS[eventName];
+    if (sendTo) {
+      trackEvent("conversion", { ...params, send_to: sendTo });
+    }
+    fireMetaConversion(eventName, params);
+  } catch {
+    // Losing a conversion ping is survivable; breaking the funnel is not.
   }
-  fireMetaConversion(eventName, params);
 }
 
 async function sha256Hex(s: string): Promise<string | null> {
@@ -80,7 +101,21 @@ function normalizePhoneE164(input: string): string | null {
 // Google does Gmail dot-stripping etc. server-side; we don't.
 // MUST be awaited BEFORE firing the conversion event so the user_data is
 // attached to it.
+// Also must never reject — it is `await`ed inside the same try block as the
+// lead submission. See the note on fireConversion above.
 export async function setEnhancedUserData(input: {
+  email?: string;
+  phone?: string;
+}): Promise<void> {
+  try {
+    await setEnhancedUserDataUnsafe(input);
+  } catch {
+    // Hashing failures (locked-down crypto, odd phone input) must not break
+    // the submit that triggered them.
+  }
+}
+
+async function setEnhancedUserDataUnsafe(input: {
   email?: string;
   phone?: string;
 }): Promise<void> {

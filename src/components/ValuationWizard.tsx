@@ -149,6 +149,11 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const sessionIdRef = useRef<string>("");
+  // Step 3 offers a Back button to Step 2, so Continue can be pressed more
+  // than once in a single session. `valuation_started` is a real Google Ads
+  // conversion feeding Smart Bidding — re-firing it inflates that signal,
+  // and each re-fire carries a fresh event_id so Meta can't dedup it either.
+  const valuationStartedRef = useRef(false);
 
   useEffect(() => {
     sessionIdRef.current = getSessionId();
@@ -240,13 +245,14 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
       // Google Ads campaigns. Enhanced conversions (hashed email +
       // phone) raise Google Ads match rate for users without ad cookies.
       await setEnhancedUserData({ email, phone });
+      // `legal_name` deliberately omitted — see nextFromStep2 below.
+      // `currency` too: it means nothing to either platform without a
+      // `value`, and only produces a custom_data warning in Meta.
       fireConversion("valuation_completed", {
         locale,
         has_amazon_relay: hasRelay === "yes",
         kind,
         mc_present: kind === "mc",
-        currency: "USD",
-        legal_name: carrier?.legalName ?? null,
       });
       setStep(5);
     } catch {
@@ -262,13 +268,17 @@ export function ValuationWizard({ locale = "en" as Locale }: { locale?: Locale }
     // confirmed it's the right company. Distinct from valuation_completed
     // (which only fires after Step 4 submit). Useful for optimizing
     // Google Ads bidding on "qualified intent" earlier in the funnel.
-    fireConversion("valuation_started", {
-      locale,
-      kind,
-      mc_number: carrier?.mcNumbers[0] ?? null,
-      dot_number: carrier?.dotNumber ?? null,
-      legal_name: carrier?.legalName ?? null,
-    });
+    if (!valuationStartedRef.current) {
+      valuationStartedRef.current = true;
+      // No carrier identifiers. The FMCSA legal name is very often the
+      // owner's own name, and Google's Analytics policy forbids sending
+      // personal data — a breach is grounds for data deletion or losing the
+      // property. MC/DOT are equally identifying once paired with it. None
+      // of it belongs in an ad platform anyway: the full carrier record is
+      // already written to our own database by /api/valuation/finalize,
+      // which is where we actually look it up.
+      fireConversion("valuation_started", { locale, kind });
+    }
     setStep(3);
   }
 

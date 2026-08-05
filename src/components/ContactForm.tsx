@@ -307,11 +307,12 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
       // conversion event fires so gtag attaches them to it. Helpers
       // no-op when gtag isn't loaded (consent declined, env unset).
       await setEnhancedUserData({ email: form.email, phone: form.phone });
+      // No `currency` — it's meaningless to both platforms without a
+      // `value`, and Meta raises a custom_data warning for it.
       fireConversion("generate_lead", {
         locale,
         has_relay: form.hasRelay || "unknown",
         mc_present: Boolean(form.mc.trim()),
-        currency: "USD",
       });
       // Redirect to thanks page (so we can fire ad conversion pixels later).
       router.push(locale === "en" ? "/thanks" : `/${locale}/thanks`);

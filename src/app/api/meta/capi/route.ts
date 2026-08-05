@@ -86,8 +86,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, skipped: "unconfigured" });
   }
 
+  // Same-origin check. This endpoint forwards straight into the ad dataset
+  // that Smart Bidding optimizes against, so an open version of it lets
+  // anyone manufacture Lead events with invented click IDs and identities
+  // and poison campaign optimization. Only our own pages may call it.
+  // Not a security boundary against a determined attacker (Origin is
+  // client-supplied), but it stops drive-by and scripted abuse outright.
+  const origin = req.headers.get("origin");
+  if (origin) {
+    let sameOrigin = false;
+    try {
+      sameOrigin = new URL(origin).host === new URL(req.url).host;
+    } catch {
+      sameOrigin = false;
+    }
+    if (!sameOrigin) {
+      return NextResponse.json({ ok: false, error: "bad_origin" }, { status: 403 });
+    }
+  }
+
+  // 300 rather than a tight limit: this is keyed on IP, and real visitors
+  // share egress IPs (a carrier's office NAT, mobile CGNAT, corporate VPN).
+  // Tripping it drops the SERVER half of the pair while the browser half
+  // still fires — and the browser half is precisely what ad blockers and
+  // ITP kill, so a false positive costs us exactly the traffic the CAPI
+  // exists to recover. Abuse protection still holds; conversions are rare
+  // events, so 300 in five minutes from one IP is not organic.
   const ip = getClientIp(req);
-  const rl = await rateLimit(`meta-capi:${ip}`, 60, 5 * 60 * 1000);
+  const rl = await rateLimit(`meta-capi:${ip}`, 300, 5 * 60 * 1000);
   if (!rl.ok) {
     return NextResponse.json({ ok: false, error: "rate_limited" }, { status: 429 });
   }
@@ -125,9 +151,12 @@ export async function POST(req: Request) {
   );
 
   const user_data: Record<string, string | string[]> = {
-    client_ip_address: ip,
     client_user_agent: req.headers.get("user-agent") ?? "",
   };
+  // getClientIp returns the literal string "unknown" when no forwarding
+  // header is present. Sending that as an IP makes Meta reject the whole
+  // event, so omit the field instead of poisoning it.
+  if (ip && ip !== "unknown") user_data.client_ip_address = ip;
 
   const fbp = cookies.get("_fbp");
   if (fbp) user_data.fbp = fbp;
@@ -144,6 +173,12 @@ export async function POST(req: Request) {
   }
 
   const body = {
+    // Token travels in the POST body, never the query string. In the URL it
+    // would be echoed by anything that stringifies the request — including
+    // our own console.error below, whose output is read with
+    // `vercel logs --expand`. A long-lived CAPI token in a log line is a
+    // real leak.
+    access_token: ACCESS_TOKEN,
     data: [
       {
         event_name: eventName,
@@ -164,7 +199,7 @@ export async function POST(req: Request) {
   after(async () => {
     try {
       const res = await fetch(
-        `https://graph.facebook.com/${GRAPH_VERSION}/${PIXEL_ID}/events?access_token=${encodeURIComponent(ACCESS_TOKEN)}`,
+        `https://graph.facebook.com/${GRAPH_VERSION}/${PIXEL_ID}/events`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

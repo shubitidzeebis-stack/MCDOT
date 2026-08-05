@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { trackMetaPageView } from "@/lib/meta";
@@ -16,18 +16,29 @@ import { trackMetaPageView } from "@/lib/meta";
 // changes are not (the snippet only runs once), which is what the effect
 // below handles.
 
+// Last path we counted a PageView for, held at module scope rather than in
+// a ref so it survives remounts. A ref got this wrong twice:
+//   - toggling advertising consent off and on remounts this component, but
+//     next/script will not re-run an inline script with the same id, so the
+//     bootstrap PageView does NOT fire again — while a fresh ref would
+//     swallow the following route change, permanently losing one PageView;
+//   - React StrictMode double-invokes effects in dev, so a "skip the first
+//     run" ref fires an extra PageView on top of the bootstrap's.
+// Comparing paths instead makes both cases no-ops.
+let lastCountedPath: string | null = null;
+
 export function MetaPixel({ pixelId }: { pixelId: string }) {
   const pathname = usePathname();
-  // The bootstrap already fired PageView for the entry page. Skipping the
-  // first effect run stops a duplicate PageView on load, which would
-  // otherwise inflate landing-page traffic in Events Manager.
-  const bootstrapped = useRef(false);
 
   useEffect(() => {
-    if (!bootstrapped.current) {
-      bootstrapped.current = true;
+    // First run of the page lifetime: the bootstrap snippet's own
+    // fbq('track','PageView') already covered this path.
+    if (lastCountedPath === null) {
+      lastCountedPath = pathname;
       return;
     }
+    if (lastCountedPath === pathname) return;
+    lastCountedPath = pathname;
     trackMetaPageView();
   }, [pathname]);
 
