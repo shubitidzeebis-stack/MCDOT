@@ -27,6 +27,7 @@ import {
   listMonitorForDrafting,
   listMonitorForSafetyEnrich,
   listMonitorForVerification,
+  listWindingDownTargets,
   logAgentAction,
   markMonitorNotFound,
   setCursor,
@@ -40,7 +41,11 @@ import { verifyCandidatesBatch } from "@/lib/monitor/verify";
 import { rateSafety } from "@/lib/audit/safety";
 import { lookupCarrierBasics } from "@/lib/fmcsa";
 import { generateDraft } from "@/lib/outreach/draft";
-import { renderFollowUpDraft, selectPersona } from "@/lib/outreach/templates";
+import {
+  renderFollowUpDraft,
+  renderWindingDownDraft,
+  selectPersona,
+} from "@/lib/outreach/templates";
 
 export type MonitorSweepMode = "cron" | "backfill";
 
@@ -55,6 +60,7 @@ export type MonitorSweepResult =
       enriched: number;
       drafted: number;
       followups: number;
+      winding: number;
       note?: string;
     };
 
@@ -75,6 +81,7 @@ const BACKFILL_WINDOW_DAYS = 210; // ~7 months — catches carriers nearing 180d
 // follow-ups can never crowd the daily cap on their own).
 const FOLLOWUP_DELAY_DAYS = Number(process.env.MONITOR_FOLLOWUP_DELAY_DAYS) || 8;
 const FOLLOWUP_CAP = 10;
+const WINDING_CAP = 10; // lapsed-insurance drafts per run — small pool, urgent clock
 
 const MS_PER_DAY = 86_400_000;
 
@@ -447,9 +454,86 @@ export async function monitorSweep(
     console.error("[monitorSweep] follow-up pass failed", err);
   }
 
+  // ---- Pass 3.7: winding-down track (cron only, double-gated) ---------------
+  // First touch for active-authority carriers whose insurance has lapsed —
+  // often an owner shutting down. Identical mechanics to the main draft pass
+  // (stage machine, phone routing, suppression, JIT room), different copy.
+  let winding = 0;
+  try {
+    if (
+      !isBackfill &&
+      (await getFlag("windingDownEnabled")) &&
+      (await getFlag("outreachDraftEnabled"))
+    ) {
+      const dailyCap = Math.min(
+        500,
+        Math.max(1, Number(await getConfigValue("outreachDailyCap")) || 20),
+      );
+      const stages = await getOutreachStageCounts();
+      const pending = (stages["draft"] ?? 0) + (stages["approved"] ?? 0);
+      const room = dailyCap * 2 - pending;
+      const targets =
+        room > 0 ? await listWindingDownTargets(Math.min(WINDING_CAP, room)) : [];
+      for (const t of targets) {
+        if (overBudget()) break;
+        const email = t.census_email?.trim() || null;
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+          await setMonitorStage(t.id, "outreach_phone", "phone");
+          continue;
+        }
+        if (await isUnsubscribed(email)) {
+          await setMonitorStage(t.id, "suppressed");
+          continue;
+        }
+        try {
+          const persona = selectPersona({ powerUnits: t.power_units });
+          const draft = renderWindingDownDraft({
+            legalName: t.legal_name,
+            dbaName: t.dba_name,
+            state:
+              (t.phy_address as { state?: string | null } | null)?.state ?? null,
+            mcNumber: t.mc_number,
+            dotNumber: t.dot_number,
+            powerUnits: t.power_units,
+            daysTo180: t.days_to_180,
+            eligibilityState: t.eligibility_state,
+            eligibleAt: t.eligible_at,
+            offerLow: null,
+            offerHigh: null,
+          });
+          const queuedId = await enqueueDraft({
+            valuationId: t.id,
+            channel: "email",
+            recipientEmail: email,
+            recipientPhone: t.telephone,
+            persona,
+            subject: draft.subject,
+            bodyText: draft.body,
+          });
+          if (queuedId == null) {
+            console.error(
+              "[monitorSweep] winding-down draft skipped, in-flight row exists",
+              t.dot_number,
+            );
+            continue;
+          }
+          await setMonitorStage(t.id, "drafted", "email");
+          winding += 1;
+          await logAgentAction("winding_down_drafted", "agent", t.id, {
+            outreachId: queuedId,
+          });
+        } catch (e) {
+          console.error("[monitorSweep] winding-down draft failed", t.dot_number, e);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[monitorSweep] winding-down pass failed", err);
+  }
+
   // Heartbeat for the dashboard activity feed — only when work happened, so
   // hourly no-op runs don't flood the feed.
-  if (discovered + verified + enriched + drafted + followups > 0) {
+  if (discovered + verified + enriched + drafted + followups + winding > 0) {
     await logAgentAction("sweep_completed", "agent", null, {
       mode,
       discovered,
@@ -457,6 +541,7 @@ export async function monitorSweep(
       enriched,
       drafted,
       followups,
+      winding,
     });
   }
 
@@ -468,6 +553,7 @@ export async function monitorSweep(
     enriched,
     drafted,
     followups,
+    winding,
     note: enrichNote,
   };
 }

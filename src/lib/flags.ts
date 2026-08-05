@@ -30,6 +30,7 @@ export type FlagKey =
   | "outreachSendEnabled" // master kill switch for actually SENDING approved mail
   | "autoSendEnabled" // skip the human approval gate (per validated persona)
   | "followUpEnabled" // draft the single follow-up touch for no-reply carriers
+  | "windingDownEnabled" // draft the lapsed-insurance "sell it instead" track
   | "smsOutreachEnabled"; // allow Twilio phone/SMS fallback
 
 const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
@@ -52,6 +53,9 @@ const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   // Default OFF: follow-up copy needs Lukas's approval before the first one
   // can ever draft. Flip in Edge Config once approved.
   followUpEnabled: false,
+  // Default OFF — Lukas approved the copy 2026-08-05; the switch lets this
+  // track be turned off alone if the lapsed-insurance angle misfires.
+  windingDownEnabled: false,
   smsOutreachEnabled: false,
 };
 

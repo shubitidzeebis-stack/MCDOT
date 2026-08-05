@@ -53,6 +53,7 @@ export type AgentDashboardData = {
     outreachSendEnabled: boolean;
     autoSendEnabled: boolean;
     followUpEnabled: boolean;
+    windingDownEnabled: boolean;
     smsOutreachEnabled: boolean;
     monitorDays: string;
     autoSendPersonas: string;
@@ -774,6 +775,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
             <ReadyRow on label="Sending (outreachSendEnabled)" value={data.flags.outreachSendEnabled} />
             <ReadyRow on label="Auto-send without approval (autoSendEnabled)" value={data.flags.autoSendEnabled} />
             <ReadyRow on label="Follow-up touch (followUpEnabled)" value={data.flags.followUpEnabled} />
+            <ReadyRow on label="Winding-down track (windingDownEnabled)" value={data.flags.windingDownEnabled} />
           </div>
           <p className="mt-3 text-[11px] text-white/40">
             The switches above and the daily cap ({dailyCap}) are changed in
@@ -1652,6 +1654,7 @@ function actionLabel(action: string): string {
     outreach_resumed: "Sending resumed",
     outreach_paused: "⛔ Sending stopped",
     followup_drafted: "Follow-up drafted",
+    winding_down_drafted: "Winding-down email drafted",
     outcome_set: "Outcome recorded",
   };
   return map[action] ?? action;
@@ -1667,6 +1670,7 @@ function sweepDetail(a: AgentActionRow): string | null {
     enriched?: number;
     drafted?: number;
     followups?: number;
+    winding?: number;
   } | null;
   if (!d) return null;
   const parts = [
@@ -1675,6 +1679,7 @@ function sweepDetail(a: AgentActionRow): string | null {
     d.enriched ? `${d.enriched} safety` : null,
     d.drafted ? `${d.drafted} drafted` : null,
     d.followups ? `${d.followups} follow-ups` : null,
+    d.winding ? `${d.winding} winding-down` : null,
   ].filter(Boolean);
   return parts.length > 0 ? `— ${parts.join(" · ")}` : null;
 }

@@ -518,6 +518,42 @@ export async function listMonitorForDrafting(
   return rows;
 }
 
+// Winding-down targets: ACTIVE authority + LAPSED insurance (the main gate
+// requires insurance_current = true, so these never enter the normal draft
+// pass) + in-window + safety pass. Often an owner shutting down — the moment
+// the "sell it before FMCSA pulls it" email lands hardest. First touch, so
+// monitor_stage is still 'verified'; drafting moves it to 'drafted' exactly
+// like the main pass, which keeps one-email-per-company guarantees intact.
+export async function listWindingDownTargets(
+  limit: number,
+): Promise<MonitorDraftTarget[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  await ensureValuationsSchema();
+  const rows = (await sql`
+    SELECT id, dot_number, mc_number, legal_name, dba_name, census_email,
+           telephone, phy_address, power_units,
+           (eligible_at - CURRENT_DATE) AS days_to_180,
+           CASE
+             WHEN (eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+             ELSE 'eligible_now'
+           END AS eligibility_state,
+           eligible_at::text AS eligible_at
+      FROM valuations
+     WHERE source = 'monitor'
+       AND monitor_stage = 'verified'
+       AND authority_status = 'active'
+       AND insurance_current = false
+       AND eligible_at IS NOT NULL
+       AND (eligible_at - CURRENT_DATE) <= 60
+       AND (eligible_at - CURRENT_DATE) >= -185
+       AND safety_status = 'pass'
+     ORDER BY (eligible_at - CURRENT_DATE) ASC NULLS LAST
+     LIMIT ${limit}
+  `) as MonitorDraftTarget[];
+  return rows;
+}
+
 // The single follow-up touch: carriers whose first cold email went out ≥
 // delayDays ago, still sitting at status 'offer_sent' (any human-recorded
 // outcome — replied / interested / not interested / do-not-contact — excludes

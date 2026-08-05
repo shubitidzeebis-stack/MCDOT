@@ -48,29 +48,31 @@ export type OutreachTemplate = {
 // One straightforward copy set shared by every persona (the persona structure
 // stays so per-segment tuning later is a one-line change).
 //
-// COPY v3 — approved by Lukas 2026-08-05. Changes vs v2: milestone paragraph
-// leads (their situation first, not our intro); "companies like {company}"
-// merge-tell removed (the name lives in the subject only); "closing is fast"
-// replaced with the real 3–5 business days; "We're the buyer, not a broker."
-// added; deferral-inviting intro CTA rewritten; P.S. explains WHY 180 days
-// matters (Amazon Relay's 180-day active-authority minimum — verified current
-// 2026-08-05; nominative mention only, never implied affiliation, never in the
-// subject line); em dashes stripped (ASCII subjects render everywhere).
+// COPY v4 — approved by Lukas 2026-08-05. Direction: friendly and direct, like
+// talking to a person, and every subject leads with the selling question so
+// the hook is instant. "We help you sell" is expressed as "selling to us is
+// about as easy as it gets" — the helpful feeling WITHOUT broker-speak (the
+// brand is the BUYER; operators-not-brokers). Kept from v2/v3: no dollar
+// figures, no flattery, no em dashes, name-guarded subjects, date-based
+// timing, P.S. explaining the 180-day age minimum (Amazon Relay verified
+// current 2026-08-05; nominative mention only, never in the subject).
 const PS_LINE =
-  "P.S. 180 days matters because that's when your authority clears the age minimum the large shippers set. Amazon Relay's is the one everybody knows.";
+  "P.S. 180 days matters because that's when your authority clears the age minimum the big shippers set. Amazon Relay's is the one everybody knows.";
+
+const SHARED_MIDDLE = `I'm Luka with Veritor Group. We buy trucking and transport companies directly. No broker in the middle, so selling to us is about as easy as it gets.
+
+Here's how it works: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, most closings take 3 to 5 business days, in person or all online.`;
 
 const INTRO_COPY: TrackCopy = {
-  subject: "We buy trucking companies: intro for {company}",
-  subjectFallback: "We buy trucking and transport companies",
+  subject: "Would you ever sell {company}?",
+  subjectFallback: "Would you ever sell your trucking company?",
   body: `Hi,
 
-{milestone}I'm Luka with Veritor Group. We buy trucking and transport companies that hold active MC authority.
+Quick question: would you ever sell the company? The reason I ask now is timing. {milestone}
 
-How it works: we look up your DOT, value the company, and come back with a number. Most closings take 3 to 5 business days, in person or fully online.
+${SHARED_MIDDLE}
 
-We're the buyer, not a broker. What we look for: {website}
-
-If you want to know what it's worth, reply here. Even if you're not selling yet. Confidential, no obligation.
+Want to know what it's worth? Reply here, even if selling isn't on your mind yet. Costs nothing to ask, and it stays between us.
 
 Luka
 Veritor Group
@@ -79,17 +81,15 @@ ${PS_LINE}`,
 };
 
 const OFFER_COPY: TrackCopy = {
-  subject: "Are you open to selling {company}?",
-  subjectFallback: "Are you open to selling your trucking company?",
+  subject: "Selling {company}? I'm a buyer",
+  subjectFallback: "Selling your trucking company? I'm a buyer",
   body: `Hi,
 
-{milestone}I'm Luka with Veritor Group. We buy trucking and transport companies that hold active MC authority.
+Ever thought about selling the company? Right now is actually the best time to do it. Your MC authority is past the 180-day mark, and that's when it's worth the most to a buyer.
 
-How it works: we look up your DOT, value the company, and come back with a number. Most closings take 3 to 5 business days, in person or fully online.
+${SHARED_MIDDLE}
 
-We're the buyer, not a broker. What we look for: {website}
-
-If you'd consider it, reply here and I'll take it from there. Confidential, no obligation.
+Curious what it's worth? Reply here and I'll get you a number. Costs nothing to ask, and it stays between us.
 
 Luka
 Veritor Group
@@ -98,7 +98,7 @@ ${PS_LINE}`,
 };
 
 const SHARED_ANGLE =
-  "Straightforward, zero fluff, no flattery, no em dashes. Lead with THEIR situation (the 180-day milestone paragraph), then: I'm Luka with Veritor Group; we buy trucking and transport companies that hold active MC authority; how it works (DOT lookup, valuation, come back with a number); most closings take 3 to 5 business days, in person or fully online; we're the buyer, not a broker; website for what we look for; reply-here CTA; confidential, no obligation; P.S. explaining 180 days = the age minimum large shippers set (Amazon Relay as the known example — a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): invite a reply even if not selling yet. OFFER track (past 180d): direct interest.";
+  "Friendly, direct, zero fluff, no flattery, no em dashes, contractions welcome. Subject and opener lead with the selling question. Then: I'm Luka with Veritor Group; we buy trucking and transport companies directly; no broker in the middle, selling to us is about as easy as it gets; how it works (DOT lookup, we put a value on it, I come back with a number); most closings 3 to 5 business days, in person or all online; reply-here CTA; costs nothing to ask, and it stays between us; P.S. explaining 180 days = the age minimum big shippers set (Amazon Relay as the known example, a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): timing question, invite a reply even if selling isn't on their mind. OFFER track (past 180d): now is the best time.";
 
 export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
@@ -250,18 +250,17 @@ function formatMonthDay(iso: string | null): string | null {
   return `${month} ${day}`;
 }
 
-// The timing paragraph (own paragraph; ends with a blank line when present).
-// It leads the email, so it must never be wrong: prefer the exact DATE the
-// carrier crosses 180 days (immune to queue delay); fall back to a rounded
-// bucket, never a raw day count that drifts stale while a draft waits.
+// The timing sentence for the INTRO opener ({milestone} slot mid-paragraph).
+// It must never be wrong: prefer the exact DATE the carrier crosses 180 days
+// (immune to queue delay); fall back to a rounded bucket, never a raw day
+// count that drifts stale while a draft waits. OFFER carries its own static
+// timing line in the body, so it gets an empty string.
 function milestoneLine(track: TrackKey, f: DraftFacts): string {
-  if (track === "offer") {
-    return "Your MC authority is past the 180-day mark. That's the point where it's worth the most to a buyer, and it's why I'm writing.\n\n";
-  }
-  const tail = "That's the point where it's worth the most to a buyer.\n\n";
+  if (track === "offer") return "";
+  const tail = "and that's the point where it's worth the most to a buyer.";
   const date = formatMonthDay(f.eligibleAt);
   if (date) {
-    return `Your MC authority hits the 180-day mark on ${date}. ${tail}`;
+    return `Your MC authority hits the 180-day mark on ${date}, ${tail}`;
   }
   if (f.daysTo180 != null && f.daysTo180 > 0) {
     const bucket =
@@ -274,9 +273,9 @@ function milestoneLine(track: TrackKey, f: DraftFacts): string {
             : f.daysTo180 <= 40
               ? "about a month"
               : "about two months";
-    return `Your MC authority hits the 180-day mark in ${bucket}. ${tail}`;
+    return `Your MC authority hits the 180-day mark in ${bucket}, ${tail}`;
   }
-  return `Your MC authority is approaching the 180-day mark. ${tail}`;
+  return `Your MC authority is coming up on the 180-day mark, ${tail}`;
 }
 
 // Build the system + user prompt for the LLM. Pure — no I/O.
@@ -360,24 +359,24 @@ export function renderFallbackDraft(
 export type FollowUpVariant = "crossed" | "generic";
 
 const FOLLOWUP_CROSSED: TrackCopy = {
-  subject: "{company} crossed the 180-day mark",
-  subjectFallback: "Your authority crossed the 180-day mark",
+  subject: "Selling {company}? It's past 180 now",
+  subjectFallback: "Selling? Your authority is past 180 now",
   body: `Hi,
 
-I wrote a few weeks back, before your MC authority reached 180 days. You've crossed it now. That puts the company at the point where it's worth the most to a buyer.
+I wrote a few weeks back, before your MC authority hit 180 days. You've crossed it now, and that's when the company is worth the most to a buyer. If you ever wanted to sell, this is the moment to find out what it's worth.
 
-If you want a number, reply here and I'll get you one. Confidential, no obligation.
+Reply here and I'll get you a number. Costs nothing to ask, and it stays between us.
 
 Luka
 Veritor Group`,
 };
 
 const FOLLOWUP_GENERIC: TrackCopy = {
-  subject: "Quick follow-up: {company}",
-  subjectFallback: "Quick follow-up on my last email",
+  subject: "Still open to selling {company}?",
+  subjectFallback: "Still open to selling?",
   body: `Hi,
 
-Following up on my note about buying your trucking company. If it's not for you, no problem at all. If you're curious what it's worth, reply here and I'll get you a number.
+Just circling back on my note about buying your trucking company. If it's a no, no worries at all, I won't keep bugging you. But if you're even a little curious what it's worth, reply here and I'll get you a number.
 
 Luka
 Veritor Group`,
@@ -394,6 +393,43 @@ export function renderFollowUpDraft(
       ? copy.subject.replaceAll("{company}", company)
       : copy.subjectFallback;
   return { subject, body: copy.body };
+}
+
+// ---------------------------------------------------------------------------
+// Winding-down track (v4, approved 2026-08-05) — first touch for carriers with
+// ACTIVE authority but LAPSED insurance. Often an owner shutting the business
+// down: the authority still has sale value, and FMCSA revocation is coming.
+// The observation is public FMCSA record, the urgency is real, and the
+// "just switching insurers" line is the graceful out for the mid-switch
+// minority. Same guards as everything else.
+// ---------------------------------------------------------------------------
+const WINDING_DOWN_COPY: TrackCopy = {
+  subject: "Winding down {company}? Sell it instead",
+  subjectFallback: "Winding down? Sell it instead",
+  body: `Hi,
+
+Noticed your liability insurance dropped off the FMCSA record. If you're getting out of trucking, don't just let the MC die. Sell it. It's worth real money to a buyer while it's still active. Once FMCSA pulls it, it's worth nothing.
+
+I'm Luka with Veritor Group. We buy trucking companies all the time, a lot of them from owners who are calling it quits. No brokers, no middlemen, we're the actual buyer.
+
+It's simple: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, we can close in 3 to 5 days, all online if that's easier.
+
+Just switching insurance companies? Then ignore me, no worries. But if you're done with it, reply before the authority goes and I'll get you that number. Costs nothing to ask, and it stays between us.
+
+Luka
+Veritor Group`,
+};
+
+export function renderWindingDownDraft(f: DraftFacts): {
+  subject: string;
+  body: string;
+} {
+  const company = companyName(f);
+  const subject =
+    company !== "your company" && company.length <= MAX_SUBJECT_NAME_LEN
+      ? WINDING_DOWN_COPY.subject.replaceAll("{company}", company)
+      : WINDING_DOWN_COPY.subjectFallback;
+  return { subject, body: WINDING_DOWN_COPY.body };
 }
 
 // Plain-text -> branded-shell HTML body (paragraphs). The shell + CAN-SPAM
