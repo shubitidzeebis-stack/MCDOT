@@ -47,6 +47,13 @@ export const DISQUALIFY_LABEL: Record<string, string> = {
   safety_fail: "Failed safety gate",
 };
 
+export const OUTCOME_LABEL: Record<string, string> = {
+  replied: "Replied",
+  interested: "Interested",
+  not_interested: "Not interested",
+  do_not_contact: "Do not contact",
+};
+
 // Label lookup with a readable fallback for keys the maps don't know.
 export function labelFor(map: Record<string, string>, key: string | null | undefined): string {
   if (!key) return "—";

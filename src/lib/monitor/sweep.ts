@@ -23,6 +23,7 @@ import {
   ensureMonitorTables,
   getCursor,
   getOutreachStageCounts,
+  listFollowUpTargets,
   listMonitorForDrafting,
   listMonitorForSafetyEnrich,
   listMonitorForVerification,
@@ -39,7 +40,7 @@ import { verifyCandidatesBatch } from "@/lib/monitor/verify";
 import { rateSafety } from "@/lib/audit/safety";
 import { lookupCarrierBasics } from "@/lib/fmcsa";
 import { generateDraft } from "@/lib/outreach/draft";
-import { selectPersona } from "@/lib/outreach/templates";
+import { renderFollowUpDraft, selectPersona } from "@/lib/outreach/templates";
 
 export type MonitorSweepMode = "cron" | "backfill";
 
@@ -53,6 +54,7 @@ export type MonitorSweepResult =
       verified: number;
       enriched: number;
       drafted: number;
+      followups: number;
       note?: string;
     };
 
@@ -68,6 +70,11 @@ const ENRICH_CAP_CRON = 40; // QCMobile safety lookups/run — bounded by 60/min
 const ENRICH_CAP_BACKFILL = 300; // ~60/min × 5 min
 const DRAFT_CAP = 25; // LLM calls are slower; the wall-clock budget is the real cap
 const BACKFILL_WINDOW_DAYS = 210; // ~7 months — catches carriers nearing 180d
+// The single follow-up touch: how long after the first send, and how many
+// drafts per run (they share the JIT queue room with first-touch drafts, so
+// follow-ups can never crowd the daily cap on their own).
+const FOLLOWUP_DELAY_DAYS = Number(process.env.MONITOR_FOLLOWUP_DELAY_DAYS) || 8;
+const FOLLOWUP_CAP = 10;
 
 const MS_PER_DAY = 86_400_000;
 
@@ -361,17 +368,106 @@ export async function monitorSweep(
     console.error("[monitorSweep] draft pass failed", err);
   }
 
+  // ---- Pass 3.5: the single follow-up touch (cron only, double-gated) -------
+  // For carriers whose first email went out ≥ FOLLOWUP_DELAY_DAYS ago with no
+  // human-recorded outcome, queue ONE follow-up draft (touch=2). It then rides
+  // the exact same rails as every other draft: auto-approve allowlist, daily
+  // cap, breaker, suppression, send window.
+  let followups = 0;
+  try {
+    if (
+      !isBackfill &&
+      (await getFlag("followUpEnabled")) &&
+      (await getFlag("outreachDraftEnabled"))
+    ) {
+      const dailyCap = Math.min(
+        500,
+        Math.max(1, Number(await getConfigValue("outreachDailyCap")) || 20),
+      );
+      const stages = await getOutreachStageCounts();
+      const pending = (stages["draft"] ?? 0) + (stages["approved"] ?? 0);
+      const room = dailyCap * 2 - pending;
+      const targets =
+        room > 0
+          ? await listFollowUpTargets(
+              Math.min(FOLLOWUP_CAP, room),
+              FOLLOWUP_DELAY_DAYS,
+            )
+          : [];
+      for (const t of targets) {
+        if (overBudget()) break;
+        const email = t.census_email?.trim() || null;
+        // No usable email or suppressed since the first touch: skip silently —
+        // the carrier keeps its 'sent' stage, nothing to dead-letter.
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) continue;
+        if (await isUnsubscribed(email)) continue;
+        try {
+          const persona = selectPersona({ powerUnits: t.power_units });
+          const variant =
+            t.intro_first === true && (t.days_to_180 ?? 1) <= 0
+              ? "crossed"
+              : "generic";
+          const draft = renderFollowUpDraft(variant, {
+            legalName: t.legal_name,
+            dbaName: t.dba_name,
+            state:
+              (t.phy_address as { state?: string | null } | null)?.state ?? null,
+            mcNumber: t.mc_number,
+            dotNumber: t.dot_number,
+            powerUnits: t.power_units,
+            daysTo180: t.days_to_180,
+            eligibilityState: t.eligibility_state,
+            eligibleAt: t.eligible_at,
+            offerLow: null,
+            offerHigh: null,
+          });
+          const queuedId = await enqueueDraft({
+            valuationId: t.id,
+            channel: "email",
+            recipientEmail: email,
+            recipientPhone: t.telephone,
+            persona,
+            subject: draft.subject,
+            bodyText: draft.body,
+            touch: 2,
+          });
+          if (queuedId != null) {
+            followups += 1;
+            await logAgentAction("followup_drafted", "agent", t.id, {
+              outreachId: queuedId,
+              variant,
+            });
+          }
+        } catch (e) {
+          console.error("[monitorSweep] follow-up draft failed", t.dot_number, e);
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[monitorSweep] follow-up pass failed", err);
+  }
+
   // Heartbeat for the dashboard activity feed — only when work happened, so
   // hourly no-op runs don't flood the feed.
-  if (discovered + verified + enriched + drafted > 0) {
+  if (discovered + verified + enriched + drafted + followups > 0) {
     await logAgentAction("sweep_completed", "agent", null, {
       mode,
       discovered,
       verified,
       enriched,
       drafted,
+      followups,
     });
   }
 
-  return { ran: true, mode, discovered, verified, enriched, drafted, note: enrichNote };
+  return {
+    ran: true,
+    mode,
+    discovered,
+    verified,
+    enriched,
+    drafted,
+    followups,
+    note: enrichNote,
+  };
 }

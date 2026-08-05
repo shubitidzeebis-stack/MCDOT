@@ -19,6 +19,7 @@ import {
   DISQUALIFY_LABEL,
   ELIGIBILITY_LABEL,
   INSURANCE_LABEL,
+  OUTCOME_LABEL,
   SAFETY_LABEL,
   STAGE_LABEL,
   labelFor,
@@ -44,12 +45,14 @@ export type AgentDashboardData = {
   pulse: AgentPulse;
   failedSends: FailedSendCounts;
   dataOk: boolean;
+  outcomes: Record<string, number>;
   flags: {
     monitorEnabled: boolean;
     discoveryEnabled: boolean;
     outreachDraftEnabled: boolean;
     outreachSendEnabled: boolean;
     autoSendEnabled: boolean;
+    followUpEnabled: boolean;
     smsOutreachEnabled: boolean;
     monitorDays: string;
     autoSendPersonas: string;
@@ -153,6 +156,10 @@ const RATING_COLOR: Record<string, string> = {
   pass: "#34d399",
   review: "#fbbf24",
   fail: "#f87171",
+  interested: "#34d399",
+  replied: "#60a5fa",
+  not_interested: "#9ca3af",
+  do_not_contact: "#f87171",
 };
 
 function colorFor(key: string): string {
@@ -676,8 +683,36 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         </Card>
       </div>
 
-      {/* Agent work log + system health */}
+      {/* Agent work log + results + system health */}
       <div className="grid gap-4 lg:grid-cols-2">
+        <Card title="Results — outcomes you've recorded">
+          {sum(data.outcomes) === 0 ? (
+            <Empty>
+              Nothing recorded yet. Open any company (click a sent email or a
+              prospect row) and use the Replied / Interested / Not interested /
+              Do-not-contact buttons — recorded companies are automatically
+              excluded from follow-ups.
+            </Empty>
+          ) : (
+            <>
+              <BarList
+                counts={data.outcomes}
+                order={["interested", "replied", "not_interested", "do_not_contact"]}
+                labels={OUTCOME_LABEL}
+                colorByKey
+              />
+              <p className="mt-3 text-[11px] text-white/40">
+                {sum(data.outcomes).toLocaleString("en-US")} outcomes recorded
+                across {sentCount.toLocaleString("en-US")} companies emailed (
+                {sentCount > 0
+                  ? ((sum(data.outcomes) / sentCount) * 100).toFixed(1)
+                  : "0"}
+                % response recorded so far).
+              </p>
+            </>
+          )}
+        </Card>
+
         <Card title="Agent work — what it actually did">
           <ul className="space-y-2 text-[13px] text-white/80">
             <li>
@@ -738,6 +773,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
             <ReadyRow on label="Email drafting (outreachDraftEnabled)" value={data.flags.outreachDraftEnabled} />
             <ReadyRow on label="Sending (outreachSendEnabled)" value={data.flags.outreachSendEnabled} />
             <ReadyRow on label="Auto-send without approval (autoSendEnabled)" value={data.flags.autoSendEnabled} />
+            <ReadyRow on label="Follow-up touch (followUpEnabled)" value={data.flags.followUpEnabled} />
           </div>
           <p className="mt-3 text-[11px] text-white/40">
             The switches above and the daily cap ({dailyCap}) are changed in
@@ -1107,6 +1143,7 @@ function CompanyAndEmail({
         <div className="mt-0.5 text-[13px] text-white/55">
           {company.census_email ?? "no email"} · {company.telephone ?? "no phone"}
         </div>
+        <OutcomeButtons id={company.id} initial={company.status ?? null} />
       </div>
 
       {/* Audit results grid */}
@@ -1243,6 +1280,82 @@ function CompanyAndEmail({
       ) : (
         <Empty>No email drafted for this company yet.</Empty>
       )}
+    </div>
+  );
+}
+
+// Record what happened after the email — feeds the Results card and pulls the
+// company out of the follow-up pool. "Do not contact" also suppresses the
+// address forever.
+const OUTCOME_CHOICES: Array<{ key: string; tone: string }> = [
+  { key: "replied", tone: "bg-blue-500/15 text-blue-300 ring-blue-400/25 hover:bg-blue-500/25" },
+  { key: "interested", tone: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/25 hover:bg-emerald-500/25" },
+  { key: "not_interested", tone: "bg-white/[0.06] text-white/70 ring-white/15 hover:bg-white/[0.1]" },
+  { key: "do_not_contact", tone: "bg-red-500/10 text-red-300 ring-red-400/25 hover:bg-red-500/20" },
+];
+
+function OutcomeButtons({ id, initial }: { id: number; initial: string | null }) {
+  const [status, setStatus] = useState<string | null>(initial);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const hasOutcome = status != null && status in OUTCOME_LABEL;
+
+  async function set(outcome: string) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/admin/monitor/outcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, outcome }),
+      });
+      if (!res.ok) {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setErr(j.error ?? "Failed.");
+        return;
+      }
+      setStatus(outcome === "clear" ? "offer_sent" : outcome);
+    } catch {
+      setErr("Failed — check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+      <span className="text-[11px] uppercase tracking-[0.14em] text-white/40">
+        Outcome:
+      </span>
+      {OUTCOME_CHOICES.map((c) => (
+        <button
+          key={c.key}
+          type="button"
+          disabled={busy}
+          onClick={() => void set(c.key)}
+          title={
+            c.key === "do_not_contact"
+              ? "Also suppresses the address forever — no email of any kind again"
+              : "Excludes this company from follow-ups"
+          }
+          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 disabled:opacity-50 ${c.tone} ${
+            status === c.key ? "ring-2 ring-white/60" : ""
+          }`}
+        >
+          {OUTCOME_LABEL[c.key]}
+        </button>
+      ))}
+      {hasOutcome && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void set("clear")}
+          className="rounded-full px-2.5 py-1 text-[11px] text-white/50 ring-1 ring-white/10 hover:bg-white/[0.06] disabled:opacity-50"
+        >
+          Clear
+        </button>
+      )}
+      {err && <span className="text-[11px] text-red-300">{err}</span>}
     </div>
   );
 }
@@ -1538,6 +1651,8 @@ function actionLabel(action: string): string {
     outreach_complained: "⚠ Spam complaint",
     outreach_resumed: "Sending resumed",
     outreach_paused: "⛔ Sending stopped",
+    followup_drafted: "Follow-up drafted",
+    outcome_set: "Outcome recorded",
   };
   return map[action] ?? action;
 }
@@ -1551,6 +1666,7 @@ function sweepDetail(a: AgentActionRow): string | null {
     verified?: number;
     enriched?: number;
     drafted?: number;
+    followups?: number;
   } | null;
   if (!d) return null;
   const parts = [
@@ -1558,6 +1674,7 @@ function sweepDetail(a: AgentActionRow): string | null {
     d.verified ? `${d.verified} checked` : null,
     d.enriched ? `${d.enriched} safety` : null,
     d.drafted ? `${d.drafted} drafted` : null,
+    d.followups ? `${d.followups} follow-ups` : null,
   ].filter(Boolean);
   return parts.length > 0 ? `— ${parts.join(" · ")}` : null;
 }

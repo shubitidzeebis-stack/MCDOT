@@ -344,6 +344,56 @@ export function renderFallbackDraft(
   return { subject, body };
 }
 
+// ---------------------------------------------------------------------------
+// The single follow-up touch (touch 2) — sent once, ~8 days after the first
+// email, ONLY while no human outcome is recorded. Two variants:
+//   crossed: the first email went out while they were APPROACHING 180 and
+//            they have since crossed it — the strongest possible reason to
+//            write twice.
+//   generic: a short polite nudge with an explicit easy-out.
+// Deliberately shorter than the first email, no links in the body (the footer
+// carries the unsubscribe), no P.S. — a follow-up must read like a person
+// checking back, not a campaign.
+// ---------------------------------------------------------------------------
+export type FollowUpVariant = "crossed" | "generic";
+
+const FOLLOWUP_CROSSED: TrackCopy = {
+  subject: "{company} crossed the 180-day mark",
+  subjectFallback: "Your authority crossed the 180-day mark",
+  body: `Hi,
+
+I wrote a few weeks back, before your MC authority reached 180 days. You've crossed it now. That puts the company at the point where it's worth the most to a buyer.
+
+If you want a number, reply here and I'll get you one. Confidential, no obligation.
+
+Luka
+Veritor Group`,
+};
+
+const FOLLOWUP_GENERIC: TrackCopy = {
+  subject: "Quick follow-up: {company}",
+  subjectFallback: "Quick follow-up on my last email",
+  body: `Hi,
+
+Following up on my note about buying your trucking company. If it's not for you, no problem at all. If you're curious what it's worth, reply here and I'll get you a number.
+
+Luka
+Veritor Group`,
+};
+
+export function renderFollowUpDraft(
+  variant: FollowUpVariant,
+  f: DraftFacts,
+): { subject: string; body: string } {
+  const company = companyName(f);
+  const copy = variant === "crossed" ? FOLLOWUP_CROSSED : FOLLOWUP_GENERIC;
+  const subject =
+    company !== "your company" && company.length <= MAX_SUBJECT_NAME_LEN
+      ? copy.subject.replaceAll("{company}", company)
+      : copy.subjectFallback;
+  return { subject, body: copy.body };
+}
+
 // Plain-text -> branded-shell HTML body (paragraphs). The shell + CAN-SPAM
 // footer + unsubscribe are added by the sender. Exposed here so drafting and
 // sending agree on rendering. `formatAddressOneLine` is re-exported for callers

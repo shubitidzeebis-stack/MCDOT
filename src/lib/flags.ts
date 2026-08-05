@@ -29,6 +29,7 @@ export type FlagKey =
   | "outreachDraftEnabled" // allow LLM draft generation
   | "outreachSendEnabled" // master kill switch for actually SENDING approved mail
   | "autoSendEnabled" // skip the human approval gate (per validated persona)
+  | "followUpEnabled" // draft the single follow-up touch for no-reply carriers
   | "smsOutreachEnabled"; // allow Twilio phone/SMS fallback
 
 const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
@@ -48,6 +49,9 @@ const FLAGS_DEFAULTS: Record<FlagKey, boolean> = {
   outreachDraftEnabled: false,
   outreachSendEnabled: false,
   autoSendEnabled: false,
+  // Default OFF: follow-up copy needs Lukas's approval before the first one
+  // can ever draft. Flip in Edge Config once approved.
+  followUpEnabled: false,
   smsOutreachEnabled: false,
 };
 

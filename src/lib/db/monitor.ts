@@ -61,13 +61,18 @@ export async function ensureMonitorTables(): Promise<void> {
   // When a sender claimed the row ('approved' -> 'sending'). Lets the reaper
   // detect rows stranded mid-send by a crash/timeout.
   await sql`ALTER TABLE outreach_queue ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ`;
-  // One active draft/send per (valuation, persona). Failed/dead rows are
-  // excluded so a retry can be re-queued.
+  // Which touch of the sequence this row is: 1 = first cold email, 2 = the
+  // single follow-up. Uniqueness is per (valuation, persona, touch) so a
+  // follow-up can coexist with the sent first-touch row while still making
+  // duplicate sends of the SAME touch impossible. Create the new index before
+  // dropping the old one so there is never an unguarded window.
+  await sql`ALTER TABLE outreach_queue ADD COLUMN IF NOT EXISTS touch INT NOT NULL DEFAULT 1`;
   await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS outreach_queue_active_uq
-      ON outreach_queue (valuation_id, persona)
+    CREATE UNIQUE INDEX IF NOT EXISTS outreach_queue_active_touch_uq
+      ON outreach_queue (valuation_id, persona, touch)
       WHERE stage NOT IN ('failed', 'dead')
   `;
+  await sql`DROP INDEX IF EXISTS outreach_queue_active_uq`;
   // Processed webhook deliveries (Svix at-least-once) — PK insert dedupes
   // retries so a re-delivered bounce/complaint isn't double-counted into the
   // auto-pause thresholds.
@@ -510,6 +515,103 @@ export async function listMonitorForDrafting(
   return rows;
 }
 
+// The single follow-up touch: carriers whose first cold email went out ≥
+// delayDays ago, still sitting at status 'offer_sent' (any human-recorded
+// outcome — replied / interested / not interested / do-not-contact — excludes
+// them automatically), with no touch-2 row ever created. intro_first says the
+// first email went out BEFORE the carrier crossed 180 days, so the follow-up
+// can open with "you've crossed it now".
+export type FollowUpTarget = MonitorDraftTarget & {
+  first_sent_at: string | null;
+  intro_first: boolean | null;
+};
+
+export async function listFollowUpTargets(
+  limit: number,
+  delayDays: number,
+): Promise<FollowUpTarget[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  await ensureValuationsSchema();
+  await ensureMonitorTables();
+  const rows = (await sql`
+    SELECT v.id, v.dot_number, v.mc_number, v.legal_name, v.dba_name,
+           v.census_email, v.telephone, v.phy_address, v.power_units,
+           (v.eligible_at - CURRENT_DATE) AS days_to_180,
+           CASE
+             WHEN (v.eligible_at - CURRENT_DATE) > 0 THEN 'approaching'
+             ELSE 'eligible_now'
+           END AS eligibility_state,
+           v.eligible_at::text AS eligible_at,
+           oq.sent_at::text AS first_sent_at,
+           (v.eligible_at IS NOT NULL AND oq.sent_at::date < v.eligible_at)
+             AS intro_first
+      FROM valuations v
+      JOIN outreach_queue oq
+        ON oq.valuation_id = v.id
+       AND oq.touch = 1
+       AND oq.stage = 'sent'
+       AND oq.channel = 'email'
+     WHERE v.source = 'monitor'
+       AND v.monitor_stage = 'sent'
+       AND v.status = 'offer_sent'
+       AND oq.sent_at <= now() - make_interval(days => ${delayDays})
+       AND NOT EXISTS (
+             SELECT 1 FROM outreach_queue x
+              WHERE x.valuation_id = v.id AND x.touch >= 2
+           )
+     ORDER BY oq.sent_at ASC
+     LIMIT ${limit}
+  `) as FollowUpTarget[];
+  return rows;
+}
+
+// Human-recorded outcome of an outreach conversation — the dashboard's
+// Replied / Interested / Not interested / Do-not-contact buttons. Stored in
+// valuations.status; anything other than 'offer_sent' takes the carrier out
+// of the follow-up pool.
+export const MONITOR_OUTCOMES = [
+  "replied",
+  "interested",
+  "not_interested",
+  "do_not_contact",
+] as const;
+export type MonitorOutcome = (typeof MONITOR_OUTCOMES)[number];
+
+export async function setMonitorOutcome(
+  valuationId: number,
+  outcome: MonitorOutcome | "clear",
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await ensureValuationsSchema();
+  const status = outcome === "clear" ? "offer_sent" : outcome;
+  await sql`
+    UPDATE valuations
+       SET status = ${status}, status_updated_at = now(), updated_at = now()
+     WHERE id = ${valuationId} AND source = 'monitor'
+  `;
+}
+
+export async function getOutcomeCounts(): Promise<Record<string, number>> {
+  const sql = getSql();
+  if (!sql) return {};
+  try {
+    await ensureValuationsSchema();
+    return await groupCounts(
+      sql,
+      sql`SELECT status AS k, count(*)::int AS n
+            FROM valuations
+           WHERE source = 'monitor'
+             AND status IN ('replied', 'interested', 'not_interested', 'do_not_contact')
+           GROUP BY 1`,
+    );
+  } catch (err) {
+    console.error("[getOutcomeCounts] error", err);
+    return {};
+  }
+}
+
 // Carriers awaiting the FMCSA safety enrich: in-window + verified, not yet
 // safety-checked. (Not insurance-gated — enrich the whole in-window set so the
 // dashboard shows complete safety data and a later insurance-gate change needs
@@ -620,7 +722,19 @@ export async function markMonitorOfferSent(valuationId: number): Promise<void> {
   const sql = getSql();
   if (!sql) return;
   await ensureValuationsSchema();
-  await sql`UPDATE valuations SET monitor_stage = 'sent', status = 'offer_sent', updated_at = now() WHERE id = ${valuationId} AND source = 'monitor'`;
+  // A human-recorded outcome (replied/interested/…) must survive a later send
+  // (e.g. a follow-up that was already approved when the outcome was recorded).
+  await sql`
+    UPDATE valuations
+       SET monitor_stage = 'sent',
+           status = CASE
+             WHEN status IN ('replied', 'interested', 'not_interested', 'do_not_contact')
+               THEN status
+             ELSE 'offer_sent'
+           END,
+           updated_at = now()
+     WHERE id = ${valuationId} AND source = 'monitor'
+  `;
 }
 
 export async function enqueueDraft(d: {
@@ -631,19 +745,22 @@ export async function enqueueDraft(d: {
   persona: string;
   subject: string | null;
   bodyText: string | null;
+  /** 1 = first cold email (default), 2 = the single follow-up touch. */
+  touch?: number;
 }): Promise<number | null> {
   const sql = getSql();
   if (!sql) return null;
   await ensureMonitorTables();
+  const touch = d.touch ?? 1;
   const rows = (await sql`
     INSERT INTO outreach_queue (
       valuation_id, channel, recipient_email, recipient_phone, persona,
-      draft_subject, draft_body_text, stage
+      draft_subject, draft_body_text, stage, touch
     ) VALUES (
       ${d.valuationId}, ${d.channel}, ${d.recipientEmail}, ${d.recipientPhone},
-      ${d.persona}, ${d.subject}, ${d.bodyText}, 'draft'
+      ${d.persona}, ${d.subject}, ${d.bodyText}, 'draft', ${touch}
     )
-    ON CONFLICT (valuation_id, persona) WHERE stage NOT IN ('failed', 'dead')
+    ON CONFLICT (valuation_id, persona, touch) WHERE stage NOT IN ('failed', 'dead')
     DO UPDATE SET
       channel = EXCLUDED.channel,
       recipient_email = EXCLUDED.recipient_email,
@@ -1482,6 +1599,7 @@ export type MonitorCompanyDetail = MonitorExportRow & {
   ucc_rating: string | null;
   outreach_channel: string | null;
   updated_at: string | null;
+  status: string | null;
 };
 
 export async function getMonitorCompanyDetail(
@@ -1516,7 +1634,7 @@ export async function getMonitorCompanyDetail(
              bipd_anchor_date::text AS bipd_anchor_date, insurance_gaps,
              safety_checked_at::text AS safety_checked_at, safety_findings,
              safety_penalty, ucc_status, ucc_rating, outreach_channel,
-             updated_at::text AS updated_at
+             updated_at::text AS updated_at, status
         FROM valuations
        WHERE id = ${id} AND source = 'monitor'
     `) as MonitorCompanyDetail[];
