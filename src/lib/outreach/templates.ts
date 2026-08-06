@@ -59,7 +59,9 @@ export type OutreachTemplate = {
 const PS_LINE =
   "P.S. 180 days matters because that's when your authority clears the age minimum the big shippers set. Amazon Relay's is the one everybody knows.";
 
-const SHARED_MIDDLE = `I'm Luka with Veritor Group. We buy trucking and transport companies directly. No broker in the middle, so selling to us is about as easy as it gets.
+// {sender} is the per-domain persona first name (see outreach/senders.ts) —
+// substituted at render time alongside {company}/{milestone}.
+const SHARED_MIDDLE = `I'm {sender} with Veritor Group. We buy trucking and transport companies directly. No broker in the middle, so selling to us is about as easy as it gets.
 
 Here's how it works: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, most closings take 3 to 5 business days, in person or all online.`;
 
@@ -74,7 +76,7 @@ ${SHARED_MIDDLE}
 
 Want to know what it's worth? Reply here, even if selling isn't on your mind yet. Costs nothing to ask, and it stays between us.
 
-Luka
+{sender}
 Veritor Group
 
 ${PS_LINE}`,
@@ -91,14 +93,14 @@ ${SHARED_MIDDLE}
 
 Curious what it's worth? Reply here and I'll get you a number. Costs nothing to ask, and it stays between us.
 
-Luka
+{sender}
 Veritor Group
 
 ${PS_LINE}`,
 };
 
 const SHARED_ANGLE =
-  "Friendly, direct, zero fluff, no flattery, no em dashes, contractions welcome. Subject and opener lead with the selling question. Then: I'm Luka with Veritor Group; we buy trucking and transport companies directly; no broker in the middle, selling to us is about as easy as it gets; how it works (DOT lookup, we put a value on it, I come back with a number); most closings 3 to 5 business days, in person or all online; reply-here CTA; costs nothing to ask, and it stays between us; P.S. explaining 180 days = the age minimum big shippers set (Amazon Relay as the known example, a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): timing question, invite a reply even if selling isn't on their mind. OFFER track (past 180d): now is the best time.";
+  "Friendly, direct, zero fluff, no flattery, no em dashes, contractions welcome. Subject and opener lead with the selling question. Then: I'm {sender} with Veritor Group; we buy trucking and transport companies directly; no broker in the middle, selling to us is about as easy as it gets; how it works (DOT lookup, we put a value on it, I come back with a number); most closings 3 to 5 business days, in person or all online; reply-here CTA; costs nothing to ask, and it stays between us; P.S. explaining 180 days = the age minimum big shippers set (Amazon Relay as the known example, a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): timing question, invite a reply even if selling isn't on their mind. OFFER track (past 180d): now is the best time.";
 
 export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
@@ -282,6 +284,7 @@ function milestoneLine(track: TrackKey, f: DraftFacts): string {
 export function buildDraftPrompt(
   persona: OutreachTemplate,
   f: DraftFacts,
+  senderName = "Luka",
 ): { system: string; user: string } {
   const offer = offerLine(f);
   const track = selectTrack(f);
@@ -289,6 +292,7 @@ export function buildDraftPrompt(
     `You write short cold B2B acquisition-outreach emails for ${SITE.name} (${SITE.legalName}), an operator-led acquirer of US logistics LLCs.`,
     `Goal: open a conversation about buying the recipient's trucking company / operating authority.`,
     `HARD RULES:`,
+    `- The email is written and signed by "${senderName}" of Veritor Group — first person, sign off with that name only.`,
     `- Use ONLY the facts provided. NEVER invent numbers, dates, names, or claims.`,
     offer
       ? `- You MAY state the indicative offer range exactly as: ${offer}. Do not alter it.`
@@ -302,7 +306,7 @@ export function buildDraftPrompt(
   const user = [
     `PERSONA: ${persona.label}`,
     `TRACK: ${track === "offer" ? "OFFER — past the 180-day mark; direct, offer-style but no figure" : "INTRO — approaching the 180-day mark; brief introduction"}`,
-    `ANGLE: ${persona.angle}`,
+    `ANGLE: ${persona.angle.replaceAll("{sender}", senderName)}`,
     `SUBJECT HINT (refine, keep it specific): ${persona.subjectHint.replace("{company}", companyName(f))}`,
     ``,
     `FACTS:`,
@@ -326,9 +330,12 @@ export function buildDraftPrompt(
 
 // Deterministic personalized draft — the live path (no LLM key set). Picks the
 // intro/offer track off the carrier's real timing and fills the placeholders.
+// senderName is the per-domain persona the body signs with (default keeps the
+// original single-sender behavior).
 export function renderFallbackDraft(
   persona: OutreachTemplate,
   f: DraftFacts,
+  senderName = "Luka",
 ): { subject: string; body: string } {
   const company = companyName(f);
   const track = selectTrack(f);
@@ -337,7 +344,8 @@ export function renderFallbackDraft(
   const body = copy.body
     .replaceAll("{company}", company)
     .replaceAll("{milestone}", milestone)
-    .replaceAll("{website}", OUTREACH_WEBSITE);
+    .replaceAll("{website}", OUTREACH_WEBSITE)
+    .replaceAll("{sender}", senderName);
   const subject =
     company !== "your company" && company.length <= MAX_SUBJECT_NAME_LEN
       ? copy.subject.replaceAll("{company}", company)
@@ -367,7 +375,7 @@ I wrote a few weeks back, before your MC authority hit 180 days. You've crossed 
 
 Reply here and I'll get you a number. Costs nothing to ask, and it stays between us.
 
-Luka
+{sender}
 Veritor Group`,
 };
 
@@ -378,13 +386,14 @@ const FOLLOWUP_GENERIC: TrackCopy = {
 
 Just circling back on my note about buying your trucking company. If it's a no, no worries at all, I won't keep bugging you. But if you're even a little curious what it's worth, reply here and I'll get you a number.
 
-Luka
+{sender}
 Veritor Group`,
 };
 
 export function renderFollowUpDraft(
   variant: FollowUpVariant,
   f: DraftFacts,
+  senderName = "Luka",
 ): { subject: string; body: string } {
   const company = companyName(f);
   const copy = variant === "crossed" ? FOLLOWUP_CROSSED : FOLLOWUP_GENERIC;
@@ -392,7 +401,7 @@ export function renderFollowUpDraft(
     company !== "your company" && company.length <= MAX_SUBJECT_NAME_LEN
       ? copy.subject.replaceAll("{company}", company)
       : copy.subjectFallback;
-  return { subject, body: copy.body };
+  return { subject, body: copy.body.replaceAll("{sender}", senderName) };
 }
 
 // ---------------------------------------------------------------------------
@@ -410,17 +419,20 @@ const WINDING_DOWN_COPY: TrackCopy = {
 
 Noticed your liability insurance dropped off the FMCSA record. If you're getting out of trucking, don't just let the MC die. Sell it. It's worth real money to a buyer while it's still active. Once FMCSA pulls it, it's worth nothing.
 
-I'm Luka with Veritor Group. We buy trucking companies all the time, a lot of them from owners who are calling it quits. No brokers, no middlemen, we're the actual buyer.
+I'm {sender} with Veritor Group. We buy trucking companies all the time, a lot of them from owners who are calling it quits. No brokers, no middlemen, we're the actual buyer.
 
 It's simple: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, we can close in 3 to 5 days, all online if that's easier.
 
 Just switching insurance companies? Then ignore me, no worries. But if you're done with it, reply before the authority goes and I'll get you that number. Costs nothing to ask, and it stays between us.
 
-Luka
+{sender}
 Veritor Group`,
 };
 
-export function renderWindingDownDraft(f: DraftFacts): {
+export function renderWindingDownDraft(
+  f: DraftFacts,
+  senderName = "Luka",
+): {
   subject: string;
   body: string;
 } {
@@ -429,7 +441,10 @@ export function renderWindingDownDraft(f: DraftFacts): {
     company !== "your company" && company.length <= MAX_SUBJECT_NAME_LEN
       ? WINDING_DOWN_COPY.subject.replaceAll("{company}", company)
       : WINDING_DOWN_COPY.subjectFallback;
-  return { subject, body: WINDING_DOWN_COPY.body };
+  return {
+    subject,
+    body: WINDING_DOWN_COPY.body.replaceAll("{sender}", senderName),
+  };
 }
 
 // Plain-text -> branded-shell HTML body (paragraphs). The shell + CAN-SPAM

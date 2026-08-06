@@ -46,6 +46,11 @@ import {
   renderWindingDownDraft,
   selectPersona,
 } from "@/lib/outreach/templates";
+import {
+  parseSenders,
+  pickSender,
+  senderByAddress,
+} from "@/lib/outreach/senders";
 
 export type MonitorSweepMode = "cron" | "backfill";
 
@@ -316,6 +321,10 @@ export async function monitorSweep(
       const room = dailyCap * 2 - pending;
       const targets =
         room > 0 ? await listMonitorForDrafting(Math.min(DRAFT_CAP, room)) : [];
+      // Multi-domain sender pool: assign each carrier a sender identity at
+      // draft time (the body signs that persona's name). Keyed off t.id so the
+      // split is cap-weighted AND stable — a re-draft keeps the same persona.
+      const senders = parseSenders(await getConfigValue("outreachSenders"));
       for (const t of targets) {
         if (overBudget()) break;
         const email = t.census_email?.trim() || null;
@@ -331,6 +340,7 @@ export async function monitorSweep(
         }
         try {
           const persona = selectPersona({ powerUnits: t.power_units });
+          const sender = pickSender(senders, t.id);
           const state =
             (t.phy_address as { state?: string | null } | null)?.state ?? null;
           const draft = await generateDraft(
@@ -347,7 +357,7 @@ export async function monitorSweep(
               offerLow: null,
               offerHigh: null,
             },
-            { personaKey: persona },
+            { personaKey: persona, senderName: sender?.name },
           );
           const queuedId = await enqueueDraft({
             valuationId: t.id,
@@ -357,6 +367,7 @@ export async function monitorSweep(
             persona,
             subject: draft.subject,
             bodyText: draft.body,
+            sender: sender?.address ?? null,
           });
           if (queuedId == null) {
             // An in-flight (approved/sending/sent) queue row already exists for
@@ -401,6 +412,9 @@ export async function monitorSweep(
               FOLLOWUP_DELAY_DAYS,
             )
           : [];
+      // Follow-ups inherit the touch-1 sender — "I wrote a few weeks back"
+      // must come from the same persona the prospect already heard from.
+      const senders = parseSenders(await getConfigValue("outreachSenders"));
       for (const t of targets) {
         if (overBudget()) break;
         const email = t.census_email?.trim() || null;
@@ -410,24 +424,30 @@ export async function monitorSweep(
         if (await isUnsubscribed(email)) continue;
         try {
           const persona = selectPersona({ powerUnits: t.power_units });
+          const firstSender = senderByAddress(senders, t.first_sender);
           const variant =
             t.intro_first === true && (t.days_to_180 ?? 1) <= 0
               ? "crossed"
               : "generic";
-          const draft = renderFollowUpDraft(variant, {
-            legalName: t.legal_name,
-            dbaName: t.dba_name,
-            state:
-              (t.phy_address as { state?: string | null } | null)?.state ?? null,
-            mcNumber: t.mc_number,
-            dotNumber: t.dot_number,
-            powerUnits: t.power_units,
-            daysTo180: t.days_to_180,
-            eligibilityState: t.eligibility_state,
-            eligibleAt: t.eligible_at,
-            offerLow: null,
-            offerHigh: null,
-          });
+          const draft = renderFollowUpDraft(
+            variant,
+            {
+              legalName: t.legal_name,
+              dbaName: t.dba_name,
+              state:
+                (t.phy_address as { state?: string | null } | null)?.state ??
+                null,
+              mcNumber: t.mc_number,
+              dotNumber: t.dot_number,
+              powerUnits: t.power_units,
+              daysTo180: t.days_to_180,
+              eligibilityState: t.eligibility_state,
+              eligibleAt: t.eligible_at,
+              offerLow: null,
+              offerHigh: null,
+            },
+            firstSender?.name,
+          );
           const queuedId = await enqueueDraft({
             valuationId: t.id,
             channel: "email",
@@ -437,6 +457,7 @@ export async function monitorSweep(
             subject: draft.subject,
             bodyText: draft.body,
             touch: 2,
+            sender: t.first_sender ?? null,
           });
           if (queuedId != null) {
             followups += 1;
@@ -474,6 +495,7 @@ export async function monitorSweep(
       const room = dailyCap * 2 - pending;
       const targets =
         room > 0 ? await listWindingDownTargets(Math.min(WINDING_CAP, room)) : [];
+      const senders = parseSenders(await getConfigValue("outreachSenders"));
       for (const t of targets) {
         if (overBudget()) break;
         const email = t.census_email?.trim() || null;
@@ -487,20 +509,25 @@ export async function monitorSweep(
         }
         try {
           const persona = selectPersona({ powerUnits: t.power_units });
-          const draft = renderWindingDownDraft({
-            legalName: t.legal_name,
-            dbaName: t.dba_name,
-            state:
-              (t.phy_address as { state?: string | null } | null)?.state ?? null,
-            mcNumber: t.mc_number,
-            dotNumber: t.dot_number,
-            powerUnits: t.power_units,
-            daysTo180: t.days_to_180,
-            eligibilityState: t.eligibility_state,
-            eligibleAt: t.eligible_at,
-            offerLow: null,
-            offerHigh: null,
-          });
+          const sender = pickSender(senders, t.id);
+          const draft = renderWindingDownDraft(
+            {
+              legalName: t.legal_name,
+              dbaName: t.dba_name,
+              state:
+                (t.phy_address as { state?: string | null } | null)?.state ??
+                null,
+              mcNumber: t.mc_number,
+              dotNumber: t.dot_number,
+              powerUnits: t.power_units,
+              daysTo180: t.days_to_180,
+              eligibilityState: t.eligibility_state,
+              eligibleAt: t.eligible_at,
+              offerLow: null,
+              offerHigh: null,
+            },
+            sender?.name,
+          );
           const queuedId = await enqueueDraft({
             valuationId: t.id,
             channel: "email",
@@ -509,6 +536,7 @@ export async function monitorSweep(
             persona,
             subject: draft.subject,
             bodyText: draft.body,
+            sender: sender?.address ?? null,
           });
           if (queuedId == null) {
             console.error(

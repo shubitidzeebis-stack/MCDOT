@@ -67,6 +67,11 @@ export async function ensureMonitorTables(): Promise<void> {
   // duplicate sends of the SAME touch impossible. Create the new index before
   // dropping the old one so there is never an unguarded window.
   await sql`ALTER TABLE outreach_queue ADD COLUMN IF NOT EXISTS touch INT NOT NULL DEFAULT 1`;
+  // Which sender identity (lowercased bare address, see outreach/senders.ts)
+  // this row drafts/sends as. NULL = legacy rows and single-sender mode: the
+  // env OUTREACH_EMAIL_FROM identity. Display name + per-sender cap resolve
+  // from Edge Config at send time, so config edits never touch queued rows.
+  await sql`ALTER TABLE outreach_queue ADD COLUMN IF NOT EXISTS sender TEXT`;
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS outreach_queue_active_touch_uq
       ON outreach_queue (valuation_id, persona, touch)
@@ -563,6 +568,9 @@ export async function listWindingDownTargets(
 export type FollowUpTarget = MonitorDraftTarget & {
   first_sent_at: string | null;
   intro_first: boolean | null;
+  /** Sender address of the touch-1 email — the follow-up MUST come from the
+   *  same persona ("I wrote a few weeks back"). NULL = legacy identity. */
+  first_sender: string | null;
 };
 
 export async function listFollowUpTargets(
@@ -584,7 +592,8 @@ export async function listFollowUpTargets(
            v.eligible_at::text AS eligible_at,
            oq.sent_at::text AS first_sent_at,
            (v.eligible_at IS NOT NULL AND oq.sent_at::date < v.eligible_at)
-             AS intro_first
+             AS intro_first,
+           oq.sender AS first_sender
       FROM valuations v
       JOIN outreach_queue oq
         ON oq.valuation_id = v.id
@@ -786,18 +795,21 @@ export async function enqueueDraft(d: {
   bodyText: string | null;
   /** 1 = first cold email (default), 2 = the single follow-up touch. */
   touch?: number;
+  /** Lowercased sender address the body was drafted as; null = legacy sender. */
+  sender?: string | null;
 }): Promise<number | null> {
   const sql = getSql();
   if (!sql) return null;
   await ensureMonitorTables();
   const touch = d.touch ?? 1;
+  const sender = d.sender ?? null;
   const rows = (await sql`
     INSERT INTO outreach_queue (
       valuation_id, channel, recipient_email, recipient_phone, persona,
-      draft_subject, draft_body_text, stage, touch
+      draft_subject, draft_body_text, stage, touch, sender
     ) VALUES (
       ${d.valuationId}, ${d.channel}, ${d.recipientEmail}, ${d.recipientPhone},
-      ${d.persona}, ${d.subject}, ${d.bodyText}, 'draft', ${touch}
+      ${d.persona}, ${d.subject}, ${d.bodyText}, 'draft', ${touch}, ${sender}
     )
     ON CONFLICT (valuation_id, persona, touch) WHERE stage NOT IN ('failed', 'dead')
     DO UPDATE SET
@@ -805,7 +817,8 @@ export async function enqueueDraft(d: {
       recipient_email = EXCLUDED.recipient_email,
       recipient_phone = EXCLUDED.recipient_phone,
       draft_subject = EXCLUDED.draft_subject,
-      draft_body_text = EXCLUDED.draft_body_text
+      draft_body_text = EXCLUDED.draft_body_text,
+      sender = EXCLUDED.sender
     WHERE outreach_queue.stage = 'draft'
     RETURNING id
   `) as Array<{ id: number }>;
@@ -930,6 +943,7 @@ export type DueOutreach = {
   draft_subject: string | null;
   draft_body_text: string | null;
   attempts: number;
+  sender: string | null;
 };
 
 // Atomically CLAIM due rows by flipping 'approved' -> 'sending' and returning
@@ -937,10 +951,20 @@ export type DueOutreach = {
 // row lock, two concurrent senders (e.g. the daily cron racing a "Send now")
 // can't both claim the same row — preventing duplicate emails to a prospect.
 // The caller marks each 'sent' on success, or markOutreachFailed resets it.
-export async function getDueOutreach(limit: number): Promise<DueOutreach[]> {
+//
+// Sender filtering happens AT CLAIM TIME so rows for a sender that has hit its
+// per-domain daily cap are never claimed (and never risk the stale-sending
+// reaper): `excludeSenders` skips rows whose sender address is capped out;
+// `includeLegacy=false` additionally skips NULL-sender (legacy-identity) rows.
+export async function getDueOutreach(
+  limit: number,
+  opts?: { excludeSenders?: string[]; includeLegacy?: boolean },
+): Promise<DueOutreach[]> {
   const sql = getSql();
   if (!sql) return [];
   await ensureMonitorTables();
+  const excluded = opts?.excludeSenders ?? [];
+  const includeLegacy = opts?.includeLegacy ?? true;
   // FOR UPDATE SKIP LOCKED makes the claim atomic under ANY concurrency (two
   // overlapping senders each lock disjoint rows), not just the single-statement
   // HTTP path. claimed_at lets the reaper spot rows stranded mid-send.
@@ -950,14 +974,52 @@ export async function getDueOutreach(limit: number): Promise<DueOutreach[]> {
        SELECT id FROM outreach_queue
         WHERE stage = 'approved' AND channel = 'email'
           AND (scheduled_for IS NULL OR scheduled_for <= now())
+          AND (
+                (sender IS NULL AND ${includeLegacy})
+             OR (sender IS NOT NULL AND sender <> ALL(${excluded}::text[]))
+          )
         ORDER BY scheduled_for ASC NULLS FIRST
         LIMIT ${limit}
         FOR UPDATE SKIP LOCKED
      )
     RETURNING id, valuation_id, channel, recipient_email, persona, draft_subject,
-              draft_body_text, attempts
+              draft_body_text, attempts, sender
   `) as DueOutreach[];
   return rows;
+}
+
+// Rolling-24h sent counts per sender identity (NULL sender = the legacy env
+// identity, keyed as ''). Drives the per-domain warm-up caps in send.ts.
+export async function getSentBySender(): Promise<Record<string, number>> {
+  const sql = getSql();
+  if (!sql) return {};
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT COALESCE(sender, '') AS sender, count(*)::int AS n
+        FROM outreach_queue
+       WHERE stage = 'sent' AND sent_at > now() - interval '24 hours'
+       GROUP BY COALESCE(sender, '')
+    `) as Array<{ sender: string; n: number }>;
+    const out: Record<string, number> = {};
+    for (const r of rows) out[r.sender] = r.n;
+    return out;
+  } catch (err) {
+    console.error("[getSentBySender] error", err);
+    return {};
+  }
+}
+
+// Un-claim a row this run decided not to send (e.g. its sender identity hit
+// the per-domain cap between claim and send). Back to 'approved' untouched so
+// a later run picks it up — and the stale-sending reaper never sees it.
+export async function releaseOutreachClaim(id: number): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await sql`
+    UPDATE outreach_queue SET stage = 'approved', claimed_at = NULL
+     WHERE id = ${id} AND stage = 'sending'
+  `;
 }
 
 // Crash recovery: a row stuck in 'sending' for >30 min was claimed by a sender

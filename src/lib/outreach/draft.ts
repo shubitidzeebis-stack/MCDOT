@@ -65,19 +65,20 @@ function parseDraft(text: string): { subject: string; body: string } | null {
 
 export async function generateDraft(
   facts: DraftFacts,
-  opts?: { personaKey?: PersonaKey },
+  opts?: { personaKey?: PersonaKey; senderName?: string },
 ): Promise<GeneratedDraft> {
   const persona = opts?.personaKey ?? selectPersona({ powerUnits: facts.powerUnits });
   const template = OUTREACH_TEMPLATES[persona];
+  const senderName = opts?.senderName ?? "Luka";
 
   const client = getClient();
   if (!client) {
-    const fb = renderFallbackDraft(template, facts);
+    const fb = renderFallbackDraft(template, facts, senderName);
     return { ...fb, persona, viaLlm: false };
   }
 
   try {
-    const { system, user } = buildDraftPrompt(template, facts);
+    const { system, user } = buildDraftPrompt(template, facts, senderName);
     const resp = await client.messages.create({
       model: OUTREACH_MODEL,
       max_tokens: MAX_TOKENS,
@@ -90,6 +91,6 @@ export async function generateDraft(
     console.error("[outreach/draft] LLM failed, using fallback", err);
   }
 
-  const fb = renderFallbackDraft(template, facts);
+  const fb = renderFallbackDraft(template, facts, senderName);
   return { ...fb, persona, viaLlm: false };
 }

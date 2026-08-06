@@ -17,12 +17,19 @@ import { getConfigValue, getFlag } from "@/lib/flags";
 import { isUnsubscribed } from "@/lib/db/email-followups";
 import { unsubscribeUrl } from "@/lib/email/queue";
 import { renderOutreachEmail } from "./render";
+import {
+  extractAddress,
+  parseSenders,
+  senderByAddress,
+  type OutreachSender,
+} from "./senders";
 import { stripCrLf } from "@/lib/security/sanitize";
 import {
   approveOutreach,
   discardOutreach,
   getDueOutreach,
   getOutreachHealth,
+  getSentBySender,
   isOutreachPaused,
   listAutoSendCandidates,
   logAgentAction,
@@ -30,6 +37,7 @@ import {
   markOutreachFailed,
   markOutreachSent,
   reapStaleSending,
+  releaseOutreachClaim,
   setMonitorStage,
 } from "@/lib/db/monitor";
 
@@ -122,11 +130,43 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
     Math.max(1, Math.ceil(dailyCap / RUNS_PER_DAY)),
   );
 
+  // ---- Per-sender warm-up caps (multi-domain). ------------------------------
+  // Each configured sender identity has its own rolling-24h cap so a fresh
+  // domain ramps (15 → 30 → 60 → 120/day, edited in Edge Config) while the
+  // aged domain keeps full volume. Rows whose identity is capped out are
+  // excluded AT CLAIM TIME, so they sit untouched in 'approved' until their
+  // sender has budget again. Legacy NULL-sender rows send as the env identity
+  // and count toward that identity's cap when it appears in the config.
+  const senders = parseSenders(await getConfigValue("outreachSenders"));
+  const bySender = await getSentBySender();
+  const legacyAddress = extractAddress(from);
+  const sentFor = (s: OutreachSender): number =>
+    (bySender[s.address] ?? 0) +
+    (s.address === legacyAddress ? (bySender[""] ?? 0) : 0);
+  const cappedOut = senders
+    .filter((s) => sentFor(s) >= s.cap)
+    .map((s) => s.address);
+  const legacySender = senderByAddress(senders, legacyAddress);
+  const includeLegacy = legacySender ? sentFor(legacySender) < legacySender.cap : true;
+
+  // Which HTML shell to render — flip outreachTemplate in Edge Config to
+  // switch every send between the personal note and the branded newsletter.
+  const templateStyle =
+    (await getConfigValue("outreachTemplate")) === "branded"
+      ? ("branded" as const)
+      : ("plain" as const);
+
   const resend = new Resend(apiKey);
-  const due = await getDueOutreach(perRun);
+  const due = await getDueOutreach(perRun, {
+    excludeSenders: cappedOut,
+    includeLegacy,
+  });
   let sent = 0;
   let failed = 0;
   let suppressed = 0;
+  // Sends this run per identity — guards the cap at the boundary where the
+  // rolling-24h count was below cap at claim time but this run crosses it.
+  const runCounts: Record<string, number> = {};
 
   for (const row of due) {
     const to = row.recipient_email;
@@ -136,6 +176,14 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
       continue;
     }
     try {
+      // Resolve the row's sender identity (NULL = legacy env identity).
+      const addr = row.sender ?? legacyAddress;
+      const cfg = senderByAddress(senders, addr);
+      if (cfg && sentFor(cfg) + (runCounts[addr] ?? 0) >= cfg.cap) {
+        // Cap reached mid-run — un-claim untouched; a later run sends it.
+        await releaseOutreachClaim(row.id);
+        continue;
+      }
       if (await isUnsubscribed(to)) {
         // Dead-letter (NOT 'sent') — a suppressed skip must not inflate the
         // sent denominator that the bounce/complaint auto-pause rates divide by.
@@ -149,12 +197,16 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
         subject: stripCrLf(row.draft_subject ?? "Acquisition inquiry"),
         bodyText: row.draft_body_text ?? "",
         unsubscribeUrl: unsub,
+        template: templateStyle,
       });
+      // From: the configured identity's full header ("Donald Slone <…>");
+      // legacy rows keep the env sender. Replies go back to the same address
+      // (the new-domain mailbox forwards into the main outreach inbox).
+      const fromHeader = cfg?.from ?? (row.sender ? row.sender : from);
       const { error } = await resend.emails.send({
-        from,
+        from: fromHeader,
         to,
-        // Replies go back to the outreach inbox (luka@…), not info@.
-        replyTo: from,
+        replyTo: cfg?.address ?? extractAddress(fromHeader),
         subject,
         text,
         html,
@@ -164,11 +216,13 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
         },
       });
       if (error) throw new Error(JSON.stringify(error));
+      runCounts[addr] = (runCounts[addr] ?? 0) + 1;
       await markOutreachSent(row.id);
       await markMonitorOfferSent(row.valuation_id);
       await logAgentAction("outreach_sent", "agent", row.valuation_id, {
         outreachId: row.id,
         persona: row.persona,
+        sender: addr,
       });
       sent += 1;
     } catch (err) {

@@ -77,14 +77,27 @@ export async function getFlag(key: FlagKey): Promise<boolean> {
 export type ConfigKey =
   | "monitorDays" // CSV of UTC weekday numbers the sweep runs (0=Sun .. 6=Sat)
   | "autoSendPersonas" // CSV allowlist of persona keys cleared for auto-send
-  | "outreachDailyCap"; // max cold emails per rolling 24h — the warm-up throttle
+  | "outreachDailyCap" // max cold emails per rolling 24h across ALL senders — total ceiling
+  | "outreachSenders" // JSON array of sender identities (see outreach/senders.ts); "[]" = legacy single-sender env mode
+  | "outreachTemplate"; // "plain" | "branded" — which HTML shell cold emails use
 
 const CONFIG_DEFAULTS: Record<ConfigKey, string> = {
   monitorDays: "0,1,2,3,4,5,6", // every day (cron itself fires once daily)
   autoSendPersonas: "",
-  // Warm-up ramp: bump in Edge Config weekly (20 → 40 → 70 → 100 → 150), no
-  // redeploy. The sender also spreads sends across hourly cron runs.
+  // Warm-up ramp: bump in Edge Config weekly, no redeploy. Keep this equal to
+  // the SUM of per-sender caps in outreachSenders (it is the global ceiling the
+  // JIT drafting room is sized from; per-sender caps do the fine-grained work).
   outreachDailyCap: "20",
+  // Default [] = exactly the pre-multidomain behavior: env OUTREACH_EMAIL_FROM
+  // sends everything under the global cap, bodies sign "Luka". Real senders
+  // (per-domain from/name/cap) live in Edge Config so warm-up ramps are a
+  // config edit, not a deploy.
+  outreachSenders: "[]",
+  // "plain" is the launch-era personal-note shell. "branded" is the site-UI
+  // newsletter shell (logo header, CTA button, dark footer) approved
+  // 2026-08-07. Flip back to "plain" instantly in Edge Config if deliverability
+  // dips after the switch.
+  outreachTemplate: "plain",
 };
 
 export async function getConfigValue(key: ConfigKey): Promise<string> {
