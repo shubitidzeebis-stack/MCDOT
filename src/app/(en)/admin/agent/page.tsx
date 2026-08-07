@@ -15,6 +15,7 @@ import {
   getOutcomeCounts,
   getOutreachControl,
   getOutreachHealth,
+  getOutreachSenderStats,
   getOutreachStageCounts,
   getReadyToEmailStats,
   getRecentAgentActions,
@@ -24,6 +25,7 @@ import {
   listOutreachSentRows,
   pingDb,
 } from "@/lib/db/monitor";
+import { extractAddress } from "@/lib/outreach/senders";
 import { AgentDashboard } from "@/components/AgentDashboard";
 
 export const metadata: Metadata = {
@@ -73,6 +75,9 @@ export default async function AgentPage() {
     monitorDays,
     autoSendPersonas,
     outreachDailyCap,
+    senderStats,
+    outreachSenders,
+    outreachTemplate,
   ] = await Promise.all([
     getMonitorStageCounts(),
     getEligibilityCounts(),
@@ -102,6 +107,9 @@ export default async function AgentPage() {
     getConfigValue("monitorDays"),
     getConfigValue("autoSendPersonas"),
     getConfigValue("outreachDailyCap"),
+    getOutreachSenderStats(),
+    getConfigValue("outreachSenders"),
+    getConfigValue("outreachTemplate"),
   ]);
 
   const data = {
@@ -122,6 +130,12 @@ export default async function AgentPage() {
     failedSends,
     dataOk,
     outcomes,
+    senderStats,
+    // Which identity legacy NULL-sender rows send as — lets the dashboard fold
+    // pre-split history into the right account, exactly like send.ts does.
+    legacyAddress: process.env.OUTREACH_EMAIL_FROM
+      ? extractAddress(process.env.OUTREACH_EMAIL_FROM)
+      : "",
     flags: {
       monitorEnabled,
       discoveryEnabled,
@@ -134,6 +148,8 @@ export default async function AgentPage() {
       monitorDays,
       autoSendPersonas,
       outreachDailyCap,
+      outreachSenders,
+      outreachTemplate,
     },
     readiness: {
       database: !!process.env.DATABASE_URL,

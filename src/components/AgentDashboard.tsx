@@ -14,7 +14,12 @@ import type {
   OutreachEmailDetail,
   OutreachSentRow,
   ReadyStats,
+  SenderStatsRow,
 } from "@/lib/db/monitor";
+import {
+  parseSenders,
+  type OutreachSender,
+} from "@/lib/outreach/senders";
 import {
   DISQUALIFY_LABEL,
   ELIGIBILITY_LABEL,
@@ -46,6 +51,8 @@ export type AgentDashboardData = {
   failedSends: FailedSendCounts;
   dataOk: boolean;
   outcomes: Record<string, number>;
+  senderStats: SenderStatsRow[];
+  legacyAddress: string;
   flags: {
     monitorEnabled: boolean;
     discoveryEnabled: boolean;
@@ -58,6 +65,8 @@ export type AgentDashboardData = {
     monitorDays: string;
     autoSendPersonas: string;
     outreachDailyCap: string;
+    outreachSenders: string;
+    outreachTemplate: string;
   };
   readiness: {
     database: boolean;
@@ -123,6 +132,98 @@ function Rel({ iso }: { iso: string | null }) {
 function isSweepStale(iso: string | null): boolean {
   const t = parseTs(iso);
   return t == null || Date.now() - t > 26 * 3600_000;
+}
+
+// ── Per-sender account stats ────────────────────────────────────────────────
+// Fold DB per-identity stats into the configured senders: '' (rows queued
+// before the multi-domain split) counts toward the env identity, mirroring
+// send.ts cap accounting. Configured senders always show, even at zero sends;
+// stats for identities no longer in the config still surface as extra rows.
+
+type MergedSender = SenderStatsRow & {
+  name: string;
+  address: string;
+  cap: number | null;
+};
+
+function laterTs(a: string | null, b: string | null): string | null {
+  const ta = parseTs(a);
+  const tb = parseTs(b);
+  if (ta == null) return b;
+  if (tb == null) return a;
+  return ta >= tb ? a : b;
+}
+
+function addStats(a: SenderStatsRow, b: SenderStatsRow): SenderStatsRow {
+  return {
+    sender: a.sender,
+    sent24h: a.sent24h + b.sent24h,
+    sent7d: a.sent7d + b.sent7d,
+    sentTotal: a.sentTotal + b.sentTotal,
+    queued: a.queued + b.queued,
+    bounced7d: a.bounced7d + b.bounced7d,
+    complained7d: a.complained7d + b.complained7d,
+    lastSentAt: laterTs(a.lastSentAt, b.lastSentAt),
+  };
+}
+
+const ZERO_STATS: SenderStatsRow = {
+  sender: "",
+  sent24h: 0,
+  sent7d: 0,
+  sentTotal: 0,
+  queued: 0,
+  bounced7d: 0,
+  complained7d: 0,
+  lastSentAt: null,
+};
+
+function mergeSenderStats(
+  stats: SenderStatsRow[],
+  cfg: OutreachSender[],
+  legacyAddress: string,
+  globalCap: number,
+): MergedSender[] {
+  const byAddr = new Map(stats.map((s) => [s.sender, s]));
+  const used = new Set<string>();
+  const rows: MergedSender[] = [];
+  for (const s of cfg) {
+    let agg: SenderStatsRow = { ...ZERO_STATS, sender: s.address };
+    const own = byAddr.get(s.address);
+    if (own) {
+      agg = addStats(agg, own);
+      used.add(s.address);
+    }
+    if (s.address === legacyAddress) {
+      const legacy = byAddr.get("");
+      if (legacy) {
+        agg = addStats(agg, legacy);
+        used.add("");
+      }
+    }
+    rows.push({ ...agg, name: s.name, address: s.address, cap: s.cap });
+  }
+  for (const s of stats) {
+    if (used.has(s.sender)) continue;
+    const address = s.sender || legacyAddress || "default sender";
+    const existing = rows.find((r) => r.address === address);
+    if (existing) {
+      Object.assign(existing, addStats(existing, s), {
+        name: existing.name,
+        address: existing.address,
+        cap: existing.cap,
+      });
+      continue;
+    }
+    rows.push({
+      ...s,
+      name: address.includes("@") ? address.split("@")[0] : address,
+      address,
+      // With no sender split configured, the global daily cap is the throttle.
+      cap: cfg.length === 0 ? globalCap : null,
+    });
+  }
+  return rows;
 }
 
 // When the next 15-minute send slot fires — the cron runs 14:00–21:45 UTC
@@ -237,6 +338,20 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
     .filter(Boolean).length;
   const bounceRate7d =
     data.health7d.sent > 0 ? data.health7d.bounced / data.health7d.sent : 0;
+  const senderCfg = parseSenders(data.flags.outreachSenders);
+  const senderRows = mergeSenderStats(
+    data.senderStats,
+    senderCfg,
+    data.legacyAddress,
+    dailyCap,
+  );
+  // Short label for a sent row's identity (NULL = legacy env sender).
+  const senderLabel = (addr: string | null): { name: string; full: string } => {
+    const a = addr ?? data.legacyAddress;
+    if (!a) return { name: "—", full: "default sender" };
+    const cfg = senderCfg.find((s) => s.address === a);
+    return { name: cfg?.name ?? a.split("@")[0], full: a };
+  };
   const readyEmail = data.ready.readyEmail;
   const runwayDays = dailyCap > 0 ? Math.round(readyEmail / dailyCap) : 0;
   const safetyTotal = sum(data.safetyCounts);
@@ -483,6 +598,84 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
         />
       </div>
 
+      {/* Per-account numbers — how each sending identity/domain is performing. */}
+      {senderRows.length > 0 && (
+        <Card
+          title={`Sender accounts · template: ${data.flags.outreachTemplate === "branded" ? "branded" : "plain"}`}
+        >
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-[13px]">
+              <thead className="text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
+                <tr>
+                  <th className="py-1.5 pr-3">Account</th>
+                  <th className="py-1.5 pr-3">Today / cap</th>
+                  <th className="py-1.5 pr-3" aria-hidden="true" />
+                  <th className="py-1.5 pr-3">7 days</th>
+                  <th className="py-1.5 pr-3">Total</th>
+                  <th className="py-1.5 pr-3">Queued</th>
+                  <th className="py-1.5 pr-3">Bounced 7d</th>
+                  <th className="py-1.5 pr-3">Complaints 7d</th>
+                  <th className="py-1.5">Last sent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {senderRows.map((r) => (
+                  <tr key={r.address} className="border-t border-white/8">
+                    <td className="py-2 pr-3">
+                      <div className="font-medium text-white/90">{r.name}</div>
+                      <div className="text-[11px] text-white/40">{r.address}</div>
+                    </td>
+                    <td className="whitespace-nowrap py-2 pr-3">
+                      <span className="font-semibold text-[#ffb371]">{r.sent24h}</span>
+                      <span className="text-white/40"> / {r.cap ?? "—"}</span>
+                    </td>
+                    <td className="py-2 pr-3">
+                      {r.cap != null && r.cap > 0 && (
+                        <div
+                          className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10"
+                          title={`${r.sent24h} of ${r.cap} in the rolling 24h window`}
+                        >
+                          <div
+                            className="h-full rounded-full bg-[#ff8a1a]"
+                            style={{
+                              width: `${Math.min(100, Math.round((r.sent24h / r.cap) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-white/70">{r.sent7d}</td>
+                    <td className="py-2 pr-3 text-white/70">
+                      {r.sentTotal.toLocaleString("en-US")}
+                    </td>
+                    <td className="py-2 pr-3 text-white/70">{r.queued}</td>
+                    <td
+                      className={`py-2 pr-3 ${r.bounced7d > 0 ? "font-semibold text-red-300" : "text-white/35"}`}
+                    >
+                      {r.bounced7d}
+                    </td>
+                    <td
+                      className={`py-2 pr-3 ${r.complained7d > 0 ? "font-semibold text-red-300" : "text-white/35"}`}
+                    >
+                      {r.complained7d}
+                    </td>
+                    <td className="whitespace-nowrap py-2 text-white/55">
+                      <Rel iso={r.lastSentAt} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-2 text-[11px] text-white/40">
+            Caps use the same rolling 24-hour window as the sender; warm-up bumps are
+            edited in Edge Config (outreachSenders) — no deploy needed.
+            {senderCfg.length === 0 &&
+              " Sender split not configured yet — everything sends as the default account."}
+          </p>
+        </Card>
+      )}
+
       {/* Sent emails — the live send log (what actually went out, to whom). */}
       <Card
         title={`Sent emails (${sentCount} total · last 7d: ${data.health7d.sent} sent, ${data.health7d.bounced} bounced = ${(bounceRate7d * 100).toFixed(1)}%, ${data.health7d.complained} complaints)`}
@@ -498,6 +691,7 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
               <thead className="sticky top-0 bg-[#101012] text-left text-[10px] uppercase tracking-[0.16em] text-white/45">
                 <tr>
                   <th className="py-1.5 pr-3">Sent</th>
+                  <th className="py-1.5 pr-3">From</th>
                   <th className="py-1.5 pr-3">Company</th>
                   <th className="py-1.5 pr-3">To</th>
                   <th className="py-1.5 pr-3">Subject</th>
@@ -514,6 +708,12 @@ export function AgentDashboard({ data }: { data: AgentDashboardData }) {
                   >
                     <td className="whitespace-nowrap py-1.5 pr-3 text-white/55">
                       <Rel iso={s.sent_at} />
+                    </td>
+                    <td
+                      className="whitespace-nowrap py-1.5 pr-3 text-white/70"
+                      title={senderLabel(s.sender).full}
+                    >
+                      {senderLabel(s.sender).name}
                     </td>
                     <td className="py-1.5 pr-3 text-white/90">
                       {s.dba_name ?? s.legal_name ?? "—"}

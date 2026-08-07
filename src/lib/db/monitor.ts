@@ -879,6 +879,7 @@ export type OutreachSentRow = {
   recipient_email: string | null;
   draft_subject: string | null;
   persona: string | null;
+  sender: string | null;
   legal_name: string | null;
   dba_name: string | null;
   dot_number: string | null;
@@ -892,7 +893,7 @@ export async function listOutreachSentRows(limit = 50): Promise<OutreachSentRow[
     await ensureMonitorTables();
     const rows = (await sql`
       SELECT oq.id, oq.sent_at::text AS sent_at, oq.recipient_email,
-             oq.draft_subject, oq.persona,
+             oq.draft_subject, oq.persona, oq.sender,
              v.legal_name, v.dba_name, v.dot_number
         FROM outreach_queue oq
         LEFT JOIN valuations v ON v.id = oq.valuation_id
@@ -1007,6 +1008,93 @@ export async function getSentBySender(): Promise<Record<string, number>> {
   } catch (err) {
     console.error("[getSentBySender] error", err);
     return {};
+  }
+}
+
+// Per-sender dashboard stats — one row per identity ('' = legacy rows queued
+// before the multi-domain split; the dashboard folds those into the env
+// identity, mirroring how send.ts counts them against its cap). Bounce and
+// complaint events only record the recipient, so each is attributed to the
+// identity that most recently emailed that address.
+export type SenderStatsRow = {
+  sender: string;
+  sent24h: number;
+  sent7d: number;
+  sentTotal: number;
+  queued: number;
+  bounced7d: number;
+  complained7d: number;
+  lastSentAt: string | null;
+};
+
+export async function getOutreachSenderStats(): Promise<SenderStatsRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      WITH ev AS (
+        SELECT aa.action,
+               (SELECT COALESCE(oq.sender, '')
+                  FROM outreach_queue oq
+                 WHERE lower(oq.recipient_email) = lower(aa.detail->>'email')
+                   AND oq.stage = 'sent'
+                 ORDER BY oq.sent_at DESC NULLS LAST
+                 LIMIT 1) AS sender
+          FROM agent_actions aa
+         WHERE aa.action IN ('outreach_bounced', 'outreach_complained')
+           AND aa.created_at > now() - interval '7 days'
+      )
+      SELECT q.sender,
+             q.sent24h,
+             q.sent7d,
+             q.sent_total,
+             q.queued,
+             q.last_sent_at,
+             COALESCE(e.bounced, 0) AS bounced7d,
+             COALESCE(e.complained, 0) AS complained7d
+        FROM (
+          SELECT COALESCE(sender, '') AS sender,
+                 count(*) FILTER (WHERE stage = 'sent' AND sent_at > now() - interval '24 hours')::int AS sent24h,
+                 count(*) FILTER (WHERE stage = 'sent' AND sent_at > now() - interval '7 days')::int AS sent7d,
+                 count(*) FILTER (WHERE stage = 'sent')::int AS sent_total,
+                 count(*) FILTER (WHERE stage IN ('draft', 'approved', 'sending'))::int AS queued,
+                 max(sent_at) FILTER (WHERE stage = 'sent')::text AS last_sent_at
+            FROM outreach_queue
+           GROUP BY COALESCE(sender, '')
+        ) q
+        LEFT JOIN (
+          SELECT sender,
+                 count(*) FILTER (WHERE action = 'outreach_bounced')::int AS bounced,
+                 count(*) FILTER (WHERE action = 'outreach_complained')::int AS complained
+            FROM ev
+           WHERE sender IS NOT NULL
+           GROUP BY sender
+        ) e ON e.sender = q.sender
+       ORDER BY q.sent_total DESC, q.sender
+    `) as Array<{
+      sender: string;
+      sent24h: number;
+      sent7d: number;
+      sent_total: number;
+      queued: number;
+      last_sent_at: string | null;
+      bounced7d: number;
+      complained7d: number;
+    }>;
+    return rows.map((r) => ({
+      sender: r.sender,
+      sent24h: Number(r.sent24h),
+      sent7d: Number(r.sent7d),
+      sentTotal: Number(r.sent_total),
+      queued: Number(r.queued),
+      bounced7d: Number(r.bounced7d),
+      complained7d: Number(r.complained7d),
+      lastSentAt: r.last_sent_at,
+    }));
+  } catch (err) {
+    console.error("[getOutreachSenderStats] error", err);
+    return [];
   }
 }
 
