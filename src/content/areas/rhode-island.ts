@@ -6,18 +6,18 @@ export const rhodeIsland: StateData = {
   abbr: "RI",
   metaTitle: "Sell Your Trucking LLC in Rhode Island | Veritor",
   metaDescription:
-    "Veritor Group buys Rhode Island trucking LLCs direct — Port of Providence, I-95 corridor, Amazon Johnston. Wire transfer closes in 3–5 days.",
+    "Veritor Group helps you sell your Rhode Island trucking LLC — Port of Providence, I-95 corridor, Amazon Johnston. Written offer in 24 hours, close in 3–5 days.",
   heroLine1: "I-95 Northeast Corridor drives through here.",
-  heroLine2: "We buy Rhode Island trucking LLCs.",
+  heroLine2: "Sell your Rhode Island trucking LLC.",
   heroSubhead:
-    "Port of Providence, Amazon in Johnston, Quonset Point defense freight — Rhode Island is a dense, active carrier market. Veritor Group is a direct buyer. Wire in 3–5 days.",
+    "Port of Providence, Amazon in Johnston, Quonset Point defense freight — Rhode Island is a dense, active carrier market. Written offer in 24 hours. Wire in 3–5 days.",
   intro:
-    "Rhode Island is the smallest state in the country, but it sits in the middle of one of the most freight-dense corridors on the continent. I-95 passes straight through the state — connecting Boston 50 miles north to Connecticut and New York beyond — and that location turns Rhode Island into both a drive-through lane for Northeast Corridor freight and a destination market for one of the most densely populated corners of the United States.\n\nThe Port of Providence handles petroleum products and bulk aggregates, making it the fuel distribution hub for much of southern New England. Amazon has established an active Relay operation in Johnston, Rhode Island, which sits just off I-295 and generates consistent carrier demand for LLCs based in the Providence metro. Quonset Point in North Kingstown is one of the largest industrial parks in New England — home to defense manufacturing, Raytheon contracts, and military logistics operations that generate specialized freight demand year-round. Providence also serves as overflow freight staging for Massachusetts carriers who use RI's slightly lower-cost operating environment to manage Boston-area demand spikes.\n\nVeritor Group acquires Rhode Island trucking LLCs across all freight types and carrier sizes. RI has high insurance costs, which drives some carriers to sell rather than maintain — we're the buyer for that decision. Submit your MC/DOT for a written offer within 24 hours. Wire closes in 3–5 days.",
+    "Rhode Island is the smallest state in the country, but it sits in the middle of one of the most freight-dense corridors on the continent. I-95 passes straight through the state — connecting Boston 50 miles north to Connecticut and New York beyond — and that location turns Rhode Island into both a drive-through lane for Northeast Corridor freight and a destination market for one of the most densely populated corners of the United States.\n\nThe Port of Providence handles petroleum products and bulk aggregates, making it the fuel distribution hub for much of southern New England. Amazon has established an active Relay operation in Johnston, Rhode Island, which sits just off I-295 and generates consistent carrier demand for LLCs based in the Providence metro. Quonset Point in North Kingstown is one of the largest industrial parks in New England — home to defense manufacturing, Raytheon contracts, and military logistics operations that generate specialized freight demand year-round. Providence also serves as overflow freight staging for Massachusetts carriers who use RI's slightly lower-cost operating environment to manage Boston-area demand spikes.\n\nVeritor Group helps sell Rhode Island trucking LLCs across all freight types and carrier sizes. RI has high insurance costs, which drives some carriers to sell rather than maintain — that's exactly the kind of exit we help with. Submit your MC/DOT for a written offer within 24 hours. Wire closes in 3–5 days.",
   keywords: [
     "sell trucking LLC Rhode Island",
     "sell trucking company Rhode Island",
     "trucking company buyer Rhode Island",
-    "sell MC authority Rhode Island",
+    "Rhode Island trucking LLC sale",
     "owner operator exit Rhode Island",
     "sell logistics LLC Rhode Island",
     "Rhode Island trucking LLC acquisition",
@@ -35,20 +35,20 @@ export const rhodeIsland: StateData = {
   ],
   faqs: [
     {
-      q: "Do you buy Rhode Island trucking LLCs running Amazon Relay in Johnston?",
-      a: "Yes. Amazon's Johnston facility generates active Relay carrier demand and LLCs with Relay contracts running out of Johnston are among our most frequent Rhode Island acquisitions. Active Relay contracts compress the diligence timeline — the contract dashboard tells us what we need to know quickly.",
+      q: "Do you work with Rhode Island trucking LLCs running Amazon Relay in Johnston?",
+      a: "Yes. Amazon's Johnston facility generates active Relay carrier demand and LLCs with Relay contracts running out of Johnston are among the most frequent Rhode Island sales we help close. Active Relay contracts compress the diligence timeline — the contract dashboard tells us what we need to know quickly.",
     },
     {
       q: "Does Rhode Island's high insurance cost environment affect what you'll pay?",
-      a: "RI insurance costs are a seller-side expense, not a buyer-side valuation input. What we price is the MC authority age, FMCSA record, and LLC standing. The fact that insurance is expensive in Rhode Island is actually one reason carriers seek an exit — we're the direct buyer for that decision.",
+      a: "RI insurance costs are a seller-side expense, not something that lowers the LLC's value. What we price is the MC authority age, FMCSA record, and LLC standing. The fact that insurance is expensive in Rhode Island is actually one reason carriers seek an exit — and that's exactly the kind of sale we help with.",
     },
     {
       q: "My Rhode Island LLC runs I-95 Northeast Corridor freight — mostly pass-through lanes to Connecticut and New York. Is that a sellable LLC?",
-      a: "Yes. Long-haul lanes through Rhode Island on I-95 are documented operating history regardless of the cargo origin or destination. We buy LLCs running Northeast Corridor freight. The pass-through nature of the route doesn't diminish the value of the authority or the operating record.",
+      a: "Yes. Long-haul lanes through Rhode Island on I-95 are documented operating history regardless of the cargo origin or destination. LLCs running Northeast Corridor freight are a good fit. The pass-through nature of the route doesn't diminish the value of the authority or the operating record.",
     },
     {
-      q: "Do you buy LLCs running defense freight out of Quonset Point?",
-      a: "Yes. Quonset Point carriers with military or defense manufacturing freight history are within our acquisition scope. Specialized freight lanes are noted in diligence as operating history — they demonstrate consistent, documented use of the authority on established customer lanes.",
+      q: "Do LLCs running defense freight out of Quonset Point qualify?",
+      a: "Yes. Quonset Point carriers with military or defense manufacturing freight history are within the range of carriers we work with. Specialized freight lanes are noted in diligence as operating history — they demonstrate consistent, documented use of the authority on established customer lanes.",
     },
     {
       q: "Can I sell a Rhode Island LLC that also runs Massachusetts freight lanes?",
@@ -61,19 +61,19 @@ export const rhodeIsland: StateData = {
       name: "Providence",
       metaTitle: "Sell Your Trucking LLC in Providence, RI | Veritor",
       metaDescription:
-        "Providence RI trucking LLC? Veritor Group buys direct — Port of Providence, I-95 corridor, Amazon staging. Wire closes in 3–5 days.",
+        "Providence RI trucking LLC? Veritor Group can help you sell — Port of Providence, I-95 corridor, Amazon staging. Written offer in 24 hours, close in 3–5 days.",
       heroLine1: "Port city on the I-95 corridor.",
-      heroLine2: "We buy Providence trucking LLCs.",
+      heroLine2: "Sell your Providence trucking LLC.",
       heroSubhead:
-        "Providence anchors the Rhode Island freight market — port petroleum, I-95, and Amazon staging from Johnston nearby. Veritor Group buys direct, no brokers.",
+        "Providence anchors the Rhode Island freight market — port petroleum, I-95, and Amazon staging from Johnston nearby. Veritor Group can help you sell.",
       intro:
-        "Providence is Rhode Island's capital and largest city, positioned at the head of Narragansett Bay where the Providence River narrows into the urban waterfront. The Port of Providence is the primary fuel import terminal for southern New England — petroleum products, distillates, and bulk aggregates move through the port and distribute via tanker truck to the region's energy infrastructure. That port freight activity alone sustains a specialized tier of carrier demand that few New England cities outside Portland, Maine can match.\n\nI-95 runs through the heart of Providence, making the city a natural freight convergence point for the Boston-to-Connecticut corridor. The I-195 connector branches east toward Fall River and New Bedford, and I-295 loops the western suburbs toward Johnston and Cranston where Amazon's active Relay operation is located. Massachusetts carriers routinely stage freight through Providence to manage Boston metro overflow without Massachusetts overhead — a pattern that adds to Providence's freight density beyond what its own population base would generate.\n\nVeritor Group buys Providence trucking LLCs whether you're running port petroleum freight, I-95 general truckload, Amazon Relay routes, or Massachusetts-overflow staging runs. Submit your MC/DOT for a written offer within 24 hours. Wire closes in 3–5 days.",
+        "Providence is Rhode Island's capital and largest city, positioned at the head of Narragansett Bay where the Providence River narrows into the urban waterfront. The Port of Providence is the primary fuel import terminal for southern New England — petroleum products, distillates, and bulk aggregates move through the port and distribute via tanker truck to the region's energy infrastructure. That port freight activity alone sustains a specialized tier of carrier demand that few New England cities outside Portland, Maine can match.\n\nI-95 runs through the heart of Providence, making the city a natural freight convergence point for the Boston-to-Connecticut corridor. The I-195 connector branches east toward Fall River and New Bedford, and I-295 loops the western suburbs toward Johnston and Cranston where Amazon's active Relay operation is located. Massachusetts carriers routinely stage freight through Providence to manage Boston metro overflow without Massachusetts overhead — a pattern that adds to Providence's freight density beyond what its own population base would generate.\n\nVeritor Group helps sell Providence trucking LLCs whether you're running port petroleum freight, I-95 general truckload, Amazon Relay routes, or Massachusetts-overflow staging runs. Submit your MC/DOT for a written offer within 24 hours. Wire closes in 3–5 days.",
       whySell:
-        "Providence carriers operate in a dense freight market with high operating costs — insurance, tolls, and port access fees add up. If the math no longer works for your LLC, a direct buyer converts the authority value to a wire payment in under a week. That's the clean exit Rhode Island carriers deserve.",
+        "Providence carriers operate in a dense freight market with high operating costs — insurance, tolls, and port access fees add up. If the math no longer works for your LLC, selling converts the authority value to a wire payment in under a week. That's the clean exit Rhode Island carriers deserve.",
       keywords: [
         "sell trucking LLC Providence Rhode Island",
         "trucking company buyer Providence RI",
-        "sell MC authority Providence Rhode Island",
+        "Providence trucking LLC sale",
         "owner operator exit Providence RI",
         "sell logistics LLC Providence Rhode Island",
         "Providence Rhode Island trucking acquisition",
@@ -89,20 +89,20 @@ export const rhodeIsland: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Providence carriers running Port of Providence petroleum distribution?",
-          a: "Yes. Port of Providence petroleum tanker distribution is specialized operating history — it shows documented, consistent use of the authority on established port-origination lanes. The cargo type is noted in diligence as the carrier's lane specialty. Standard acquisition criteria apply.",
+          q: "Do Providence carriers running Port of Providence petroleum distribution qualify?",
+          a: "Yes. Port of Providence petroleum tanker distribution is specialized operating history — it shows documented, consistent use of the authority on established port-origination lanes. The cargo type is noted in diligence as the carrier's lane specialty. The standard criteria apply.",
         },
         {
-          q: "My Providence LLC is staging Massachusetts overflow freight. Is that a standard acquisition?",
-          a: "Yes. Providence-based staging for Boston metro overflow is common and we've bought those LLCs before. Running MA freight from a RI address is legitimate multi-state operating history — it's a positive authority utilization signal.",
+          q: "My Providence LLC is staging Massachusetts overflow freight. Is that a standard fit?",
+          a: "Yes. Providence-based staging for Boston metro overflow is common and we've helped sell those LLCs before. Running MA freight from a RI address is legitimate multi-state operating history — it's a positive authority utilization signal.",
         },
         {
           q: "How does the Amazon Johnston facility relate to Providence carriers?",
-          a: "Johnston is just off I-295 — minutes from Providence's western edge. Providence-based LLCs running Relay routes out of Johnston are common and we buy them. If your LLC holds an active Amazon Relay contract, that's the highest-value single element of the deal.",
+          a: "Johnston is just off I-295 — minutes from Providence's western edge. Providence-based LLCs running Relay routes out of Johnston are common and we help sell them. If your LLC holds an active Amazon Relay contract, that's the highest-value single element of the deal.",
         },
         {
           q: "What banks handle your Providence closings?",
-          a: "We wire to whatever Rhode Island bank you already use. Citizens Bank is headquartered in Providence, and Santander, Webster, and Bank of America all have strong local presence. Funds transfer same-day at closing — no special banking arrangements required.",
+          a: "Closing happens at whatever Rhode Island bank you already use. Citizens Bank is headquartered in Providence, and Santander, Webster, and Bank of America all have strong local presence. Funds transfer same-day at closing — no special banking arrangements required.",
         },
         {
           q: "Can I sell a Providence LLC running I-195 lanes toward Fall River and New Bedford?",
@@ -116,19 +116,19 @@ export const rhodeIsland: StateData = {
       name: "Cranston",
       metaTitle: "Sell Your Trucking LLC in Cranston, RI | Veritor Group",
       metaDescription:
-        "Cranston RI trucking LLC? Veritor Group buys direct — I-295 access, Providence metro freight, Amazon Johnston proximity. Wire in 3–5 days.",
+        "Cranston RI trucking LLC? Veritor Group can help you sell — I-295 access, Providence metro freight, Amazon Johnston proximity. Written offer in 24 hours, close in 3–5 days.",
       heroLine1: "Providence's western freight belt.",
-      heroLine2: "We buy Cranston trucking LLCs.",
+      heroLine2: "Sell your Cranston trucking LLC.",
       heroSubhead:
-        "Cranston sits between Providence and the I-295 corridor — minutes from Amazon's Johnston facility. Veritor Group buys Rhode Island trucking LLCs direct.",
+        "Cranston sits between Providence and the I-295 corridor — minutes from Amazon's Johnston facility. Veritor Group helps sell Rhode Island trucking LLCs.",
       intro:
-        "Cranston is Rhode Island's second-largest city and sits directly south and west of Providence, with I-95 running along its eastern edge and I-295 cutting through its western territory. That highway access — dual freeway frontage in a small state — makes Cranston one of the most logistically convenient locations in Rhode Island for carrier operations. The Reservoir Avenue and Pontiac Avenue industrial corridors anchor Cranston's distribution and light manufacturing zones, which generate consistent regional truckload demand.\n\nCranston's proximity to Johnston — where Amazon's active Rhode Island Relay operation is based — makes it a natural staging point for Amazon carrier routes running the I-295 loop north toward Providence and south toward Warwick. Carriers based in Cranston can access the Johnston facility in under 10 minutes, making it effectively an Amazon-adjacent market even without a dedicated facility in the city itself.\n\nVeritor Group buys Cranston trucking LLCs whether you're running Providence metro freight, Amazon Relay routes, I-95 general freight, or I-295 connector lanes. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
+        "Cranston is Rhode Island's second-largest city and sits directly south and west of Providence, with I-95 running along its eastern edge and I-295 cutting through its western territory. That highway access — dual freeway frontage in a small state — makes Cranston one of the most logistically convenient locations in Rhode Island for carrier operations. The Reservoir Avenue and Pontiac Avenue industrial corridors anchor Cranston's distribution and light manufacturing zones, which generate consistent regional truckload demand.\n\nCranston's proximity to Johnston — where Amazon's active Rhode Island Relay operation is based — makes it a natural staging point for Amazon carrier routes running the I-295 loop north toward Providence and south toward Warwick. Carriers based in Cranston can access the Johnston facility in under 10 minutes, making it effectively an Amazon-adjacent market even without a dedicated facility in the city itself.\n\nVeritor Group helps sell Cranston trucking LLCs whether you're running Providence metro freight, Amazon Relay routes, I-95 general freight, or I-295 connector lanes. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
       whySell:
-        "Cranston's dual freeway access and Amazon adjacency mean active carriers here have well-documented, high-frequency authority histories. That operating record has real value today. A direct buyer pays for it in one wire transaction — no broker, no listing delay, no distant acquirer unfamiliar with the Rhode Island market.",
+        "Cranston's dual freeway access and Amazon adjacency mean active carriers here have well-documented, high-frequency authority histories. That operating record has real value today. Selling converts it into one wire transaction — no listing delay, no distant team unfamiliar with the Rhode Island market.",
       keywords: [
         "sell trucking LLC Cranston Rhode Island",
         "trucking company buyer Cranston RI",
-        "sell MC authority Cranston Rhode Island",
+        "Cranston trucking LLC sale",
         "owner operator exit Cranston RI",
         "sell logistics LLC Cranston Rhode Island",
         "Cranston Rhode Island trucking acquisition",
@@ -143,8 +143,8 @@ export const rhodeIsland: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Cranston LLCs running Amazon Relay routes out of the Johnston facility?",
-          a: "Yes. Cranston is effectively Amazon-adjacent given the 10-minute access to Johnston on I-295. LLCs based in Cranston running Johnston Relay routes are standard acquisitions for us. Active Relay contracts accelerate our diligence significantly.",
+          q: "Do Cranston LLCs running Amazon Relay routes out of the Johnston facility qualify?",
+          a: "Yes. Cranston is effectively Amazon-adjacent given the 10-minute access to Johnston on I-295. LLCs based in Cranston running Johnston Relay routes are a standard fit. Active Relay contracts accelerate our diligence significantly.",
         },
         {
           q: "Is Cranston treated the same as Providence for valuation purposes?",
@@ -156,7 +156,7 @@ export const rhodeIsland: StateData = {
         },
         {
           q: "What banks do you use for Cranston closings?",
-          a: "We wire to whatever bank you already use. Citizens Bank, Santander, and Webster all have Cranston-area presence. Funds transfer same-day at closing. No new accounts or special arrangements required.",
+          a: "Closing happens at whatever bank you already use. Citizens Bank, Santander, and Webster all have Cranston-area presence. Funds transfer same-day at closing. No new accounts or special arrangements required.",
         },
         {
           q: "Can I sell a Cranston LLC that runs Massachusetts lanes on a regular basis?",
@@ -170,19 +170,19 @@ export const rhodeIsland: StateData = {
       name: "Warwick",
       metaTitle: "Sell Your Trucking LLC in Warwick, RI | Veritor Group",
       metaDescription:
-        "Warwick RI trucking LLC? Veritor Group buys direct — TF Green Airport freight, I-95 corridor, Providence metro lanes. Wire in 3–5 days.",
+        "Warwick RI trucking LLC? Veritor Group can help you sell — TF Green Airport freight, I-95 corridor, Providence metro lanes. Written offer in 24 hours, close in 3–5 days.",
       heroLine1: "TF Green Airport freight market.",
-      heroLine2: "We buy Warwick trucking LLCs.",
+      heroLine2: "Sell your Warwick trucking LLC.",
       heroSubhead:
-        "Warwick is Rhode Island's airport city — TF Green Airport on I-95 generates active cargo freight demand. Veritor Group buys trucking LLCs direct.",
+        "Warwick is Rhode Island's airport city — TF Green Airport on I-95 generates active cargo freight demand. Veritor Group helps sell trucking LLCs here.",
       intro:
-        "Warwick is Rhode Island's second-largest city by population and home to T.F. Green Airport, the state's primary commercial airport positioned directly on I-95 at Exit 13. The airport handles both passenger and cargo operations, with cargo ramp activity supporting time-sensitive freight lanes connecting Rhode Island to the broader New England air freight network. Carriers serving the TF Green cargo ramp have a built-in time-sensitive freight adjacency that generates consistent, documented operating history.\n\nBeyond the airport, Warwick's Post Road and Bald Hill Road commercial corridors anchor one of Rhode Island's densest retail and distribution zones. The proximity to I-95 at multiple interchanges makes Warwick accessible from both the Providence metro to the north and the Connecticut border to the south, and the I-295 interchange at Warwick's western edge adds loop access for carriers running Cranston and Johnston routes including Amazon Relay.\n\nVeritor Group buys Warwick trucking LLCs whether you're running TF Green cargo adjacency lanes, I-95 general freight, Providence metro distribution, or Amazon Relay routes. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
+        "Warwick is Rhode Island's second-largest city by population and home to T.F. Green Airport, the state's primary commercial airport positioned directly on I-95 at Exit 13. The airport handles both passenger and cargo operations, with cargo ramp activity supporting time-sensitive freight lanes connecting Rhode Island to the broader New England air freight network. Carriers serving the TF Green cargo ramp have a built-in time-sensitive freight adjacency that generates consistent, documented operating history.\n\nBeyond the airport, Warwick's Post Road and Bald Hill Road commercial corridors anchor one of Rhode Island's densest retail and distribution zones. The proximity to I-95 at multiple interchanges makes Warwick accessible from both the Providence metro to the north and the Connecticut border to the south, and the I-295 interchange at Warwick's western edge adds loop access for carriers running Cranston and Johnston routes including Amazon Relay.\n\nVeritor Group helps sell Warwick trucking LLCs whether you're running TF Green cargo adjacency lanes, I-95 general freight, Providence metro distribution, or Amazon Relay routes. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
       whySell:
-        "Warwick's airport and highway combination means carriers here often operate some of the most active, time-sensitive freight lanes in Rhode Island. That documented operating history is valuable — and it doesn't survive dissolution. A direct buyer pays for the authority and the operating record in one clean wire transaction.",
+        "Warwick's airport and highway combination means carriers here often operate some of the most active, time-sensitive freight lanes in Rhode Island. That documented operating history is valuable — and it doesn't survive dissolution. Selling converts the authority and the operating record into one clean wire transaction.",
       keywords: [
         "sell trucking LLC Warwick Rhode Island",
         "trucking company buyer Warwick RI",
-        "sell MC authority Warwick Rhode Island",
+        "Warwick trucking LLC sale",
         "owner operator exit Warwick RI",
         "sell logistics LLC Warwick Rhode Island",
         "Warwick Rhode Island trucking acquisition",
@@ -197,8 +197,8 @@ export const rhodeIsland: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Warwick carriers running TF Green Airport cargo routes?",
-          a: "Yes. Airport cargo adjacency lanes are documented, time-sensitive operating history — the strongest type from a utilization standpoint. Carriers running TF Green cargo ramp routes show consistent, high-frequency use of the authority. Standard acquisition, faster-than-usual operating history verification.",
+          q: "Do Warwick carriers running TF Green Airport cargo routes qualify?",
+          a: "Yes. Airport cargo adjacency lanes are documented, time-sensitive operating history — the strongest type from a utilization standpoint. Carriers running TF Green cargo ramp routes show consistent, high-frequency use of the authority. A standard fit, with faster-than-usual operating history verification.",
         },
         {
           q: "My Warwick LLC is right off I-95 Exit 13. Does that highway access matter?",
@@ -210,7 +210,7 @@ export const rhodeIsland: StateData = {
         },
         {
           q: "What banks handle your Warwick, RI closings?",
-          a: "We wire to whatever bank you use. Citizens Bank, Santander, and Washington Trust all have Warwick-area branches. Funds transfer same-day at closing. No new accounts or out-of-state banking required.",
+          a: "Closing happens at whatever bank you use. Citizens Bank, Santander, and Washington Trust all have Warwick-area branches. Funds transfer same-day at closing. No new accounts or out-of-state banking required.",
         },
         {
           q: "My Warwick LLC also runs Amazon Relay routes from Johnston. Does that combination affect the offer?",
@@ -224,19 +224,19 @@ export const rhodeIsland: StateData = {
       name: "Pawtucket",
       metaTitle: "Sell Your Trucking LLC in Pawtucket, RI | Veritor",
       metaDescription:
-        "Pawtucket RI trucking LLC? Veritor Group buys direct — Providence metro freight, I-95, MA border carrier market. Wire closes in 3–5 days.",
+        "Pawtucket RI trucking LLC? Veritor Group can help you sell — Providence metro freight, I-95, MA border carrier market. Written offer in 24 hours, close in 3–5 days.",
       heroLine1: "Providence metro's northern freight market.",
-      heroLine2: "We buy Pawtucket trucking LLCs.",
+      heroLine2: "Sell your Pawtucket trucking LLC.",
       heroSubhead:
-        "Pawtucket sits on the Rhode Island-Massachusetts border with direct I-95 access. Veritor Group buys trucking LLCs direct — written offer in 24 hours.",
+        "Pawtucket sits on the Rhode Island-Massachusetts border with direct I-95 access. Veritor Group can help you sell — written offer in 24 hours.",
       intro:
-        "Pawtucket sits at Rhode Island's northern edge, directly on the Massachusetts border and separated from Attleboro and North Attleborough by only a few miles on I-95. That border position makes Pawtucket a natural freight staging point for the Providence-to-Boston corridor and gives carriers based here immediate access to both Rhode Island and Massachusetts freight markets from a single operating base.\n\nThe Pawtucket-Central Falls industrial corridor along the Blackstone River has historically been the manufacturing heartland of Rhode Island's northeast — textile, jewelry, and light manufacturing operations have transitioned over decades to warehouse and distribution uses, and that industrial real estate base now anchors the freight zone that connects Providence's northeastern edge to the I-95 and I-95's connector to Route 1 and Route 15 northbound into Massachusetts. Pawtucket carriers running Boston-area freight southbound frequently stage through the city's Route 1A and Fountain Street industrial corridors.\n\nVeritor Group buys Pawtucket trucking LLCs whether you're running Providence metro freight, MA-border staging lanes, or I-95 Northeast Corridor hauls. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
+        "Pawtucket sits at Rhode Island's northern edge, directly on the Massachusetts border and separated from Attleboro and North Attleborough by only a few miles on I-95. That border position makes Pawtucket a natural freight staging point for the Providence-to-Boston corridor and gives carriers based here immediate access to both Rhode Island and Massachusetts freight markets from a single operating base.\n\nThe Pawtucket-Central Falls industrial corridor along the Blackstone River has historically been the manufacturing heartland of Rhode Island's northeast — textile, jewelry, and light manufacturing operations have transitioned over decades to warehouse and distribution uses, and that industrial real estate base now anchors the freight zone that connects Providence's northeastern edge to the I-95 and I-95's connector to Route 1 and Route 15 northbound into Massachusetts. Pawtucket carriers running Boston-area freight southbound frequently stage through the city's Route 1A and Fountain Street industrial corridors.\n\nVeritor Group helps sell Pawtucket trucking LLCs whether you're running Providence metro freight, MA-border staging lanes, or I-95 Northeast Corridor hauls. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
       whySell:
-        "Pawtucket's MA-border position means carriers here run some of the most active freight lanes in Rhode Island — Providence-to-Boston corridor freight is consistently high-demand. That operating history has real dollar value today. A direct buyer captures it in a single wire transaction without broker delay.",
+        "Pawtucket's MA-border position means carriers here run some of the most active freight lanes in Rhode Island — Providence-to-Boston corridor freight is consistently high-demand. That operating history has real dollar value today. Selling captures it in a single wire transaction.",
       keywords: [
         "sell trucking LLC Pawtucket Rhode Island",
         "trucking company buyer Pawtucket RI",
-        "sell MC authority Pawtucket Rhode Island",
+        "Pawtucket trucking LLC sale",
         "owner operator exit Pawtucket RI",
         "sell logistics LLC Pawtucket Rhode Island",
         "Pawtucket Rhode Island trucking acquisition",
@@ -251,8 +251,8 @@ export const rhodeIsland: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Pawtucket LLCs running the Providence-to-Boston corridor?",
-          a: "Yes. The Providence-Boston I-95 corridor is one of the most active freight lanes in New England, and Pawtucket-based carriers running it have documented, high-frequency operating history. That's a strong positive in diligence. Standard acquisition, strong operating profile.",
+          q: "Do Pawtucket LLCs running the Providence-to-Boston corridor qualify?",
+          a: "Yes. The Providence-Boston I-95 corridor is one of the most active freight lanes in New England, and Pawtucket-based carriers running it have documented, high-frequency operating history. That's a strong positive in diligence. A standard fit, with a strong operating profile.",
         },
         {
           q: "My Pawtucket LLC regularly runs Massachusetts lanes. Does cross-state history help?",
@@ -268,7 +268,7 @@ export const rhodeIsland: StateData = {
         },
         {
           q: "What banks process your wires in Pawtucket?",
-          a: "We wire to whatever bank you already use. Citizens Bank, Santander, and Washington Trust all have Pawtucket-area branches. Funds transfer same-day at closing. No new accounts or arrangements needed.",
+          a: "Closing happens at whatever bank you already use. Citizens Bank, Santander, and Washington Trust all have Pawtucket-area branches. Funds transfer same-day at closing. No new accounts or arrangements needed.",
         },
       ],
       nearbySlugs: ["providence", "cranston", "warwick"],
@@ -278,19 +278,19 @@ export const rhodeIsland: StateData = {
       name: "East Providence",
       metaTitle: "Sell Your Trucking LLC in East Providence, RI | Veritor",
       metaDescription:
-        "East Providence RI trucking LLC? Veritor Group buys direct — petroleum terminal corridor, I-195 access, Providence metro. Wire in 3–5 days.",
+        "East Providence RI trucking LLC? Veritor Group can help you sell — petroleum terminal corridor, I-195 access, Providence metro. Written offer in 24 hours, close in 3–5 days.",
       heroLine1: "Petroleum terminal freight on the Seekonk River.",
-      heroLine2: "We buy East Providence trucking LLCs.",
+      heroLine2: "Sell your East Providence trucking LLC.",
       heroSubhead:
-        "East Providence sits at the Seekonk River terminal zone — a concentrated petroleum distribution corridor adjacent to the Port of Providence. Veritor Group buys direct.",
+        "East Providence sits at the Seekonk River terminal zone — a concentrated petroleum distribution corridor adjacent to the Port of Providence. Veritor Group can help you sell.",
       intro:
-        "East Providence occupies a unique position in the Rhode Island freight market: it sits at the confluence of the Seekonk River and Providence Harbor, directly adjacent to the petroleum terminal infrastructure that defines the Port of Providence's freight character. The Wampanoag Trail and Allens Avenue industrial corridors on the Providence-East Providence border handle fuel storage, distribution staging, and bulk commodity transfer operations that generate specialized tanker and distribution freight demand on both sides of the river.\n\nI-195 passes through East Providence, connecting the city east toward Fall River, New Bedford, and southeastern Massachusetts — a corridor that gives East Providence carriers access to the densely industrialized South Coast Massachusetts market without needing to route through Providence proper. Route 44 and Route 6 provide additional connectivity north toward Attleboro and west across the Henderson Bridge into downtown Providence.\n\nVeritor Group buys East Providence trucking LLCs whether you're running petroleum distribution lanes, I-195 Southeast MA freight, or Providence harbor-adjacent general freight. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
+        "East Providence occupies a unique position in the Rhode Island freight market: it sits at the confluence of the Seekonk River and Providence Harbor, directly adjacent to the petroleum terminal infrastructure that defines the Port of Providence's freight character. The Wampanoag Trail and Allens Avenue industrial corridors on the Providence-East Providence border handle fuel storage, distribution staging, and bulk commodity transfer operations that generate specialized tanker and distribution freight demand on both sides of the river.\n\nI-195 passes through East Providence, connecting the city east toward Fall River, New Bedford, and southeastern Massachusetts — a corridor that gives East Providence carriers access to the densely industrialized South Coast Massachusetts market without needing to route through Providence proper. Route 44 and Route 6 provide additional connectivity north toward Attleboro and west across the Henderson Bridge into downtown Providence.\n\nVeritor Group helps sell East Providence trucking LLCs whether you're running petroleum distribution lanes, I-195 Southeast MA freight, or Providence harbor-adjacent general freight. Submit your MC/DOT and we'll return a written offer within 24 hours. Wire closes in 3–5 days.",
       whySell:
-        "East Providence carriers running petroleum distribution have some of the most specialized, consistently documented lane histories in Rhode Island. That operating record — tied to active terminal operations on the Seekonk River — has real dollar value. A direct buyer converts it to a wire transfer without a listing process or broker middleman.",
+        "East Providence carriers running petroleum distribution have some of the most specialized, consistently documented lane histories in Rhode Island. That operating record — tied to active terminal operations on the Seekonk River — has real dollar value. Selling converts it to a wire transfer without a listing process.",
       keywords: [
         "sell trucking LLC East Providence Rhode Island",
         "trucking company buyer East Providence RI",
-        "sell MC authority East Providence Rhode Island",
+        "East Providence trucking LLC sale",
         "owner operator exit East Providence RI",
         "sell logistics LLC East Providence Rhode Island",
         "East Providence Rhode Island trucking acquisition",
@@ -305,8 +305,8 @@ export const rhodeIsland: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy East Providence carriers running petroleum terminal distribution?",
-          a: "Yes. Petroleum distribution from the Seekonk River terminal zone is specialized operating history — it documents consistent, high-frequency use of the authority on established port-origination lanes. We buy tanker distribution LLCs and evaluate them on standard criteria: MC authority age, FMCSA record, and LLC standing.",
+          q: "Do East Providence carriers running petroleum terminal distribution qualify?",
+          a: "Yes. Petroleum distribution from the Seekonk River terminal zone is specialized operating history — it documents consistent, high-frequency use of the authority on established port-origination lanes. Tanker distribution LLCs are evaluated on standard criteria: MC authority age, FMCSA record, and LLC standing.",
         },
         {
           q: "My East Providence LLC runs the I-195 corridor into southeastern Massachusetts. Does that cross-state lane matter?",
@@ -322,7 +322,7 @@ export const rhodeIsland: StateData = {
         },
         {
           q: "What banks handle closings for East Providence sellers?",
-          a: "We wire to whatever bank you already use. Citizens Bank, Washington Trust, and Santander all have East Providence and Providence metro presence. Funds transfer same-day at closing — no new accounts or special arrangements needed.",
+          a: "Closing happens at whatever bank you already use. Citizens Bank, Washington Trust, and Santander all have East Providence and Providence metro presence. Funds transfer same-day at closing — no new accounts or special arrangements needed.",
         },
       ],
       nearbySlugs: ["providence", "cranston", "pawtucket"],

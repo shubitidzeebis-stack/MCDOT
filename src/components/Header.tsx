@@ -20,7 +20,7 @@ export function Header({ locale = "en" as Locale }: { locale?: Locale }) {
     { label: t.nav.whyUs, href: `${prefix}/why-veritor` },
     ...(locale === "en"
       ? [
-          { label: "Operators vs Brokers", href: "/operators-vs-brokers" },
+          { label: "Selling Safely", href: "/operators-vs-brokers" },
           { label: t.nav.about, href: "/about" },
           { label: "Closing stories", href: "/case-studies" },
           { label: "Areas", href: "/areas" },

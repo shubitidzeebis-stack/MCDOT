@@ -138,7 +138,7 @@ export const sellerNurtureStep2: TemplateFn = (c) => {
     `   The LLC itself, MC + DOT records, EIN, broker setups, company phone, company email, company bank account, and the Amazon Relay contract if applicable. Trucks transfer only if they're titled to the LLC and you want them to.`,
     ``,
     `3. "How do I know you're not a scam?"`,
-    `   Three checks: written purchase agreement (never verbal), funds wire through an attorney's escrow account (not direct to a person), we operate the LLC after closing (not flip it). Trade press has documented rings buying authorities for cargo theft schemes — those operations refuse legal counsel and offer cash. We do neither.`,
+    `   Three checks: a written purchase agreement, never a verbal handshake; funds move through a closing attorney's escrow account, never cash, never person to person; and the money lands as the documents execute, not after you've handed the company over. Trade press has documented rings buying authorities for cargo theft schemes — those operations skip the paperwork and deal in cash. We do neither.`,
     ``,
     `Read the full FAQ: ${SITE_URL}/faq`,
     ``,
@@ -169,10 +169,10 @@ export const sellerNurtureStep2: TemplateFn = (c) => {
       </p>
       <p style="${STYLE.paragraph}"><strong style="${STYLE.strong}">3. &ldquo;How do I know you&rsquo;re not a scam?&rdquo;</strong></p>
       <p style="${STYLE.paragraphMuted}">
-        Three checks: written purchase agreement (never verbal), funds wire through an
-        attorney&rsquo;s escrow account (not direct to a person), and we operate the LLC after
-        closing (not flip it). Operations refusing legal counsel and offering cash are the ones
-        you avoid. We do neither.
+        Three checks: a written purchase agreement, never a verbal handshake; funds move through
+        a closing attorney&rsquo;s escrow account, never cash, never person to person; and the money
+        lands as the documents execute, not after you&rsquo;ve handed the company over. Operations
+        that skip the paperwork and deal in cash are the ones you avoid. We do neither.
       </p>
     `,
   });
@@ -194,7 +194,7 @@ export const sellerNurtureStep3: TemplateFn = (c) => {
     ``,
     `Day 2-3 — Diligence. Tax filings current, no undisclosed liens, violation history matches. Our legal counsel drafts the purchase agreement (we pay those fees, not you).`,
     ``,
-    `Day 3-5 — In-person closing at your bank. We meet face-to-face at your bank — typically the one attached to your Amazon Relay payments — sign the final agreement, update signatories at the counter, and wire the closing payment from our account to yours while we're standing there together. You walk out with funds, we walk out with the LLC. No remote signing, no waiting for wires to clear out of sight.`,
+    `Day 3-5 — In-person closing at your bank. We meet face-to-face at your bank — typically the one attached to your Amazon Relay payments — sign the final agreement, update signatories at the counter, and the closing payment moves through the closing attorney's escrow account into yours while we're standing there together. You walk out with funds in your account and a signed agreement in hand. No remote signing, no waiting for wires to clear out of sight.`,
     ``,
     `Bottlenecks are usually outside our control: bank takes a day to update signatories, lender consent on a loan payoff, FMCSA portal access transfer. We've seen all of these and we know how to handle them.`,
     ``,

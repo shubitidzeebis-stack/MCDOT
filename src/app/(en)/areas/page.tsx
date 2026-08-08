@@ -11,12 +11,12 @@ import { AreasHeroText } from "@/components/areas/AreasHeroText";
 
 export const metadata: Metadata = {
   title: "Areas We Cover — Sell Your Trucking LLC Nationwide",
-  description: "Veritor Group buys trucking LLCs and logistics companies in all 50 states. Find your state and get a cash offer in 24 hours.",
+  description: "Sell your trucking company in any of the 50 states. Find your state, get a free FMCSA valuation and a written offer in 24 hours.",
   keywords: [
     "sell trucking LLC by state",
     "trucking company buyer nationwide",
     "sell logistics LLC near me",
-    "trucking LLC acquisition USA",
+    "sell trucking company USA",
     "sell Amazon Relay carrier by state",
     "owner operator exit by state",
     "trucking business buyer United States",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/areas" },
   openGraph: {
     title: "Areas We Cover | Veritor Group",
-    description: "All 50 states. 300+ cities. Direct buyer — not a broker. Wire transfer at your bank.",
+    description: "All 50 states. 300+ cities. Written offer in 24 hours, wire at your own bank, you keep 100% of the number.",
     url: "/areas",
     images: [DEFAULT_OG_IMAGE],
   },
@@ -73,7 +73,7 @@ export default function AreasPage() {
             <div className="mt-16 md:mt-20 rounded-2xl border border-[#ff8a1a]/20 bg-[#ff8a1a]/[0.04] p-8 md:p-12 text-center">
               <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#ff8a1a] mb-4 md:text-[11px]">Ready to sell?</p>
               <h2 className="text-2xl font-semibold text-white md:text-3xl mb-4">Don&rsquo;t see your city?</h2>
-              <p className="text-[15px] text-white/60 max-w-md mx-auto mb-8">We buy trucking LLCs from all 50 states. If your state isn&rsquo;t listed, we still want to hear from you.</p>
+              <p className="text-[15px] text-white/60 max-w-md mx-auto mb-8">Trucking companies sell from all 50 states. If your state isn&rsquo;t listed, we still want to hear from you.</p>
               <Link
                 href="/get-offer"
                 className="inline-flex rounded-full border border-[#ff8a1a]/40 bg-[#ff8a1a]/10 px-7 py-3 text-[15px] font-medium text-[#ffb371] backdrop-blur-md transition-all duration-300 hover:border-[#ff8a1a]/70 hover:bg-[#ff8a1a]/20"

@@ -92,7 +92,7 @@ export default async function StatePage({
                     { label: "Cities covered", value: `${stateData.cities.length}` },
                     { label: "Average close", value: "3–5 business days" },
                     { label: "Wire transfer", value: "At your bank" },
-                    { label: "Broker fees", value: "None — we're the buyer" },
+                    { label: "Fees & commission", value: "None — you keep 100%" },
                   ].map((fact) => (
                     <div key={fact.label} className="flex justify-between items-center py-3 border-b border-white/8 last:border-0">
                       <span className="text-sm text-white/50">{fact.label}</span>

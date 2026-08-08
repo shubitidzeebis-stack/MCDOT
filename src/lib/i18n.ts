@@ -226,11 +226,11 @@ export const DICT: Record<Locale, Dict> = {
       cta: "Get an offer",
     },
     hero: {
-      eyebrow: "US Logistics LLC Acquisitions",
+      eyebrow: "US Trucking Company Sales",
       headlineLine1: "Sell your trucking LLC.",
       headlineLine2: "Closed in 3–5 business days.",
       subhead:
-        "Veritor Group acquires US logistics LLCs — including those with active Amazon Relay contracts. Clean process. Fair offer. We handle the transfer.",
+        "Veritor Group handles the sale of US trucking companies end to end — including carriers running Amazon Relay. Written offer, in-person closing, full transfer handled. You keep 100% of the number you accept.",
       ctaPrimary: "Get a free valuation",
       ctaSecondary: "How it works",
       lookupMc: "MC",
@@ -242,33 +242,33 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Track record",
-      acquisitionsLabel: "LLCs closed",
+      acquisitionsLabel: "Sales closed",
       closeLabel: "Average close",
       closeValue: "3–5 business days",
-      yearsLabel: "Years acquiring",
+      yearsLabel: "Years doing this",
     },
     requirements: {
-      eyebrow: "What we buy",
+      eyebrow: "What qualifies",
       headline1: "Clear requirements.",
       headline2: "No guesswork.",
       intro:
-        "We make offers on LLCs that fit one of two profiles. If your company matches either, we want to hear from you.",
+        "A written offer comes back on companies that fit one of two profiles. If yours matches either, we want to hear from you. If it doesn't, you'll hear that straight — same day, no runaround.",
       withRelay: {
-        title: "LLCs that already have Amazon Relay",
+        title: "Companies already running Amazon Relay",
         items: [
-          "Active or inactive insurance — both work",
-          "Valid MC number, in good standing",
           "Active Amazon Relay contract on the LLC",
-          "Clean violation history",
+          "Insurance can be lapsed — Relay access resumes once coverage is re-bound",
+          "MC authority active and in good standing",
+          "Safety rating Satisfactory or unrated — not Conditional",
         ],
       },
       withoutRelay: {
-        title: "LLCs without Amazon Relay",
+        title: "Companies not on Amazon Relay yet",
         items: [
-          "Active insurance policy in force",
-          "MC authority + insurance active for at least 6 months (180+ days)",
-          "MC authority in good standing",
-          "Clean violation history",
+          "MC authority and insurance continuously active 180+ days",
+          "Insurance in force right now, no current lapse",
+          "MC authority active and in good standing",
+          "Safety rating Satisfactory or unrated, clean violation history",
         ],
       },
       transferTitle: "What transfers at closing",
@@ -292,38 +292,38 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Get a free valuation",
-          body: "We respond within hours, every day of the week. If your LLC fits, we make a written offer.",
+          body: "We respond within hours, every day of the week. If your company qualifies, a written offer comes back to you.",
         },
         {
           title: "Sign and verify",
-          body: "Standard purchase agreement, light document review, no surprises. We pay legal on our side.",
+          body: "Standard purchase agreement, light document review, no surprises. Legal costs don't come out of your number.",
         },
         {
           title: "Meet at the bank",
-          body: "We meet you at your bank, sign in person, and the wire goes from our account to yours at the counter. You walk out with funds.",
+          body: "Meet us at your bank and sign in person, or run it remotely if that's easier. Either way the funds land as the documents execute — through attorney escrow, never after.",
         },
       ],
     },
     why: {
       eyebrow: "Why Veritor",
-      headline1: "Operators buying from operators.",
-      headline2: "Not brokers. Not flippers.",
+      headline1: "Sold safely.",
+      headline2: "Documented start to finish.",
       points: [
         {
-          title: "We close fast — and we close.",
-          body: "Average close in 3–5 business days. We've done this 400+ times. Funds are ready before we make the offer.",
+          title: "Written agreement, never a handshake.",
+          body: "Every deal runs on a signed purchase agreement. No verbal number that shrinks at the table, no last-minute price drop. If someone offers you cash on a phone call, that is the warning sign.",
         },
         {
-          title: "Fair, written offers.",
-          body: "Every number is on paper. No verbal promises that change at closing. No last-minute price drops.",
+          title: "Funds move through attorney escrow.",
+          body: "Money goes through a closing attorney's escrow account, not person to person. That single detail is the clearest line between a real sale and a fraud setup.",
         },
         {
-          title: "We handle the transfer.",
-          body: "LLC paperwork, MC re-registration, phone / email / bank handover — we drive every step so you don't have to.",
+          title: "The paperwork actually changes hands.",
+          body: "Secretary of State records and the EIN responsible party are updated to the new owner. The company stops being yours on paper, not just in conversation.",
         },
         {
           title: "Discretion by default.",
-          body: "We never disclose seller identity to drivers, dispatchers, or competitors. Confidentiality is standard.",
+          body: "Your identity stays private — nothing disclosed to drivers, dispatchers, or competitors. Confidentiality is standard, and 400+ closings back it up.",
         },
       ],
     },
@@ -336,19 +336,19 @@ export const DICT: Record<Locale, Dict> = {
       categories: [
         {
           id: "qualifying",
-          label: "Does my LLC qualify?",
+          label: "Does my company qualify?",
           questions: [
             {
               q: "Can I sell if my MC authority is registered to me personally (sole proprietor / SSN)?",
-              a: "No. FMCSA authority registered to a sole proprietor under your SSN can't be transferred — it's tied to you personally, not to a sellable entity. Authority issued to an LLC or corporation is what we acquire, because the entity itself is what changes hands. If you're operating as a sole prop, the path is to wind down and re-apply under a new entity rather than to sell the existing authority.",
+              a: "No. Authority registered to a sole proprietor under your SSN is tied to you personally, not to a sellable entity, so there's nothing to hand over. Authority held by an LLC or corporation is what changes hands, because the entity itself is what's sold. If you're operating as a sole prop, the honest answer is that this isn't a fit.",
             },
             {
-              q: "Does my LLC qualify if it's only one truck?",
-              a: "Yes. Fleet size doesn't determine whether we'll buy — we acquire single-truck LLCs all the time. What matters is the LLC's authority status, insurance, Amazon Relay status (if any), and violation history. Pricing for single-truck LLCs is lower than multi-truck operations, but the structure is the same.",
+              q: "Does my company qualify if it's only one truck?",
+              a: "Yes. Fleet size isn't what decides it — single-truck companies go through all the time. What matters is authority status, insurance, Amazon Relay status if any, and violation history. A single-truck company prices lower than a multi-truck operation, but the process is identical.",
             },
             {
               q: "What if my MC authority is currently inactive?",
-              a: "If the LLC has an active Amazon Relay contract, inactive authority is workable — we re-bind insurance and reactivate authority as part of closing. If there's no Relay contract, we generally need the authority to be active, because reactivation alone doesn't give us the operating history we need to onboard with freight networks. Authorities inactive for more than 12 months are usually beyond reactivation by FMCSA.",
+              a: "If the LLC has an active Amazon Relay contract, inactive authority is workable — coverage is re-bound and the authority reactivated as part of closing. Without a Relay contract, the authority generally needs to be active, because reactivation alone doesn't produce the continuous operating history freight networks look for. Authorities inactive for more than 12 months are usually beyond reactivation by FMCSA.",
             },
             {
               q: "Can I sell only the MC number and keep the LLC?",
@@ -356,7 +356,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "I have multiple LLCs — can I sell some and keep others?",
-              a: "Yes. Each LLC is a separate legal entity and we treat each one independently. Sellers with multi-LLC books often sell one or two and keep the rest — there's nothing in our process that requires all-or-nothing.",
+              a: "Yes. Each LLC is a separate legal entity and each is handled independently. Sellers with several often sell one or two and keep the rest — nothing here is all-or-nothing.",
             },
           ],
         },
@@ -366,7 +366,7 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "How much is my MC authority worth?",
-              a: "It depends on five real variables, in rough order of impact: whether the LLC has an active Amazon Relay contract (biggest single factor), MC authority age, insurance status, violation history, and any active loans. A clean LLC with active Relay typically trades in a much higher band than a fresh non-Relay MC. We give a written number per LLC after a quick FMCSA pull — that's the only honest way to price it.",
+              a: "It depends on five real variables, in rough order of impact: whether the LLC has an active Amazon Relay contract (biggest single factor), MC authority age, insurance status, violation history, and any active loans. A clean company with active Relay trades in a much higher band than a fresh non-Relay authority. A written number comes back after a quick FMCSA pull — that's the only honest way to price it.",
             },
             {
               q: "What raises my LLC's value the most?",
@@ -378,7 +378,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Asset sale or stock sale — what's the difference?",
-              a: "A stock (equity) sale transfers the LLC itself with all its authorities, EIN, history, and contracts intact. An asset sale transfers specific items (trucks, equipment, contracts) but not the LLC. We do equity sales because that's what preserves the MC, DOT, EIN, broker setups, and Amazon Relay contract. Asset sales force the buyer to set up fresh authority — which usually isn't what we're after.",
+              a: "An equity sale transfers the LLC itself, with its authority, EIN, history, and contracts intact. An asset sale moves only specific items — trucks, equipment — and leaves the company behind. These are equity sales, because that's the only structure that preserves what makes a trucking company worth anything. The mechanics get walked through on the call.",
             },
             {
               q: "Does niche freight (reefer, flatbed, hazmat) change the price?",
@@ -396,15 +396,11 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "What are the actual steps?",
-              a: "Four main stages: (1) you submit your LLC details and we come back with a written offer; (2) we sign a short letter of intent and complete diligence; (3) we sign the Membership Interest Purchase Agreement and any related state filings; (4) closing wire goes out, and the LLC, MC, DOT, phone, email, and bank account hand over to us. Post-close, we drive the FMCSA notification, drug-consortium handover, and any state-level registration updates.",
+              a: "Four main stages: (1) you submit your company details and a written offer comes back; (2) a short letter of intent is signed and diligence runs; (3) the Membership Interest Purchase Agreement is signed, along with any related state filings; (4) the closing wire goes out and the LLC, phone, email, and bank account hand over. Post-close, the state-level registration updates and the drug-consortium handover are driven for you — you're not left chasing paperwork.",
             },
             {
               q: "Do I have to file anything with FMCSA myself?",
-              a: "Not really. Since 2013, FMCSA no longer requires a formal $300 application or filing for an ownership change of an LLC that holds operating authority. Both parties are asked to notify FMCSA of the change, and we handle that filing on your behalf. You may need to sign one or two state-level forms (membership amendment, statement of change) depending on the LLC's state of registration.",
-            },
-            {
-              q: "Once we close, how quickly can the LLC run loads under our ownership?",
-              a: "Same week, in most cases. The MC authority itself stays active because the entity didn't change — only the membership did. We file the new insurance certificate (BMC-91 or BMC-32) and update the BOC-3 process agent on day one of new ownership, and Amazon Relay (if applicable) sees continuity rather than a transfer event.",
+              a: "No. You'll sign one or two state-level documents depending on where the LLC is registered, and those are prepared for you. There's been no FMCSA transfer application or fee for an ownership change since 2013. Everything else is walked through on the call, step by step, before you sign anything.",
             },
           ],
         },
@@ -413,20 +409,16 @@ export const DICT: Record<Locale, Dict> = {
           label: "What transfers at closing",
           questions: [
             {
-              q: "Does my DOT number transfer to you?",
-              a: "Yes, because we do equity sales. DOT and MC numbers stay with the LLC entity. In an asset sale they wouldn't — the buyer would need a new DOT — but that's not how our deals are structured.",
+              q: "Does my DOT and MC number transfer?",
+              a: "Yes. DOT and MC numbers stay with the LLC entity, and the entity is what's sold — that's the whole reason these are structured as equity sales rather than asset sales.",
             },
             {
               q: "Does my EIN transfer?",
-              a: "Yes. The LLC's EIN stays with the LLC because the entity itself doesn't dissolve. We file Form 8822-B with the IRS post-close to update the responsible party. Note: this also means you can't reuse the same EIN for a future business — once an EIN is issued to an entity, it stays there for the life of the entity.",
-            },
-            {
-              q: "What about my broker setups, rate confirmations, and packets?",
-              a: "Broker setups carry forward when the LLC is sold intact, because brokers have set you up under the LLC's MC, DOT, and EIN. We don't need to re-onboard with each broker. Some broker contracts have anti-assignment or change-of-control clauses that technically require notice — we handle that as part of post-close cleanup.",
+              a: "Yes. The EIN stays with the LLC because the entity itself never dissolves. One consequence worth knowing: you can't reuse that EIN for a future business — once issued to an entity, it stays with that entity for life.",
             },
             {
               q: "What about my company phone, email, MyRelay login, ELD account?",
-              a: "All transferable as part of closing — and we want them. The phone number is non-negotiable for us; an LLC without its phone is missing half its operational continuity. Email accounts (Gmail Workspace or domain-attached) port through admin access. MyRelay logins update with the new ownership. ELD subscriptions either transfer or get migrated to our provider.",
+              a: "All of it transfers as part of closing, and it all matters — a company without its phone number is missing half its operating continuity. Exactly what hands over and when is covered on the call, so nothing catches you out on closing day.",
             },
             {
               q: "Do my trucks transfer with the LLC?",
@@ -440,19 +432,15 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Can I sell if I still have a loan on a truck?",
-              a: "Yes, if the truck is titled to the LLC and the lien is paid off at closing. We coordinate the payoff wire directly with your lender — the purchase price splits between the lender (for payoff) and you (for the remainder). If you want to keep the truck, you keep both the truck and the loan, and we exclude the truck from the LLC sale.",
+              a: "Yes, if the truck is titled to the LLC and the lien is paid off at closing. The payoff is coordinated directly with your lender: the price splits between the lender and you, and you get the remainder. If you'd rather keep the truck, you keep the truck and the loan, and it's excluded from the sale.",
             },
             {
-              q: "Do you take on my factoring relationship?",
-              a: "We can. Factoring relationships sit on UCC liens against the LLC, so we have to address them at closing — either by paying off the line and closing the relationship, or by transferring it under our ownership. Most often we pay it off because we have our own factoring on better terms, but each deal is structured to fit.",
-            },
-            {
-              q: "If you buy the LLC in a stock sale, do you assume my debts?",
-              a: "Equity sales do come with the LLC's existing liabilities, which is why diligence matters. We don't take on undisclosed debt — your purchase agreement includes a representation that you've disclosed all liabilities and an indemnification if something undisclosed surfaces post-close. Disclose everything up front and the structure is clean.",
+              q: "Do I have to sort out my factoring line first?",
+              a: "No. Factoring sits on a UCC lien against the LLC, so it gets addressed at closing — usually paid off, occasionally carried over. Either way it's structured before you sign, not left as a surprise afterwards.",
             },
             {
               q: "What happens to my insurance policy at closing?",
-              a: "If your policy is active, we either re-bind it under new ownership with the existing carrier or transfer to one of ours. If it's lapsed, we re-bind from scratch — the LLC is briefly without coverage during the transition, but we time the new BMC-91 filing to land within 24 hours of closing. You're not on the hook for coverage post-close.",
+              a: "Active policies are re-bound under the new ownership or replaced. Lapsed coverage is bound from scratch, timed to land within 24 hours of closing. Either way you're not on the hook for coverage after the sale.",
             },
           ],
         },
@@ -462,19 +450,19 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Can the Amazon Relay contract actually transfer?",
-              a: "Indirectly, yes — by selling the LLC that holds the contract. Amazon Relay contracts are bound to the carrier (LLC), not to you personally. When the LLC's membership changes hands, the contract continues. Amazon's 2026 verification rules require disclosure of beneficial-owner changes, so we always notify Amazon through proper channels rather than letting the change appear as a quiet transfer — undisclosed changes are a terminable offense under their terms.",
+              a: "The contract is held by the carrier — the LLC — not by you personally, which is why selling the company is the only path that keeps it intact. Selling an MC number on its own is prohibited by FMCSA and destroys the value anyway. Exactly how it plays out depends on your account, your scorecard, and how the entity is set up, and that's a conversation worth having on a call rather than a paragraph on a web page. What we can tell you plainly: an active Relay contract is the single biggest thing that moves your number.",
             },
             {
               q: "Does my Amazon scorecard / performance history carry over?",
-              a: "Yes. Performance scores are bound to the carrier ID, and the carrier ID stays with the LLC. Your tier, your acceptance rate, your on-time delivery score — all of it survives the ownership change and continues under our operation. Amazon recalculates scores on a 12-month rolling basis, so any regressions take time to surface, and any history of strong performance is real value we factor into the offer.",
+              a: "Performance history is bound to the carrier ID, and the carrier ID belongs to the LLC — it isn't re-issued when the company changes owners. Amazon recalculates on a 12-month rolling basis, so a strong record carries real weight and is one of the things that pushes a valuation up. We'll walk through what your specific scorecard is worth on the call.",
             },
             {
               q: "Is Amazon Relay the same as Amazon DSP? I'm confused.",
-              a: "They're completely different and not interchangeable. Amazon Relay is for independent trucking carriers (Class 8) hauling middle-mile and long-haul freight between Amazon facilities. DSP (Delivery Service Partner) is the last-mile branded-van program with employee drivers. We acquire Relay carriers; we don't acquire DSPs, and DSP accounts are explicitly non-transferable under Amazon's rules.",
+              a: "They're completely different and not interchangeable. Amazon Relay is for independent trucking carriers (Class 8) hauling middle-mile and long-haul freight between Amazon facilities. DSP (Delivery Service Partner) is the last-mile branded-van program with employee drivers. Relay carriers are what this is about — a DSP account is explicitly non-transferable under Amazon's rules and can't be sold this way at all.",
             },
             {
               q: "How much extra is my LLC worth because it has Amazon Relay?",
-              a: "A lot — the Relay contract is the primary driver of price for a Relay carrier. That said, be wary of buyers who claim Relay alone adds $20K–$30K on top of an otherwise modest LLC. Real Relay value depends on the contract status, scorecard, lane assignments, and load volume — not on the existence of the account itself. We price Relay based on the actual operating data we can verify.",
+              a: "A lot — the Relay contract is the primary driver of price for a Relay carrier. That said, be wary of anyone who claims Relay alone adds $20K–$30K on top of an otherwise modest company. Real Relay value depends on contract status, scorecard, lane assignments, and load volume — not on the existence of the account itself. Relay gets priced off the actual operating data we can verify, not off the fact that the account exists.",
             },
           ],
         },
@@ -484,19 +472,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "What happens to my drivers when the LLC sells?",
-              a: "Drivers are at-will employees of the LLC, so legally their employment continues under the new ownership unless one side terminates. In practice, we offer continued employment to drivers we want to retain on the same terms (or better), and your existing drivers can choose to stay or leave. Drug-consortium files transfer with the carrier, so there's no break in their compliance status.",
+              a: "Drivers are at-will employees of the LLC, so legally their employment continues under the new ownership unless one side terminates. In practice, drivers worth keeping are usually offered continued employment on the same terms or better, and they can choose to stay or leave. Drug-consortium files transfer with the carrier, so there's no break in their compliance status.",
             },
             {
-              q: "Do I need to give drivers WARN-Act notice?",
-              a: "Generally no for small-fleet sales. Federal WARN applies at 100+ employees with mass layoffs; most owner-operator LLCs are well below that threshold. Some states have lower thresholds — California, New York, New Jersey, Illinois — so check state law if you have 50+ drivers. For typical 1–20 truck fleets, WARN doesn't apply.",
-            },
-            {
-              q: "What about IFTA, IRP, 2290, drug consortium, ELD provider — do all of those transfer?",
-              a: "Yes, when the LLC stays intact (equity sale). IFTA license is base-state issued to the LLC and continues. IRP cab cards stay with the LLC. Form 2290 (HVUT) is paid annually and the LLC's filing status stays current — no refund needed. Drug consortium membership transfers; clearinghouse query history follows each driver. ELD provider account transfers with the entity. The only thing we typically reset is the consortium membership, because we move drivers to our consortium — but that happens cleanly post-close.",
-            },
-            {
-              q: "Can I get a Form 2290 (HVUT) refund for the unused months after sale?",
-              a: "If trucks transfer with the LLC, no — the LLC keeps operating those trucks under us. If you keep trucks personally and sell them later, then yes: file IRS Form 8849 Schedule 6 to claim a credit for the unused months on the 2290.",
+              q: "Do IFTA, IRP, 2290 and the drug consortium all carry over?",
+              a: "Yes — when the LLC stays intact, the registrations attached to it stay intact too. None of it is something you need to unwind or re-file yourself. The specifics for your setup get covered on the call.",
             },
           ],
         },
@@ -505,20 +485,20 @@ export const DICT: Record<Locale, Dict> = {
           label: "Risk & avoiding scams",
           questions: [
             {
-              q: "How do I know you're a legitimate buyer and not running a fraud scheme?",
-              a: "Three checks: (1) we provide a written purchase agreement, never a verbal handshake; (2) all funds wire through an attorney's escrow account, not direct to a person; (3) we operate the LLC after closing — we don't disappear with the authority and use it for double-brokering. Trade press (Overdrive, CCJ) has documented rings buying authorities for cargo theft schemes — those operations refuse legal counsel, refuse escrow, and offer cash. We do none of that.",
+              q: "How do I know this is legitimate and not a fraud scheme?",
+              a: "Three checks — and use them on anyone you deal with, not just us. (1) There is a written purchase agreement, never a verbal handshake. (2) Funds move through a closing attorney's escrow account, not person to person, and never in cash. (3) The money lands as the documents execute — escrow releases on signature, rather than you handing over the company and waiting. Trade press (Overdrive, CCJ) has documented rings acquiring authorities for cargo-theft and double-brokering schemes. Those operations refuse legal counsel, refuse escrow, push hard for speed, and offer cash. Every one of those three checks is something they won't agree to. Closing remotely, by the way, is not itself a warning sign — a remote closing run through escrow is perfectly legitimate and plenty of sellers prefer it. It's the order that matters, not the location.",
             },
             {
               q: "Will FMCSA inactivate my MC if it sees me 'selling' it?",
-              a: "Only if the transaction is structured as a sale of the number itself, which is prohibited. FMCSA explicitly inactivates authorities that are sold, leased, or transferred outside legitimate corporate transactions. The way we structure deals — equity sale of the LLC, with both parties notifying FMCSA of the ownership change — is the legitimate path FMCSA recognizes. We've never had an authority deactivated post-close.",
+              a: "Only if the transaction is structured as a sale of the number itself, which is prohibited. FMCSA explicitly inactivates authorities that are sold, leased, or transferred outside legitimate corporate transactions — and issued a bulletin saying exactly that in March 2026. The legitimate path FMCSA recognizes is an equity sale of the LLC itself, which is how these deals are structured. We've never had an authority deactivated post-close.",
             },
             {
-              q: "How do I protect myself from accidents or violations the buyer causes after closing?",
-              a: "Three legal mechanisms: (1) the purchase agreement includes a release of seller liability for post-close events; (2) we file the FMCSA ownership change with a clear effective date so any subsequent violation is documented under our ownership; (3) the LLC's insurance is re-bound under our name immediately, so claims arising after closing are against our policy, not yours. Your CDL, your personal driving record, and your name are completely separate from the LLC post-close.",
+              q: "How do I protect myself from what happens after closing?",
+              a: "The purchase agreement carries a release of seller liability for post-close events, and the closing has a clear effective date that draws the line. Your CDL and your personal driving record are separate from the company either way. The full picture — what's covered, what isn't, and what to confirm — is something we go through with you directly before you sign, not something to settle off a web page.",
             },
             {
               q: "How should payment be structured so I'm safe?",
-              a: "Wire transfer through escrow at closing — never partial payments, never seller financing for first-time buyers, never anything in cash. Our standard is funds go from us into the closing attorney's IOLTA escrow account, sign the documents, escrow releases the wire to your account same-day. If a buyer asks you to send the LLC documents before they wire funds, that's a flag.",
+              a: "Wire transfer through escrow at closing — never partial payments, never seller financing for a first-time buyer, never anything in cash. The standard is funds into the closing attorney's IOLTA escrow account, documents signed, escrow releases the wire to your account same day. If anyone asks you to hand over LLC documents before the funds move, that's a flag.",
             },
           ],
         },
@@ -528,11 +508,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "How is the sale taxed for me?",
-              a: "Equity sales held for more than 12 months generally qualify for long-term capital gains treatment on the gain over your basis in the LLC. Some portion may be taxed as ordinary income depending on how the purchase price is allocated (Form 8594) — particularly any part attributed to depreciable equipment that triggers depreciation recapture. Talk to a CPA familiar with trucking-business sales before closing — the structure of the deal directly affects your after-tax proceeds.",
+              a: "Held more than 12 months, an equity sale generally qualifies for long-term capital gains treatment on the gain over your basis — but part can be taxed as ordinary income depending on how the price is allocated. Talk to a CPA who knows trucking sales before you close. We're not going to give you tax advice on a web page, and anyone who does should worry you.",
             },
             {
               q: "Will my drivers, brokers, or competitors find out before closing?",
-              a: "Not from us. We sign a mutual NDA before diligence on request, and our standard practice is to keep the transaction confidential through closing. Brokers and Amazon don't get notified until closing, when the change is filed officially. The only parties who know during diligence are you, us, our respective lawyers, and any lender involved in a payoff.",
+              a: "Not from us. We sign a mutual NDA before diligence on request, and our standard practice is to keep the transaction confidential through closing. The only parties who know during diligence are you, us, the respective lawyers, and any lender involved in a payoff. Nothing is listed publicly, nothing is advertised, and your company is never shopped around.",
             },
             {
               q: "Can I open a new MC authority after I sell?",
@@ -587,7 +567,7 @@ export const DICT: Record<Locale, Dict> = {
       privacy: "Privacy",
       terms: "Terms",
       description:
-        "Veritor Group acquires US logistics LLCs — Amazon Relay specialists.",
+        "Veritor Group handles US trucking company sales — Amazon Relay specialists.",
     },
     wizard: {
       brandTag: "Free Valuation",
@@ -657,9 +637,9 @@ export const DICT: Record<Locale, Dict> = {
       ageBasis: "Authority age is based on the latest MCS-150 filing ({date}) — the best public proxy in FMCSA. Final age is confirmed on the call.",
       note: "Note:",
       floorNote:
-        "this caps the indicative valuation at our floor. We can still buy, but final terms will be confirmed on a call.",
+        "this caps the indicative valuation at our floor. There may still be a path here, but final terms have to be confirmed on a call.",
       indicativeBlock:
-        "This is an indicative range based on your FMCSA snapshot. Final offer is confirmed on a 15-minute call after we review your insurance, MC age, and contract status — then in writing within 48 hours.",
+        "This is an indicative range based on your FMCSA snapshot. Final offer is confirmed on a 15-minute call after we review your insurance, MC age, and contract status — then in writing within 24 hours.",
       haveQuestions: "Have questions? Contact us →",
       scheduleCall: "Schedule a call",
       nextAvailable: "Next available:",
@@ -686,11 +666,11 @@ export const DICT: Record<Locale, Dict> = {
       cta: "Recibir oferta",
     },
     hero: {
-      eyebrow: "Compra de LLCs de logística en EE. UU.",
+      eyebrow: "Venta de empresas de transporte en EE. UU.",
       headlineLine1: "Venda su LLC de transporte.",
-      headlineLine2: "Cerramos en 3–5 días hábiles.",
+      headlineLine2: "Cierre en 3–5 días hábiles.",
       subhead:
-        "Veritor Group adquiere LLCs de logística en EE. UU. — incluyendo aquellas con contrato activo de Amazon Relay. Proceso limpio. Oferta justa. Nosotros manejamos la transferencia.",
+        "Veritor Group gestiona la venta de empresas de transporte en EE. UU. de principio a fin — incluyendo transportistas con Amazon Relay activo. Oferta por escrito, cierre en persona, transferencia completa gestionada. Usted se queda con el 100% de la cifra que acepte.",
       ctaPrimary: "Valuación gratis",
       ctaSecondary: "Cómo funciona",
       lookupMc: "MC",
@@ -702,33 +682,33 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Trayectoria",
-      acquisitionsLabel: "LLCs cerradas",
+      acquisitionsLabel: "Ventas cerradas",
       closeLabel: "Cierre promedio",
       closeValue: "3–5 días hábiles",
       yearsLabel: "Años en el negocio",
     },
     requirements: {
-      eyebrow: "Qué compramos",
+      eyebrow: "Qué califica",
       headline1: "Requisitos claros.",
-      headline2: "Sin sorpresas.",
+      headline2: "Sin conjeturas.",
       intro:
-        "Hacemos ofertas a LLCs que cumplen uno de dos perfiles. Si su empresa cumple cualquiera de ellos, queremos hablar.",
+        "Recibe una oferta por escrito la empresa que encaje en uno de dos perfiles. Si el suyo encaja, queremos saber de usted. Si no, se lo decimos sin rodeos — el mismo día, sin darle vueltas.",
       withRelay: {
-        title: "LLCs que ya tienen Amazon Relay",
+        title: "Empresas que ya operan con Amazon Relay",
         items: [
-          "Seguro activo o inactivo — ambos funcionan",
-          "Número MC válido, sin problemas",
           "Contrato activo de Amazon Relay en la LLC",
-          "Historial de violaciones limpio",
+          "El seguro puede estar vencido — el acceso a Relay se reanuda al re-vincular la cobertura",
+          "Autoridad MC activa y en buen estado",
+          "Calificación de seguridad Satisfactoria o sin calificar — no Condicional",
         ],
       },
       withoutRelay: {
-        title: "LLCs sin Amazon Relay",
+        title: "Empresas que aún no están en Amazon Relay",
         items: [
-          "Póliza de seguro activa y vigente",
-          "MC autoridad y seguro activos al menos 6 meses (180+ días)",
-          "Autoridad MC en buen estado",
-          "Historial de violaciones limpio",
+          "Autoridad MC y seguro activos de forma continua por 180+ días",
+          "Seguro vigente en este momento, sin vencimiento actual",
+          "Autoridad MC activa y en buen estado",
+          "Calificación de seguridad Satisfactoria o sin calificar, historial de violaciones limpio",
         ],
       },
       transferTitle: "Lo que se transfiere al cierre",
@@ -738,7 +718,7 @@ export const DICT: Record<Locale, Dict> = {
         "Cuenta de correo electrónico de la empresa",
         "Cuenta bancaria / datos bancarios de la empresa",
         "Autoridad MC y registros DOT",
-        "No es necesario que la LLC esté libre de deudas — solo divúlguelas desde el principio",
+        "No se requiere que la LLC esté libre de préstamos activos — pero si existen, deben divulgarse desde el principio",
       ],
     },
     how: {
@@ -752,38 +732,38 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Reciba una valuación gratis",
-          body: "Respondemos en horas, todos los días de la semana. Si su LLC encaja, hacemos una oferta por escrito.",
+          body: "Respondemos en horas, todos los días de la semana. Si su empresa encaja, recibe una oferta por escrito.",
         },
         {
           title: "Firme y verifique",
-          body: "Contrato de compra estándar, revisión documental ligera, cero sorpresas. Pagamos los honorarios legales de nuestro lado.",
+          body: "Contrato de compra estándar, revisión documental ligera, cero sorpresas. Los costos legales no salen de su cifra.",
         },
         {
           title: "Cierre presencial en su banco",
-          body: "Nos reunimos en su banco, firmamos en persona, y la transferencia bancaria sale de nuestra cuenta a la suya en el mostrador. Sale con los fondos.",
+          body: "Nos reunimos en su banco y firmamos en persona, o lo hacemos a distancia si le resulta más cómodo. De cualquier forma, los fondos llegan en el momento en que se firman los documentos — a través de escrow de un abogado, nunca después.",
         },
       ],
     },
     why: {
       eyebrow: "Por qué Veritor",
-      headline1: "Operadores comprando a operadores.",
-      headline2: "No somos brokers. No revendemos.",
+      headline1: "Vendida con seguridad.",
+      headline2: "Documentado de principio a fin.",
       points: [
         {
-          title: "Cerramos rápido — y cerramos de verdad.",
-          body: "Cierre promedio en 3–5 días hábiles. Lo hemos hecho más de 400 veces. Los fondos están listos antes de hacer la oferta.",
+          title: "Contrato por escrito, nunca un apretón de manos.",
+          body: "Cada operación se cierra con un contrato de compraventa firmado. Nada de una cifra verbal que se reduce en la mesa, nada de bajadas de precio de último minuto. Si alguien le ofrece efectivo en una llamada, esa es la señal de alerta.",
         },
         {
-          title: "Ofertas justas y por escrito.",
-          body: "Cada número está en papel. Sin promesas verbales que cambian al cierre. Sin bajadas de precio de último minuto.",
+          title: "Los fondos se mueven por escrow de un abogado.",
+          body: "El dinero pasa por la cuenta de escrow de un abogado de cierre, no de persona a persona. Ese solo detalle es la línea más clara entre una venta real y un montaje fraudulento.",
         },
         {
-          title: "Nosotros manejamos la transferencia.",
-          body: "Papeleo de la LLC, re-registro MC, traspaso de teléfono / email / banco — guiamos cada paso para que usted no tenga que hacerlo.",
+          title: "El papeleo realmente cambia de manos.",
+          body: "Los registros del Secretary of State y el responsible party del EIN se actualizan al nuevo propietario. La empresa deja de ser suya en papel, no solo de palabra.",
         },
         {
-          title: "Discreción total.",
-          body: "Nunca revelamos la identidad del vendedor a choferes, dispatchers o competidores. Confidencialidad estándar.",
+          title: "Discreción por defecto.",
+          body: "Su identidad permanece privada — nada se revela a choferes, dispatchers o competidores. La confidencialidad es estándar, y más de 400 cierres lo respaldan.",
         },
       ],
     },
@@ -800,15 +780,15 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿Puedo vender si mi autoridad MC está registrada a mi nombre personal (sole proprietor / SSN)?",
-              a: "No. La autoridad de FMCSA registrada a un sole proprietor bajo su SSN no se puede transferir — está atada a usted personalmente, no a una entidad vendible. La autoridad emitida a una LLC o corporación es lo que adquirimos, porque la entidad misma es lo que cambia de manos. Si opera como sole prop, el camino es cerrar y volver a aplicar bajo una nueva entidad, no vender la autoridad existente.",
+              a: "No. La autoridad registrada a un sole proprietor bajo su SSN está atada a usted personalmente, no a una entidad que se pueda vender, así que no hay nada que transferir. La autoridad de una LLC o corporación es lo que cambia de manos, porque lo que se vende es la entidad misma. Si opera como sole prop, la respuesta honesta es que esto no encaja.",
             },
             {
               q: "¿Mi LLC califica si solo tengo un camión?",
-              a: "Sí. El tamaño de la flota no determina si compramos — adquirimos LLCs de un solo camión todo el tiempo. Lo que importa es el estado de la autoridad de la LLC, el seguro, el estado de Amazon Relay (si aplica) y el historial de violaciones. El precio para LLCs de un camión es menor que para operaciones con varios camiones, pero la estructura es la misma.",
+              a: "Sí. El tamaño de la flota no es lo que decide — empresas de un solo camión califican todo el tiempo. Lo que importa es el estado de la autoridad, el seguro, el estado de Amazon Relay (si aplica) y el historial de violaciones. Una empresa de un camión se valúa más bajo que una operación con varios camiones, pero el proceso es idéntico.",
             },
             {
               q: "¿Qué pasa si mi autoridad MC está actualmente inactiva?",
-              a: "Si la LLC tiene un contrato activo de Amazon Relay, la autoridad inactiva se puede manejar — re-vinculamos el seguro y reactivamos la autoridad como parte del cierre. Si no hay contrato de Relay, generalmente necesitamos la autoridad activa, porque la reactivación sola no nos da el historial operativo necesario para entrar en redes de carga. Las autoridades inactivas por más de 12 meses normalmente ya no se pueden reactivar con FMCSA.",
+              a: "Si la LLC tiene un contrato activo de Amazon Relay, la autoridad inactiva es manejable — la cobertura se re-vincula y la autoridad se reactiva como parte del cierre. Sin contrato de Relay, la autoridad generalmente necesita estar activa, porque la reactivación por sí sola no genera el historial operativo continuo que buscan las redes de carga. Las autoridades inactivas por más de 12 meses normalmente ya no se pueden reactivar con FMCSA.",
             },
             {
               q: "¿Puedo vender solo el número MC y quedarme con la LLC?",
@@ -816,7 +796,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Tengo varias LLCs — ¿puedo vender algunas y quedarme con otras?",
-              a: "Sí. Cada LLC es una entidad legal separada y tratamos cada una por su cuenta. Vendedores con varias LLCs muchas veces venden una o dos y mantienen el resto — no hay nada en nuestro proceso que requiera todo o nada.",
+              a: "Sí. Cada LLC es una entidad legal separada y cada una se maneja de forma independiente. Vendedores con varias LLCs muchas veces venden una o dos y mantienen el resto — aquí nada es todo o nada.",
             },
           ],
         },
@@ -826,7 +806,7 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿Cuánto vale mi autoridad MC?",
-              a: "Depende de cinco variables reales, en orden aproximado de impacto: si la LLC tiene un contrato activo de Amazon Relay (factor más grande), edad de la autoridad MC, estado del seguro, historial de violaciones, y cualquier préstamo activo. Una LLC limpia con Relay activo normalmente se opera en una banda mucho más alta que un MC nuevo sin Relay. Damos un número por escrito por LLC después de un FMCSA pull rápido — esa es la única manera honesta de ponerle precio.",
+              a: "Depende de cinco variables reales, en orden aproximado de impacto: si la LLC tiene un contrato activo de Amazon Relay (el factor más grande), la antigüedad de la autoridad MC, el estado del seguro, el historial de violaciones y cualquier préstamo activo. Una empresa limpia con Relay activo se ubica en una banda de precio mucho más alta que una autoridad nueva sin Relay. Un número por escrito llega después de una consulta rápida a FMCSA — esa es la única forma honesta de ponerle precio.",
             },
             {
               q: "¿Qué eleva más el valor de mi LLC?",
@@ -838,7 +818,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Asset sale o stock sale — ¿cuál es la diferencia?",
-              a: "Una stock sale (venta de capital) transfiere la LLC misma con todas sus autoridades, EIN, historial y contratos intactos. Una asset sale transfiere artículos específicos (camiones, equipo, contratos) pero no la LLC. Hacemos ventas de capital porque eso preserva el MC, DOT, EIN, broker setups y contrato de Amazon Relay. Las asset sales obligan al comprador a tramitar autoridad nueva — que normalmente no es lo que buscamos.",
+              a: "Una venta de capital (stock sale) transfiere la LLC misma, con su autoridad, EIN, historial y contratos intactos. Una venta de activos (asset sale) mueve solo artículos específicos —camiones, equipo— y deja la empresa atrás. Estas son ventas de capital, porque es la única estructura que conserva lo que le da valor a una empresa de transporte. La mecánica se explica en la llamada.",
             },
             {
               q: "¿La carga de nicho (reefer, flatbed, hazmat) cambia el precio?",
@@ -856,15 +836,11 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "¿Cuáles son los pasos exactos?",
-              a: "Cuatro etapas principales: (1) usted envía los datos de su LLC y le devolvemos una oferta por escrito; (2) firmamos una carta de intención corta y completamos la diligencia; (3) firmamos el Membership Interest Purchase Agreement y los formularios estatales relacionados; (4) sale el wire de cierre y se transfieren la LLC, MC, DOT, teléfono, email y cuenta bancaria a nosotros. Después del cierre, manejamos la notificación a FMCSA, traspaso del consorcio de drogas y cualquier actualización de registro estatal.",
+              a: "Cuatro etapas principales: (1) usted envía los datos de su empresa y recibe una oferta por escrito; (2) se firma una carta de intención breve y se completa la revisión de diligencia; (3) se firma el Membership Interest Purchase Agreement, junto con los formularios estatales relacionados; (4) sale el wire de cierre y se traspasan la LLC, el teléfono, el email y la cuenta bancaria. Después del cierre, la actualización del registro estatal y el traspaso del consorcio de drogas se coordinan por usted — no se queda persiguiendo papeleo.",
             },
             {
               q: "¿Tengo que presentar algo con FMCSA personalmente?",
-              a: "No realmente. Desde 2013, FMCSA ya no requiere una solicitud formal con tarifa de $300 ni un trámite específico para el cambio de propiedad de una LLC que tiene autoridad. Se pide a ambas partes que notifiquen a FMCSA del cambio, y nosotros manejamos esa presentación por usted. Puede que necesite firmar uno o dos formularios estatales (enmienda de membresía, declaración de cambio) según el estado de registro de la LLC.",
-            },
-            {
-              q: "Una vez que cerramos, ¿qué tan rápido la LLC puede correr cargas bajo nueva propiedad?",
-              a: "La misma semana, en la mayoría de los casos. La autoridad MC permanece activa porque la entidad no cambió — solo cambió la membresía. Presentamos el nuevo certificado de seguro (BMC-91 o BMC-32) y actualizamos el process agent BOC-3 el día uno bajo nueva propiedad, y Amazon Relay (si aplica) ve continuidad en lugar de un evento de transferencia.",
+              a: "No. Va a firmar uno o dos documentos a nivel estatal según dónde esté registrada la LLC, y esos se preparan para usted. Desde 2013 no existe solicitud de transferencia ni tarifa de FMCSA por un cambio de propiedad. Todo lo demás se explica en la llamada, paso a paso, antes de que firme nada.",
             },
           ],
         },
@@ -873,24 +849,20 @@ export const DICT: Record<Locale, Dict> = {
           label: "Qué se transfiere al cierre",
           questions: [
             {
-              q: "¿Mi número DOT se transfiere a ustedes?",
-              a: "Sí, porque hacemos ventas de capital. Los números DOT y MC se quedan con la entidad LLC. En una asset sale no se transferirían — el comprador necesitaría un DOT nuevo — pero así no estructuramos nuestras operaciones.",
+              q: "¿Mi número DOT y MC se transfieren?",
+              a: "Sí. Los números DOT y MC se quedan con la entidad LLC, y la entidad es lo que se vende — por eso estas operaciones se estructuran como ventas de capital y no como ventas de activos.",
             },
             {
               q: "¿Mi EIN se transfiere?",
-              a: "Sí. El EIN de la LLC se queda con la LLC porque la entidad en sí no se disuelve. Presentamos el Form 8822-B con el IRS después del cierre para actualizar el responsible party. Ojo: esto también significa que no puede reusar ese EIN para un negocio futuro — una vez que se emite un EIN a una entidad, se queda ahí de por vida.",
-            },
-            {
-              q: "¿Y mis broker setups, rate confirmations y packets?",
-              a: "Los broker setups continúan cuando la LLC se vende intacta, porque los brokers lo configuraron bajo el MC, DOT y EIN de la LLC. No tenemos que volver a darnos de alta con cada broker. Algunos contratos de broker tienen cláusulas de no asignación o cambio de control que técnicamente requieren aviso — manejamos eso como parte de la limpieza post-cierre.",
+              a: "Sí. El EIN se queda con la LLC porque la entidad nunca se disuelve. Algo que vale la pena saber: no puede reutilizar ese EIN para un negocio futuro — una vez que se emite a una entidad, se queda con ella de por vida.",
             },
             {
               q: "¿Qué pasa con el teléfono de la empresa, email, login de MyRelay, cuenta de ELD?",
-              a: "Todos transferibles como parte del cierre — y los queremos. El número de teléfono no es negociable para nosotros; una LLC sin su teléfono pierde la mitad de su continuidad operativa. Las cuentas de email (Gmail Workspace o adjuntas a un dominio) se traspasan con acceso de admin. Los logins de MyRelay se actualizan con la nueva propiedad. Las suscripciones de ELD se transfieren o se migran a nuestro proveedor.",
+              a: "Todo se transfiere como parte del cierre, y todo importa — una empresa sin su número de teléfono pierde la mitad de su continuidad operativa. Exactamente qué se traspasa y cuándo se explica en la llamada, así que nada lo toma por sorpresa el día del cierre.",
             },
             {
               q: "¿Mis camiones se transfieren con la LLC?",
-              a: "Solo si quiere. Si los camiones tienen título de la LLC, se transfieren automáticamente con la venta y lo factorizamos en la oferta. Si quiere quedarse con sus camiones (titulados a su nombre personal o a una entidad separada), podemos estructurar la venta de modo que solo la LLC y las autoridades se transfieran, y usted vende los camiones individualmente en su propio tiempo.",
+              a: "Solo si usted quiere. Si los camiones están titulados a la LLC, se transfieren automáticamente con la venta y eso se factoriza en la oferta. Si prefiere quedarse con sus camiones (titulados a su nombre personal o a una entidad separada), la venta puede estructurarse de modo que solo la LLC y las autoridades se transfieran, y usted vende los camiones por separado, en su propio tiempo.",
             },
           ],
         },
@@ -900,19 +872,15 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿Puedo vender si todavía tengo préstamo en un camión?",
-              a: "Sí, si el camión tiene título de la LLC y el gravamen se paga al cierre. Coordinamos el wire de pago directamente con su prestamista — el precio de compra se divide entre el prestamista (para el payoff) y usted (para el resto). Si quiere quedarse con el camión, conserva tanto el camión como el préstamo, y excluimos el camión de la venta de la LLC.",
+              a: "Sí, si el camión está titulado a la LLC y el gravamen se paga al cierre. El pago se coordina directamente con su prestamista — el precio se divide entre el prestamista (para saldar el gravamen) y usted (por el resto). Si prefiere quedarse con el camión, conserva el camión y el préstamo, y ese camión queda excluido de la venta.",
             },
             {
-              q: "¿Asumen mi relación de factoring?",
-              a: "Podemos. Las relaciones de factoring están sobre UCC liens contra la LLC, así que las tenemos que tratar al cierre — pagando la línea y cerrando la relación, o transfiriéndola bajo nuestra propiedad. Lo más común es que la paguemos porque tenemos nuestro propio factoring en mejores términos, pero cada operación se estructura a la medida.",
-            },
-            {
-              q: "Si compran la LLC en stock sale, ¿asumen mis deudas?",
-              a: "Las ventas de capital sí vienen con las deudas existentes de la LLC, por eso la diligencia importa. No asumimos deudas no divulgadas — su contrato de compra incluye una representación de que ha divulgado todas las deudas y una indemnización si algo no divulgado aparece después del cierre. Divulgue todo desde el principio y la estructura queda limpia.",
+              q: "¿Tengo que resolver mi línea de factoring primero?",
+              a: "No. El factoring está sobre un UCC lien contra la LLC, así que se resuelve en el cierre — normalmente se salda, a veces se mantiene. De cualquier forma queda estructurado antes de firmar, no como sorpresa después.",
             },
             {
               q: "¿Qué pasa con mi póliza de seguro al cierre?",
-              a: "Si su póliza está activa, la re-vinculamos bajo nueva propiedad con la aseguradora actual o la transferimos a una de las nuestras. Si está vencida, la re-vinculamos desde cero — la LLC queda brevemente sin cobertura durante la transición, pero programamos el nuevo BMC-91 para llegar dentro de las 24 horas del cierre. Usted no queda responsable de cobertura post-cierre.",
+              a: "Las pólizas activas se re-vinculan bajo la nueva propiedad o se reemplazan. La cobertura vencida se contrata desde cero, programada para quedar activa dentro de las 24 horas del cierre. En cualquier caso, usted no queda responsable de la cobertura después de la venta.",
             },
           ],
         },
@@ -922,19 +890,19 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿El contrato de Amazon Relay realmente se puede transferir?",
-              a: "Indirectamente, sí — vendiendo la LLC que tiene el contrato. Los contratos de Amazon Relay están vinculados al carrier (LLC), no a usted personalmente. Cuando cambia la membresía de la LLC, el contrato sigue. Las reglas de verificación de Amazon de 2026 requieren divulgación de cambios de propietario beneficiario, así que siempre notificamos a Amazon por canales adecuados — los cambios no divulgados son una falta terminable bajo sus términos.",
+              a: "El contrato lo tiene el carrier —la LLC— no usted personalmente, por eso vender la empresa es el único camino que lo mantiene intacto. Vender solo el número MC está prohibido por FMCSA y de todas formas destruye el valor. Cómo se resuelve exactamente depende de su cuenta, su scorecard y cómo está armada la entidad — eso se conversa en una llamada, no en un párrafo de una página web. Lo que sí podemos decirle con claridad: un contrato de Relay activo es lo que más mueve su número.",
             },
             {
               q: "¿Mi scorecard / historial de desempeño en Amazon se mantiene?",
-              a: "Sí. Los scores de desempeño están vinculados al ID del carrier, y el ID del carrier se queda con la LLC. Su tier, su acceptance rate, su on-time delivery score — todo eso sobrevive al cambio de propiedad y continúa bajo nuestra operación. Amazon recalcula los scores en una base móvil de 12 meses, así que cualquier regresión tarda en aparecer, y el historial de buen desempeño es valor real que factorizamos en la oferta.",
+              a: "Sí. El historial de desempeño está vinculado al ID del carrier, y ese ID se queda con la LLC — no se reemite cuando cambia el propietario. Amazon recalcula en una base móvil de 12 meses, así que un buen historial pesa de verdad y es algo que ayuda a subir la valuación. En la llamada revisamos cuánto vale su scorecard específico.",
             },
             {
               q: "¿Amazon Relay es lo mismo que Amazon DSP? Estoy confundido.",
-              a: "Son completamente diferentes y no son intercambiables. Amazon Relay es para carriers de camiones independientes (Class 8) que llevan carga middle-mile y long-haul entre instalaciones de Amazon. DSP (Delivery Service Partner) es el programa de last-mile con vans de marca y choferes empleados. Adquirimos carriers de Relay; no adquirimos DSPs, y las cuentas DSP son explícitamente no transferibles bajo las reglas de Amazon.",
+              a: "Son completamente distintos y no son intercambiables. Amazon Relay es para carriers de camiones independientes (Class 8) que mueven carga middle-mile y long-haul entre instalaciones de Amazon. DSP (Delivery Service Partner) es el programa de última milla con vans de marca y choferes empleados. Aquí se trata de carriers de Relay — una cuenta DSP es explícitamente intransferible bajo las reglas de Amazon y no se puede vender de esta forma.",
             },
             {
               q: "¿Cuánto extra vale mi LLC porque tiene Amazon Relay?",
-              a: "Mucho — el contrato de Relay es el principal motor de precio para un carrier de Relay. Dicho eso, tenga cuidado con compradores que dicen que solo el Relay agrega $20K–$30K sobre una LLC modesta. El valor real del Relay depende del estado del contrato, scorecard, asignaciones de lanes y volumen de cargas — no de la mera existencia de la cuenta. Le ponemos precio al Relay basado en datos operativos reales que podemos verificar.",
+              a: "Mucho — el contrato de Relay es el principal factor de precio para un carrier con Relay. Dicho esto, cuidado con cualquiera que diga que el Relay por sí solo agrega $20K–$30K sobre una empresa modesta. El valor real del Relay depende del estado del contrato, el scorecard, las asignaciones de lanes y el volumen de carga — no de que la cuenta simplemente exista. El Relay se valúa con base en datos operativos reales y verificables, no en el hecho de que la cuenta exista.",
             },
           ],
         },
@@ -944,19 +912,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿Qué pasa con mis choferes cuando la LLC se vende?",
-              a: "Los choferes son empleados at-will de la LLC, así que legalmente su empleo continúa bajo la nueva propiedad a menos que una de las partes termine. En la práctica, ofrecemos empleo continuo a choferes que queremos retener bajo los mismos términos (o mejores), y sus choferes existentes pueden quedarse o irse. Los archivos del consorcio de drogas se transfieren con el carrier, así que no hay quiebre en su estado de cumplimiento.",
+              a: "Los choferes son empleados at-will de la LLC, así que legalmente su empleo continúa bajo la nueva propiedad, salvo que una de las partes lo termine. En la práctica, a los choferes que vale la pena retener normalmente se les ofrece continuar en los mismos términos o mejores, y pueden elegir quedarse o irse. Los archivos del consorcio de drogas se transfieren con el carrier, así que no hay quiebre en su estado de cumplimiento.",
             },
             {
-              q: "¿Tengo que dar aviso WARN-Act a los choferes?",
-              a: "Generalmente no en ventas de flota pequeña. WARN federal aplica con 100+ empleados y despidos masivos; la mayoría de LLCs de owner-operators están muy por debajo del umbral. Algunos estados tienen umbrales más bajos — California, Nueva York, Nueva Jersey, Illinois — así que revise la ley estatal si tiene 50+ choferes. Para flotas típicas de 1–20 camiones, WARN no aplica.",
-            },
-            {
-              q: "¿Qué pasa con IFTA, IRP, 2290, consorcio de drogas, proveedor de ELD — se transfieren todos?",
-              a: "Sí, cuando la LLC se mantiene intacta (stock sale). La licencia IFTA es emitida por el estado base a la LLC y continúa. Las cab cards de IRP se quedan con la LLC. El Form 2290 (HVUT) se paga anualmente y el estado de presentación de la LLC se queda al día — no hay que pedir reembolso. La membresía del consorcio de drogas se transfiere; el historial de queries del clearinghouse sigue a cada chofer. La cuenta del proveedor de ELD se transfiere con la entidad. Lo único que normalmente reseteamos es la membresía del consorcio, porque movemos a los choferes al nuestro — pero eso se hace limpiamente post-cierre.",
-            },
-            {
-              q: "¿Puedo pedir reembolso del Form 2290 (HVUT) por los meses no usados después de la venta?",
-              a: "Si los camiones se transfieren con la LLC, no — la LLC sigue operando esos camiones bajo nosotros. Si se queda con los camiones personalmente y los vende después, sí: presente IRS Form 8849 Schedule 6 para reclamar crédito por los meses no usados del 2290.",
+              q: "¿IFTA, IRP, 2290 y el consorcio de drogas se transfieren todos?",
+              a: "Sí — cuando la LLC se mantiene intacta, los registros asociados también se mantienen intactos. No hay nada de esto que usted tenga que desmontar o volver a tramitar. Los detalles de su caso se revisan en la llamada.",
             },
           ],
         },
@@ -965,20 +925,20 @@ export const DICT: Record<Locale, Dict> = {
           label: "Riesgo y evitar fraudes",
           questions: [
             {
-              q: "¿Cómo sé que ustedes son compradores legítimos y no un esquema de fraude?",
-              a: "Tres verificaciones: (1) entregamos contrato de compra por escrito, nunca un acuerdo verbal; (2) todos los fondos se mueven por escrow de un abogado, no directo a una persona; (3) operamos la LLC después del cierre — no desaparecemos con la autoridad para usarla en double-brokering. La prensa del sector (Overdrive, CCJ) ha documentado redes que compran autoridades para esquemas de robo de carga — esas operaciones rechazan abogados, rechazan escrow y ofrecen efectivo. Nosotros no hacemos nada de eso.",
+              q: "¿Cómo sé que esto es legítimo y no un esquema de fraude?",
+              a: "Tres verificaciones — y aplíquelas con cualquiera con quien trate, no solo con nosotros. (1) Hay un contrato de compra por escrito, nunca un acuerdo de palabra. (2) Los fondos se mueven por la cuenta de escrow de un abogado de cierre, no de persona a persona, y nunca en efectivo. (3) El dinero llega en el momento en que se firman los documentos — el escrow se libera con la firma, en lugar de que usted entregue la empresa y se quede esperando. La prensa del sector (Overdrive, CCJ) ha documentado redes que adquieren autoridades para esquemas de robo de carga y double-brokering. Esas operaciones rechazan asesoría legal, rechazan escrow, presionan por velocidad y ofrecen efectivo. Ninguna de esas tres verificaciones es algo que ellos acepten. Cerrar a distancia, por cierto, no es en sí mismo una señal de alerta — un cierre remoto llevado por escrow es perfectamente legítimo, y muchos vendedores lo prefieren. Lo que importa es el orden, no el lugar.",
             },
             {
               q: "¿FMCSA va a inactivar mi MC si ve que lo estoy 'vendiendo'?",
-              a: "Solo si la transacción se estructura como venta del número en sí, lo cual está prohibido. FMCSA explícitamente inactiva autoridades que se venden, arriendan o transfieren fuera de transacciones corporativas legítimas. La forma en que estructuramos las operaciones — venta de capital de la LLC, con ambas partes notificando a FMCSA del cambio de propiedad — es el camino legítimo que FMCSA reconoce. Nunca se nos ha desactivado una autoridad post-cierre.",
+              a: "Solo si la transacción se estructura como venta del número en sí, lo cual está prohibido. FMCSA inactiva explícitamente autoridades que se venden, arriendan o transfieren fuera de transacciones corporativas legítimas — y publicó un boletín diciendo exactamente eso en marzo de 2026. El camino legítimo que reconoce FMCSA es una venta de capital de la LLC misma, que es como se estructuran estas operaciones. Nunca se ha desactivado una autoridad después del cierre.",
             },
             {
-              q: "¿Cómo me protejo de accidentes o violaciones que el comprador cause después del cierre?",
-              a: "Tres mecanismos legales: (1) el contrato de compra incluye liberación de responsabilidad del vendedor por eventos post-cierre; (2) presentamos el cambio de propiedad de FMCSA con fecha efectiva clara para que cualquier violación posterior quede documentada bajo nuestra propiedad; (3) el seguro de la LLC se re-vincula bajo nuestro nombre inmediatamente, así que reclamos surgidos después del cierre van contra nuestra póliza, no la suya. Su CDL, su record personal de manejo y su nombre quedan completamente separados de la LLC post-cierre.",
+              q: "¿Cómo me protejo de lo que pase después del cierre?",
+              a: "El contrato de compra incluye una liberación de responsabilidad del vendedor por eventos posteriores al cierre, y el cierre tiene una fecha de vigencia clara que marca la línea divisoria. Su CDL y su historial de manejo personal quedan separados de la empresa en cualquier caso. El panorama completo — qué queda cubierto, qué no, y qué conviene confirmar — lo revisamos con usted directamente antes de firmar; no es algo para resolver desde una página web.",
             },
             {
               q: "¿Cómo debería estructurarse el pago para que esté seguro?",
-              a: "Wire transfer por escrow al cierre — nunca pagos parciales, nunca seller financing para compradores primerizos, nunca nada en efectivo. Nuestro estándar es que los fondos van de nosotros a la cuenta IOLTA escrow del abogado del cierre, se firman los documentos, y escrow libera el wire a su cuenta el mismo día. Si un comprador le pide enviar los documentos de la LLC antes de que ellos transfieran fondos, eso es una alerta.",
+              a: "Transferencia bancaria por escrow al cierre — nunca pagos parciales, nunca financiamiento del vendedor para un comprador primerizo, nunca nada en efectivo. Lo estándar es que los fondos entren a la cuenta IOLTA de escrow del abogado de cierre, se firmen los documentos, y escrow libere la transferencia a su cuenta el mismo día. Si alguien le pide entregar los documentos de la LLC antes de que se muevan los fondos, esa es una señal de alerta.",
             },
           ],
         },
@@ -988,11 +948,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "¿Cómo se grava la venta para mí?",
-              a: "Las ventas de capital con tenencia de más de 12 meses generalmente califican para tratamiento de long-term capital gains sobre la ganancia por encima de su base en la LLC. Una porción puede gravarse como ingreso ordinario según cómo se aloca el precio de compra (Form 8594) — particularmente cualquier parte atribuida a equipo depreciable que dispara depreciation recapture. Hable con un CPA familiarizado con ventas de negocios de transporte antes del cierre — la estructura de la operación afecta directamente lo que recibe después de impuestos.",
+              a: "Una venta de capital con más de 12 meses de tenencia generalmente califica para tratamiento de long-term capital gains sobre la ganancia por encima de su base. Una parte puede gravarse como ingreso ordinario según cómo se asigne el precio. Hable con un CPA que conozca ventas de empresas de transporte antes de cerrar. No le vamos a dar asesoría fiscal desde una página web, y cualquiera que lo haga debería preocuparle.",
             },
             {
               q: "¿Mis choferes, brokers o competidores se van a enterar antes del cierre?",
-              a: "No por nosotros. Firmamos un NDA mutuo antes de la diligencia bajo solicitud, y nuestra práctica estándar es mantener la transacción confidencial hasta el cierre. Brokers y Amazon no se notifican sino hasta el cierre, cuando el cambio se presenta oficialmente. Los únicos que saben durante diligencia son usted, nosotros, nuestros respectivos abogados, y cualquier prestamista involucrado en un payoff.",
+              a: "No por nosotros. Firmamos un NDA mutuo antes de la diligencia si se solicita, y nuestra práctica estándar es mantener la transacción confidencial hasta el cierre. Durante la diligencia, los únicos que saben son usted, nosotros, los respectivos abogados, y cualquier prestamista involucrado en un payoff. Nada se publica, nada se anuncia, y su empresa nunca se ofrece por ahí.",
             },
             {
               q: "¿Puedo abrir una nueva autoridad MC después de vender?",
@@ -1047,7 +1007,7 @@ export const DICT: Record<Locale, Dict> = {
       privacy: "Privacidad",
       terms: "Términos",
       description:
-        "Veritor Group adquiere LLCs de logística en EE. UU. — especialistas en Amazon Relay.",
+        "Veritor Group gestiona la venta de empresas de transporte en EE. UU. — especialistas en Amazon Relay.",
     },
     wizard: {
       brandTag: "Valuación gratis",
@@ -1118,9 +1078,9 @@ export const DICT: Record<Locale, Dict> = {
       ageBasis: "La antigüedad se basa en el último registro MCS-150 ({date}) — el mejor indicador público en FMCSA. Se confirma en la llamada.",
       note: "Nota:",
       floorNote:
-        "esto limita la valuación indicativa al mínimo. Podemos comprar igualmente, pero los términos finales se confirman en llamada.",
+        "esto limita la valuación indicativa a nuestro mínimo. Puede que aún haya un camino aquí, pero los términos finales se confirman en una llamada.",
       indicativeBlock:
-        "Este es un rango indicativo basado en su registro FMCSA. La oferta final se confirma en una llamada de 15 minutos tras revisar seguro, antigüedad de MC y estado del contrato — luego por escrito en 48 horas.",
+        "Este es un rango indicativo basado en su registro FMCSA. La oferta final se confirma en una llamada de 15 minutos tras revisar seguro, antigüedad de MC y estado del contrato — luego por escrito en 24 horas.",
       haveQuestions: "¿Tiene preguntas? Contáctenos →",
       scheduleCall: "Agendar llamada",
       nextAvailable: "Próximo disponible:",
@@ -1147,11 +1107,11 @@ export const DICT: Record<Locale, Dict> = {
       cta: "Получить оффер",
     },
     hero: {
-      eyebrow: "Покупка логистических LLC в США",
+      eyebrow: "Продажа транспортных компаний в США",
       headlineLine1: "Продайте свою транспортную LLC.",
       headlineLine2: "Закрытие за 3–5 рабочих дней.",
       subhead:
-        "Veritor Group выкупает логистические LLC в США — включая компании с активным контрактом Amazon Relay. Чистый процесс. Честная цена. Перевод оформляем мы.",
+        "Veritor Group сопровождает продажу транспортных компаний в США от начала до конца — включая перевозчиков с активным Amazon Relay. Письменное предложение, личное закрытие сделки, полное сопровождение передачи. Вы получаете 100% суммы, которую примете.",
       ctaPrimary: "Бесплатная оценка",
       ctaSecondary: "Как это работает",
       lookupMc: "MC",
@@ -1163,33 +1123,33 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Опыт",
-      acquisitionsLabel: "Закрытых сделок",
+      acquisitionsLabel: "Закрытых продаж",
       closeLabel: "Среднее время закрытия",
       closeValue: "3–5 рабочих дней",
       yearsLabel: "Лет в бизнесе",
     },
     requirements: {
-      eyebrow: "Что мы покупаем",
+      eyebrow: "Что подходит",
       headline1: "Чёткие требования.",
       headline2: "Никаких догадок.",
       intro:
-        "Мы делаем оффер на LLC, которые подходят под один из двух профилей. Если ваша компания подходит — мы готовы говорить.",
+        "Письменное предложение приходит компаниям, которые подходят под один из двух профилей. Если ваша компания — один из них, мы хотим о ней услышать. Если нет — скажем прямо, в тот же день, без хождений вокруг да около.",
       withRelay: {
-        title: "LLC с действующим Amazon Relay",
+        title: "Компании, уже работающие с Amazon Relay",
         items: [
-          "Страховка активна или неактивна — оба варианта подходят",
-          "Действующий MC номер, без нарушений",
           "Активный контракт Amazon Relay на LLC",
-          "Чистая история нарушений",
+          "Страховка может быть просрочена — доступ к Relay возобновляется после перепривязки покрытия",
+          "MC authority активно и в хорошем статусе",
+          "Рейтинг безопасности Satisfactory или без рейтинга — не Conditional",
         ],
       },
       withoutRelay: {
-        title: "LLC без Amazon Relay",
+        title: "Компании, которые ещё не на Amazon Relay",
         items: [
-          "Действующий полис страхования",
-          "MC authority и страховка активны минимум 6 месяцев (180+ дней)",
-          "MC authority в хорошем статусе",
-          "Чистая история нарушений",
+          "MC authority и страховка непрерывно активны 180+ дней",
+          "Страховка действует прямо сейчас, без текущей просрочки",
+          "MC authority активно и в хорошем статусе",
+          "Рейтинг безопасности Satisfactory или без рейтинга, чистая история нарушений",
         ],
       },
       transferTitle: "Что передаётся при закрытии сделки",
@@ -1199,7 +1159,7 @@ export const DICT: Record<Locale, Dict> = {
         "Корпоративный email компании",
         "Банковский счёт / банковские реквизиты компании",
         "MC authority и записи DOT",
-        "Активные кредиты не помеха — но раскройте их сразу",
+        "Активные кредиты не обязательны — но если они есть, раскройте их сразу",
       ],
     },
     how: {
@@ -1213,38 +1173,38 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Получите бесплатную оценку",
-          body: "Отвечаем в течение нескольких часов, каждый день недели. Если LLC подходит — даём письменный оффер.",
+          body: "Отвечаем в течение нескольких часов, каждый день недели. Если компания подходит, вы получаете письменный оффер.",
         },
         {
           title: "Подпишите и проверьте",
-          body: "Стандартный договор купли-продажи, лёгкая проверка документов, никаких сюрпризов. Юристы — за наш счёт.",
+          body: "Стандартный договор купли-продажи, лёгкая проверка документов, никаких сюрпризов. Юридические расходы не вычитаются из вашей суммы.",
         },
         {
           title: "Закрытие в банке лично",
-          body: "Встречаемся с вами в вашем банке, подписываем лично, и wire уходит с нашего счёта на ваш прямо у стойки. Уходите с деньгами на руках.",
+          body: "Встречаемся с вами в вашем банке и подписываем лично, либо проводим всё удалённо, если так удобнее. В любом случае деньги поступают в момент подписания документов — через escrow адвоката, никогда позже.",
         },
       ],
     },
     why: {
       eyebrow: "Почему Veritor",
-      headline1: "Операторы покупают у операторов.",
-      headline2: "Не брокеры. Не перекупщики.",
+      headline1: "Продано безопасно.",
+      headline2: "Задокументировано от начала до конца.",
       points: [
         {
-          title: "Закрываем быстро — и реально закрываем.",
-          body: "Среднее закрытие — 3–5 рабочих дней. Сделано более 400 раз. Деньги готовы ещё до оффера.",
+          title: "Письменный договор, никогда рукопожатие.",
+          body: "Каждая сделка идёт по подписанному договору купли-продажи. Никаких устных цифр, которые сжимаются за столом, никаких снижений цены в последний момент. Если кто-то предлагает вам наличные по телефону — это тревожный знак.",
         },
         {
-          title: "Честные офферы — на бумаге.",
-          body: "Каждая цифра письменно. Никаких устных обещаний, которые меняются при закрытии. Никаких снижений цены в последний момент.",
+          title: "Средства идут через escrow адвоката.",
+          body: "Деньги проходят через escrow-счёт адвоката закрытия, а не из рук в руки. Эта единственная деталь — самая чёткая граница между реальной продажей и мошеннической схемой.",
         },
         {
-          title: "Передачу оформляем мы.",
-          body: "Документы LLC, перерегистрация MC, передача телефона / email / банка — каждый шаг ведём мы.",
+          title: "Документы действительно переходят из рук в руки.",
+          body: "Записи Secretary of State и responsible party в EIN обновляются на нового владельца. Компания перестаёт быть вашей на бумаге, а не только на словах.",
         },
         {
           title: "Конфиденциальность по умолчанию.",
-          body: "Мы не раскрываем личность продавца водителям, диспетчерам или конкурентам. NDA — стандартно.",
+          body: "Ваша личность остаётся закрытой — ничего не раскрывается водителям, диспетчерам или конкурентам. Конфиденциальность — стандарт, это подтверждают более 400 закрытых сделок.",
         },
       ],
     },
@@ -1261,15 +1221,15 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Можно ли продавать, если MC authority оформлено на меня лично (sole proprietor / SSN)?",
-              a: "Нет. Authority FMCSA, оформленное на sole proprietor под вашим SSN, не передаётся — оно привязано к вам лично, а не к продаваемой сущности. Authority, выданное LLC или корпорации — это то, что мы покупаем, потому что меняется владелец самой сущности. Если вы работаете как sole prop, путь — закрыть и подать заново под новой LLC, а не продавать существующее authority.",
+              a: "Нет. Authority, оформленное на sole proprietor под вашим SSN, привязано к вам лично, а не к продаваемой сущности — передавать нечего. Authority, выданное LLC или корпорации, — это то, что меняет владельца, потому что продаётся именно сущность. Если вы работаете как sole prop, честный ответ — это не тот случай.",
             },
             {
               q: "Подходит ли LLC, если у меня всего один трак?",
-              a: "Да. Размер парка не определяет, купим мы или нет — мы регулярно покупаем LLC с одним траком. Важны статус authority LLC, страховка, статус Amazon Relay (если есть) и история нарушений. Цена за LLC с одним траком ниже, чем у мульти-трак операций, но структура сделки та же.",
+              a: "Да. Размер парка не решающий фактор — LLC с одним траком проходят регулярно. Важны статус authority, страховка, статус Amazon Relay (если есть) и история нарушений. LLC с одним траком оценивается ниже, чем операция с несколькими траками, но процесс тот же.",
             },
             {
               q: "А если моё MC authority сейчас неактивно?",
-              a: "Если у LLC активный контракт Amazon Relay — неактивное authority решаемо: мы перебиндим страховку и реактивируем authority как часть закрытия. Если Relay-контракта нет — обычно нужна активная authority, потому что одна реактивация не даёт операционной истории, нужной для онбординга в фрахт-сети. Authority, неактивное более 12 месяцев, обычно уже не реактивируется FMCSA.",
+              a: "Если у LLC активный контракт Amazon Relay, неактивное authority — решаемо: страховка перебиндивается, а authority реактивируется как часть закрытия. Без контракта Relay authority обычно должно быть активным, потому что одна реактивация не даёт непрерывной операционной истории, которую ищут фрахт-сети. Authority, неактивное больше 12 месяцев, обычно уже не реактивируется FMCSA.",
             },
             {
               q: "Можно ли продать только MC номер, а LLC оставить?",
@@ -1277,7 +1237,7 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "У меня несколько LLC — можно продать одну, а другие оставить?",
-              a: "Да. Каждая LLC — отдельная юридическая сущность, и мы рассматриваем каждую отдельно. Продавцы с несколькими LLC часто продают одну-две и оставляют остальные — в нашем процессе нет правила «всё или ничего».",
+              a: "Да. Каждая LLC — отдельная юридическая сущность, и каждая рассматривается отдельно. Продавцы с несколькими LLC часто продают одну-две, а остальные оставляют себе — здесь нет правила «всё или ничего».",
             },
           ],
         },
@@ -1287,7 +1247,7 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Сколько стоит моё MC authority?",
-              a: "Зависит от пяти реальных переменных, в порядке влияния: есть ли у LLC активный контракт Amazon Relay (самый большой фактор), возраст authority, статус страховки, история нарушений, активные кредиты. Чистая LLC с активным Relay торгуется в гораздо более высокой полосе, чем свежий MC без Relay. Мы даём письменное число по каждой LLC после быстрой проверки FMCSA — это единственный честный способ оценки.",
+              a: "Зависит от пяти реальных переменных, по убыванию влияния: есть ли у LLC активный контракт Amazon Relay (самый весомый фактор), возраст authority, статус страховки, история нарушений и активные кредиты. Чистая LLC с активным Relay торгуется в заметно более высокой ценовой полосе, чем свежее authority без Relay. Письменное число приходит после быстрой проверки FMCSA — это единственный честный способ оценки.",
             },
             {
               q: "Что больше всего повышает стоимость моей LLC?",
@@ -1295,11 +1255,11 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Я слышал, MC продают за $20K–$30K — это правда?",
-              a: "Осторожно с этой цифрой. Overdrive и отраслевая пресса писали, что предложения $30K за «возрастной authority» часто исходят от покупателей, планирующих использовать MC для double-brokering или схем краж груза, а не для реальных операций. Реальная рыночная цена чистого MC обычно сильно ниже этих заголовочных цифр. Если покупатель предлагает $30K без диligence и письменного договора — остановитесь и проверьте.",
+              a: "Осторожно с этой цифрой. Overdrive и отраслевая пресса писали, что предложения $30K за «возрастной authority» часто исходят от покупателей, планирующих использовать MC для double-brokering или схем краж груза, а не для реальных операций. Реальная рыночная цена чистого MC обычно сильно ниже этих заголовочных цифр. Если покупатель предлагает $30K без due diligence и письменного договора — остановитесь и проверьте.",
             },
             {
               q: "Asset sale или stock sale — в чём разница?",
-              a: "Stock sale (продажа долей) передаёт саму LLC со всеми authority, EIN, историей и контрактами. Asset sale передаёт конкретные позиции (траки, оборудование, контракты), но не саму LLC. Мы делаем stock sales, потому что это сохраняет MC, DOT, EIN, broker setups и контракт Amazon Relay. Asset sales заставляют покупателя оформлять authority заново — обычно это не то, что нам нужно.",
+              a: "Stock sale (продажа долей) передаёт саму LLC — с authority, EIN, историей и контрактами. Asset sale передаёт только конкретные позиции — траки, оборудование — и оставляет саму компанию в стороне. Это stock sales, потому что только такая структура сохраняет то, что делает транспортную компанию ценной. Механику разбираем на звонке.",
             },
             {
               q: "Нишевый фрахт (reefer, flatbed, hazmat) меняет цену?",
@@ -1317,15 +1277,11 @@ export const DICT: Record<Locale, Dict> = {
             },
             {
               q: "Какие именно шаги?",
-              a: "Четыре основных этапа: (1) вы отправляете данные LLC, мы возвращаемся с письменным оффером; (2) подписываем короткое letter of intent и проходим due diligence; (3) подписываем Membership Interest Purchase Agreement и связанные штатные формы; (4) уходит wire закрытия, и LLC, MC, DOT, телефон, email, банк передаются нам. После закрытия мы ведём уведомление FMCSA, передачу drug-консорциума и обновления штатной регистрации.",
+              a: "Четыре основных этапа: (1) вы отправляете данные компании и получаете письменный оффер; (2) подписывается короткое letter of intent, проходит due diligence; (3) подписывается Membership Interest Purchase Agreement вместе со связанными штатными формами; (4) уходит wire закрытия, и LLC, телефон, email и банковский счёт передаются. После закрытия обновление штатной регистрации и передача drug-консорциума координируются за вас — бегать за бумагами не придётся.",
             },
             {
               q: "Нужно ли мне самому что-то подавать в FMCSA?",
-              a: "Нет, по сути. С 2013 года FMCSA не требует формального заявления с пошлиной $300 или специального трамита для смены владельца LLC, держащей authority. Обеим сторонам предлагается уведомить FMCSA о смене, и эту подачу мы ведём за вас. Возможно, нужно будет подписать одну-две штатные формы (поправка к membership, statement of change) в зависимости от штата регистрации LLC.",
-            },
-            {
-              q: "После закрытия как быстро LLC может возить грузы под нашим управлением?",
-              a: "В большинстве случаев — на той же неделе. MC authority остаётся активным, потому что сущность не изменилась — изменилось только membership. Мы подаём новый certificate of insurance (BMC-91 или BMC-32) и обновляем BOC-3 process agent в первый день нового владения, и Amazon Relay (если применимо) видит continuity, а не событие передачи.",
+              a: "Нет. Вы подпишете один-два документа на уровне штата в зависимости от того, где зарегистрирована LLC, и они будут подготовлены за вас. С 2013 года не существует заявления на передачу или пошлины FMCSA за смену владельца. Всё остальное разбирается на звонке, шаг за шагом, до того как вы что-то подпишете.",
             },
           ],
         },
@@ -1334,24 +1290,20 @@ export const DICT: Record<Locale, Dict> = {
           label: "Что передаётся при закрытии",
           questions: [
             {
-              q: "Мой DOT номер передаётся вам?",
-              a: "Да, потому что мы делаем stock sales. Номера DOT и MC остаются с сущностью LLC. В asset sale они бы не передавались — покупателю нужен был бы новый DOT — но так наши сделки не структурированы.",
+              q: "Мой номер DOT и MC передаётся?",
+              a: "Да. Номера DOT и MC остаются с сущностью LLC, а продаётся именно сущность — поэтому такие сделки структурируются как продажа долей, а не продажа активов.",
             },
             {
               q: "Мой EIN передаётся?",
-              a: "Да. EIN LLC остаётся с LLC, потому что сама сущность не ликвидируется. После закрытия мы подаём Form 8822-B в IRS, чтобы обновить responsible party. Важно: это также значит, что вы не сможете повторно использовать этот EIN для будущего бизнеса — раз EIN выдан сущности, он остаётся за ней пожизненно.",
-            },
-            {
-              q: "А мои broker setups, rate confirmations и пакеты документов?",
-              a: "Broker setups сохраняются, когда LLC продаётся целиком — брокеры завели вас под MC, DOT и EIN самой LLC. Заводиться у каждого брокера заново не нужно. Некоторые контракты с брокерами имеют clauses об anti-assignment или change-of-control, формально требующие уведомления — это часть пост-закрытия, которую мы ведём.",
+              a: "Да. EIN остаётся с LLC, потому что сама сущность никогда не ликвидируется. Важный нюанс: вы не сможете повторно использовать этот EIN для будущего бизнеса — если EIN выдан сущности, он остаётся за ней пожизненно.",
             },
             {
               q: "А корпоративный телефон, email, MyRelay login, ELD аккаунт?",
-              a: "Всё передаётся как часть закрытия — и нам всё это нужно. Корпоративный телефон не обсуждается; LLC без своего номера теряет половину операционной непрерывности. Email-аккаунты (Gmail Workspace или domain-attached) портируются через admin-доступ. MyRelay logins обновляются под нового владельца. ELD-подписки либо передаются, либо мигрируют к нашему провайдеру.",
+              a: "Всё передаётся как часть закрытия, и всё это важно — компания без своего номера телефона теряет половину операционной непрерывности. Что именно передаётся и когда — разбирается на звонке, чтобы в день закрытия не было сюрпризов.",
             },
             {
               q: "Мои траки передаются вместе с LLC?",
-              a: "Только если вы хотите. Если траки оформлены на LLC — они переходят автоматически с продажей, и мы это учитываем в оффере. Если хотите оставить себе траки (оформленные на вас лично или на отдельную сущность) — мы можем структурировать сделку так, чтобы передавалась только LLC и authority, а траки вы продали отдельно в своём темпе.",
+              a: "Только если вы этого хотите. Если траки оформлены на LLC, они переходят автоматически вместе с продажей, и это учитывается в оффере. Если хотите оставить траки себе (оформленные на вас лично или на отдельную сущность), сделку можно структурировать так, чтобы передавались только LLC и authority, а траки вы продадите отдельно, в своём темпе.",
             },
           ],
         },
@@ -1361,19 +1313,15 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Можно продавать, если на траке ещё кредит?",
-              a: "Да, если трак оформлен на LLC и залог гасится при закрытии. Мы координируем wire погашения напрямую с вашим кредитором — цена сделки делится между кредитором (на payoff) и вами (остаток). Если хотите оставить трак — оставляете и трак, и кредит, а трак мы исключаем из продажи LLC.",
+              a: "Да, если трак оформлен на LLC и залог погашается при закрытии. Выплата координируется напрямую с вашим кредитором — цена делится между кредитором (на погашение залога) и вами (остаток). Если хотите оставить трак себе — оставляете и трак, и кредит, а этот трак исключается из продажи.",
             },
             {
-              q: "Берёте ли вы на себя моё factoring?",
-              a: "Можем. Factoring сидит на UCC liens против LLC, поэтому при закрытии нужно с ним разобраться — либо погасить линию и закрыть отношения, либо передать под наше владение. Чаще всего мы погашаем, потому что у нас своё factoring на лучших условиях, но каждая сделка структурируется индивидуально.",
-            },
-            {
-              q: "Если вы покупаете LLC stock sale — берёте ли вы на себя мои долги?",
-              a: "Stock sales действительно идут с существующими обязательствами LLC, поэтому диligence важен. Мы не берём на себя нераскрытые долги — ваш purchase agreement содержит representation о том, что все обязательства раскрыты, и indemnification, если что-то нераскрытое всплывает после закрытия. Раскройте всё сразу — структура остаётся чистой.",
+              q: "Нужно ли сначала закрыть вопрос с factoring?",
+              a: "Нет. Factoring сидит на UCC lien против LLC, поэтому он решается при закрытии — обычно погашается, иногда переносится. В любом случае это структурируется до подписания, а не всплывает сюрпризом потом.",
             },
             {
               q: "Что происходит со страховкой при закрытии?",
-              a: "Если ваш полис активен — мы перебиндим его под новое владение с текущим carrier-ом или переведём к одному из наших. Если полис просрочен — биндим заново; LLC ненадолго остаётся без покрытия в момент перехода, но мы планируем подачу нового BMC-91 в течение 24 часов после закрытия. После закрытия вы за покрытие не отвечаете.",
+              a: "Активные полисы перебиндиваются под новое владение или заменяются. Просроченное покрытие оформляется заново, с расчётом на активацию в течение 24 часов после закрытия. В любом случае вы не отвечаете за покрытие после продажи.",
             },
           ],
         },
@@ -1383,19 +1331,19 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Контракт Amazon Relay реально передаётся?",
-              a: "Косвенно — да, через продажу LLC, держащей контракт. Контракты Amazon Relay привязаны к carrier-у (LLC), а не к вам лично. Когда меняется membership LLC — контракт продолжается. Правила верификации Amazon 2026 года требуют раскрытия смены beneficial owner, поэтому мы всегда уведомляем Amazon через надлежащие каналы — нераскрытые смены являются основанием для расторжения по их условиям.",
+              a: "Контракт держит carrier — сама LLC — а не вы лично, поэтому продажа компании — единственный способ сохранить его нетронутым. Продавать один только номер MC запрещено FMCSA, и это в любом случае убивает ценность. Как именно всё пройдёт, зависит от вашего аккаунта, scorecard и того, как устроена сущность — это разговор для звонка, а не для параграфа на сайте. Что можем сказать прямо: активный контракт Relay сильнее всего двигает вашу цифру.",
             },
             {
               q: "Сохраняется ли мой scorecard / история показателей в Amazon?",
-              a: "Да. Performance scores привязаны к ID carrier-а, а ID carrier-а остаётся с LLC. Ваш tier, acceptance rate, on-time delivery score — всё переживает смену владельца и продолжается под нашим управлением. Amazon пересчитывает scores на скользящей 12-месячной базе, поэтому регрессии проявляются не сразу, а сильная история — реальная ценность, которую мы учитываем в оффере.",
+              a: "Да. Performance scores привязаны к ID carrier-а, а этот ID остаётся с LLC — он не переоформляется при смене владельца. Amazon пересчитывает scores на скользящей 12-месячной базе, поэтому сильная история имеет реальный вес и помогает поднять оценку. На звонке разберём, сколько именно стоит ваш scorecard.",
             },
             {
               q: "Amazon Relay и Amazon DSP — это одно и то же? Запутался.",
-              a: "Совершенно разные программы и не взаимозаменяемы. Amazon Relay — для независимых трак-carrier-ов (Class 8), возящих middle-mile и long-haul между объектами Amazon. DSP (Delivery Service Partner) — last-mile программа с брендированными vans и водителями-сотрудниками. Мы покупаем carrier-ов Relay; DSP не покупаем, и DSP-аккаунты явно не передаются по правилам Amazon.",
+              a: "Это совершенно разные программы, и они не взаимозаменяемы. Amazon Relay — для независимых трак-carrier-ов (Class 8), возящих middle-mile и long-haul между объектами Amazon. DSP (Delivery Service Partner) — программа последней мили с брендированными фургонами и водителями-сотрудниками. Речь здесь идёт о carrier-ах Relay — аккаунт DSP прямо не передаётся по правилам Amazon и не может быть продан таким образом.",
             },
             {
               q: "Насколько Amazon Relay добавляет к стоимости моей LLC?",
-              a: "Очень много — Relay-контракт это главный драйвер цены для Relay-carrier-а. При этом осторожнее с покупателями, которые утверждают, что один Relay добавляет $20K–$30K поверх скромной LLC. Реальная ценность Relay зависит от статуса контракта, scorecard, lane assignments и объёма грузов — а не от факта существования аккаунта. Мы оцениваем Relay по реальным операционным данным, которые можем верифицировать.",
+              a: "Очень много — контракт Relay является главным драйвером цены для Relay-carrier-а. При этом осторожнее с теми, кто утверждает, что один Relay добавляет $20K–$30K поверх скромной компании. Реальная ценность Relay зависит от статуса контракта, scorecard, lane assignments и объёма грузов — а не от самого факта существования аккаунта. Relay оценивается по реальным операционным данным, которые можно проверить, а не по факту существования аккаунта.",
             },
           ],
         },
@@ -1405,19 +1353,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Что произойдёт с моими водителями при продаже LLC?",
-              a: "Водители — at-will сотрудники LLC, поэтому юридически их трудоустройство продолжается под новым владением, если ни одна сторона не прекратит. На практике мы предлагаем водителям, которых хотим удержать, продолжить работу на тех же (или лучших) условиях, и ваши текущие водители могут остаться или уйти. Файлы drug-консорциума передаются с carrier-ом, поэтому compliance-статус не прерывается.",
+              a: "Водители — сотрудники LLC at-will, поэтому юридически их трудоустройство продолжается при новом владельце, если ни одна из сторон его не прекратит. На практике водителям, которых стоит удержать, обычно предлагают продолжить работу на тех же или лучших условиях, и они сами решают — остаться или уйти. Файлы drug-консорциума передаются вместе с carrier-ом, поэтому compliance-статус не прерывается.",
             },
             {
-              q: "Нужно ли давать водителям WARN-Act уведомление?",
-              a: "Обычно нет в продажах малых парков. Федеральный WARN применяется при 100+ сотрудниках с массовыми увольнениями; большинство LLC owner-operator-ов сильно ниже порога. У некоторых штатов пороги ниже — Калифорния, Нью-Йорк, Нью-Джерси, Иллинойс — поэтому при 50+ водителях стоит проверить штатный закон. Для типичных парков 1–20 траков WARN не применяется.",
-            },
-            {
-              q: "А IFTA, IRP, 2290, drug-консорциум, ELD-провайдер — всё это передаётся?",
-              a: "Да, когда LLC сохраняется целиком (stock sale). IFTA-лицензия выдана штатом-базой на LLC и продолжает действовать. IRP cab cards остаются за LLC. Form 2290 (HVUT) платится ежегодно, и статус подачи LLC остаётся актуальным — возврат не нужен. Членство в drug-консорциуме передаётся; история запросов clearinghouse следует за каждым водителем. ELD-аккаунт передаётся с сущностью. Единственное, что мы обычно сбрасываем — это членство в консорциуме, потому что переводим водителей в свой; делается это чисто после закрытия.",
-            },
-            {
-              q: "Можно ли получить возврат по Form 2290 (HVUT) за неиспользованные месяцы после продажи?",
-              a: "Если траки передаются с LLC — нет, LLC продолжает их эксплуатировать под нами. Если оставляете траки лично и продаёте позже — да: подайте IRS Form 8849 Schedule 6, чтобы запросить кредит за неиспользованные месяцы 2290.",
+              q: "IFTA, IRP, 2290 и drug-консорциум — всё это передаётся?",
+              a: "Да — когда LLC остаётся целой, все привязанные к ней регистрации тоже остаются в силе. Ничего из этого не нужно сворачивать или переоформлять самостоятельно. Детали именно вашего случая разбираем на звонке.",
             },
           ],
         },
@@ -1426,20 +1366,20 @@ export const DICT: Record<Locale, Dict> = {
           label: "Риски и защита от мошенников",
           questions: [
             {
-              q: "Как мне понять, что вы — легальный покупатель, а не схема мошенничества?",
-              a: "Три проверки: (1) мы даём письменный purchase agreement, никогда устные договорённости; (2) все средства идут через escrow адвоката, не напрямую человеку; (3) после закрытия мы оперируем LLC — мы не исчезаем с authority, чтобы использовать его в double-brokering. Отраслевая пресса (Overdrive, CCJ) задокументировала сети, скупающие authority под схемы краж груза — такие операции отказываются от юристов, отказываются от escrow и предлагают наличные. Мы не делаем ничего из этого.",
+              q: "Как понять, что это законно, а не мошенническая схема?",
+              a: "Три проверки — применяйте их к любому, с кем имеете дело, не только к нам. (1) Есть письменный purchase agreement, никогда устная договорённость. (2) Средства идут через escrow-счёт адвоката закрытия, не из рук в руки, и никогда наличными. (3) Деньги поступают в момент подписания документов — escrow высвобождается по факту подписи, а не так, что вы сначала передаёте компанию, а потом ждёте. Отраслевая пресса (Overdrive, CCJ) задокументировала сети, скупающие authority под схемы краж груза и double-brokering. Такие операции отказываются от юристов, отказываются от escrow, давят на скорость и предлагают наличные. Ни на одну из этих трёх проверок они не согласятся. Закрытие сделки удалённо, кстати, само по себе не тревожный знак — удалённое закрытие через escrow совершенно законно, и многие продавцы его предпочитают. Важен порядок действий, а не место.",
             },
             {
               q: "FMCSA не дезактивирует мой MC, увидев, что я его «продаю»?",
-              a: "Только если транзакция структурирована как продажа самого номера, что запрещено. FMCSA явно дезактивирует authority, которые продаются, сдаются в аренду или передаются вне законных корпоративных транзакций. Способ, которым мы структурируем сделки — stock sale LLC с уведомлением FMCSA от обеих сторон — это легальный путь, признаваемый FMCSA. У нас не было дезактиваций после закрытия.",
+              a: "Только если сделка структурирована как продажа самого номера, а это запрещено. FMCSA прямо дезактивирует authority, которые продаются, сдаются в аренду или передаются вне законных корпоративных транзакций — и выпустила бюллетень именно об этом в марте 2026 года. Легальный путь, который признаёт FMCSA, — это продажа долей самой LLC, именно так и структурированы такие сделки. Ни разу authority не дезактивировалось после закрытия.",
             },
             {
-              q: "Как защититься от аварий или нарушений, которые покупатель совершит после закрытия?",
-              a: "Три юридических механизма: (1) purchase agreement содержит освобождение продавца от ответственности за пост-closing события; (2) мы подаём смену владельца FMCSA с чёткой effective date, чтобы любое последующее нарушение задокументировалось под нашим владением; (3) страховка LLC сразу перебиндена под наше имя, поэтому претензии после закрытия идут на нашу полицию, не на вашу. Ваше CDL, ваша личная история вождения и ваше имя полностью отделены от LLC после закрытия.",
+              q: "Как защититься от того, что произойдёт после закрытия?",
+              a: "Purchase agreement включает освобождение продавца от ответственности за события после закрытия, а у самого закрытия есть чёткая effective date, которая проводит границу. Ваши CDL и личная история вождения в любом случае отделены от компании. Полную картину — что покрыто, что нет и что стоит уточнить — мы разбираем с вами напрямую до подписания; это не то, что решается через страницу сайта.",
             },
             {
               q: "Как должна быть структурирована оплата, чтобы я был в безопасности?",
-              a: "Wire transfer через escrow при закрытии — никогда частичных платежей, никогда seller financing для покупателей-новичков, никогда наличных. Наш стандарт — средства идут от нас на IOLTA escrow адвоката закрытия, подписываются документы, escrow выпускает wire на ваш счёт в тот же день. Если покупатель просит вас отправить документы LLC до того, как они переведут средства — это красный флаг.",
+              a: "Wire transfer через escrow при закрытии — никогда частичных платежей, никогда seller financing для покупателя-новичка, никогда наличных. Стандарт — средства поступают на IOLTA escrow-счёт адвоката закрытия, подписываются документы, и escrow в тот же день переводит деньги на ваш счёт. Если кто-то просит вас передать документы LLC до того, как переведены средства, — это тревожный флаг.",
             },
           ],
         },
@@ -1449,11 +1389,11 @@ export const DICT: Record<Locale, Dict> = {
           questions: [
             {
               q: "Как сделка облагается налогом для меня?",
-              a: "Stock sales с владением более 12 месяцев обычно квалифицируются под long-term capital gains на прибыль свыше вашей basis в LLC. Часть может облагаться как ordinary income в зависимости от того, как распределена цена покупки (Form 8594) — особенно та часть, что относится к амортизируемому оборудованию и triggers depreciation recapture. Поговорите с CPA, разбирающимся в продажах transportation-бизнесов до закрытия — структура сделки напрямую влияет на ваши после-налоговые поступления.",
+              a: "Продажа долей (stock sale) с владением больше 12 месяцев обычно квалифицируется под long-term capital gains на прибыль сверх вашей basis. Часть может облагаться как ordinary income — в зависимости от того, как распределена цена. Поговорите с CPA, который разбирается в продаже транспортных компаний, до закрытия. Мы не будем давать вам налоговые советы со страницы сайта, и вас должен насторожить любой, кто это делает.",
             },
             {
               q: "Узнают ли мои водители, брокеры или конкуренты до закрытия?",
-              a: "Не от нас. По запросу подписываем взаимный NDA до диligence, и наша стандартная практика — держать сделку конфиденциальной до закрытия. Брокеры и Amazon уведомляются только при закрытии, когда смена подаётся официально. Во время диligence знают только: вы, мы, наши соответствующие адвокаты, и любой кредитор, участвующий в payoff.",
+              a: "Не от нас. По запросу подписываем взаимный NDA до due diligence, и наша стандартная практика — держать сделку конфиденциальной до самого закрытия. Во время due diligence знают только: вы, мы, соответствующие адвокаты и кредитор, если он участвует в payoff. Ничего не публикуется, нигде не рекламируется, и ваша компания никогда не «ходит по рукам».",
             },
             {
               q: "Можно ли открыть новый MC authority после продажи?",
@@ -1508,7 +1448,7 @@ export const DICT: Record<Locale, Dict> = {
       privacy: "Конфиденциальность",
       terms: "Условия",
       description:
-        "Veritor Group выкупает логистические LLC в США — специалисты по Amazon Relay.",
+        "Veritor Group сопровождает продажу транспортных компаний в США — специалисты по Amazon Relay.",
     },
     wizard: {
       brandTag: "Бесплатная оценка",
@@ -1578,9 +1518,9 @@ export const DICT: Record<Locale, Dict> = {
       ageBasis: "Возраст полномочий рассчитан по последней подаче MCS-150 ({date}) — это лучший публичный ориентир в FMCSA. Точный возраст подтвердим на звонке.",
       note: "Примечание:",
       floorNote:
-        "это ограничивает ориентировочную оценку нашим минимумом. Мы всё равно можем купить, но условия — на звонке.",
+        "это ограничивает ориентировочную оценку нашим минимумом. Путь здесь всё ещё может быть, но финальные условия подтверждаются на звонке.",
       indicativeBlock:
-        "Это ориентировочный диапазон на основе записи FMCSA. Финальное предложение — после 15-минутного звонка с проверкой страховки, возраста MC и контракта — затем письменно в течение 48 часов.",
+        "Это ориентировочный диапазон на основе записи FMCSA. Финальное предложение — после 15-минутного звонка с проверкой страховки, возраста MC и контракта — затем письменно в течение 24 часов.",
       haveQuestions: "Есть вопросы? Свяжитесь с нами →",
       scheduleCall: "Назначить звонок",
       nextAvailable: "Ближайшее время:",

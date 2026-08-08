@@ -63,7 +63,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Jarvis",
     subtitle: "Veritor Group assistant",
     welcome:
-      "I'm Jarvis. I can answer questions about how Veritor Group buys trucking LLCs, what we look at, and what the sale process looks like. What would you like to know?",
+      "I'm Jarvis. I can answer questions about selling a trucking LLC through Veritor Group, what we look at, and what the process looks like. What would you like to know?",
     placeholder: "Type your message…",
     send: "Send",
     thinking: "Jarvis is typing…",
@@ -90,7 +90,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Jarvis",
     subtitle: "Asistente de Veritor Group",
     welcome:
-      "Soy Jarvis. Puedo responder preguntas sobre cómo Veritor Group compra LLC de transporte, qué evaluamos y cómo es el proceso de venta. ¿Qué le gustaría saber?",
+      "Soy Jarvis. Puedo responder preguntas sobre la venta de una LLC de transporte con Veritor Group, qué evaluamos y cómo es el proceso. ¿Qué le gustaría saber?",
     placeholder: "Escriba su mensaje…",
     send: "Enviar",
     thinking: "Jarvis está escribiendo…",
@@ -117,7 +117,7 @@ const COPY: Record<Locale, Copy> = {
     title: "Джарвис",
     subtitle: "Ассистент Veritor Group",
     welcome:
-      "Я Джарвис. Могу ответить на вопросы о том, как Veritor Group покупает транспортные LLC, что мы смотрим и как идёт процесс продажи. Что вас интересует?",
+      "Я Джарвис. Могу ответить на вопросы о продаже транспортной LLC через Veritor Group, что мы смотрим и как идёт процесс. Что вас интересует?",
     placeholder: "Введите сообщение…",
     send: "Отправить",
     thinking: "Джарвис печатает…",

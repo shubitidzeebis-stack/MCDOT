@@ -13,16 +13,16 @@ import {
 } from "@/components/seo/Schema";
 
 export const metadata: Metadata = {
-  title: "What Veritor buys — LLC acquisition criteria",
+  title: "What qualifies — trucking company sale criteria",
   description:
-    "Two profiles: Amazon Relay carriers (insurance flexible) or MC authority + insurance active 6+ months. Clean violation history. Full LLC transfer at closing.",
+    "Two profiles: Amazon Relay carriers (lapsed insurance workable) or authority plus insurance continuously active 180+ days. Clean violation history, safety rating not Conditional. Full transfer at closing.",
   keywords: [
-    "MC authority for sale",
+    "sell trucking company requirements",
     "sell trucking LLC requirements",
-    "Amazon Relay LLC qualifications",
-    "MC number 180 days",
-    "sell LLC with active insurance",
-    "trucking company buyer requirements",
+    "Amazon Relay carrier qualifications",
+    "MC authority 180 days Amazon Relay",
+    "sell trucking LLC with lapsed insurance",
+    "does my trucking company qualify",
     "owner-operator LLC sale criteria",
   ],
   alternates: {
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "What Veritor Group buys — LLC acquisition criteria",
+    title: "What qualifies — trucking company sale criteria",
     description:
-      "Two profiles: Amazon Relay carriers (insurance flexible), or MC authority + insurance active for 6+ months. Clean violation history. Full transfer at closing.",
+      "Two profiles: Amazon Relay carriers (lapsed insurance workable), or authority plus insurance continuously active 180+ days. Clean violation history. Full transfer at closing.",
     url: "/requirements",
     images: ["/requirements/document-table.png"],
   },
@@ -47,27 +47,27 @@ export default function RequirementsPage() {
   return (
     <>
       <ServiceSchema
-        name="Logistics LLC acquisition — US"
-        description="Acquisition of US logistics LLCs and Amazon Relay carriers with active insurance, valid MC authority, and clean violation history."
+        name="Trucking company sale — US qualification criteria"
+        description="Sale criteria for US trucking companies and Amazon Relay carriers: active MC authority in good standing, continuous insurance history, clean violation record, and a safety rating that is not Conditional or Unsatisfactory."
         url="/requirements"
       />
       <FAQPageSchema
         items={[
           {
-            q: "Does my LLC qualify if insurance is currently inactive?",
-            a: "It depends on whether the LLC has an active Amazon Relay contract. Carriers with an active Relay contract can have inactive insurance — Veritor re-binds coverage as part of closing. Carriers without Relay must have an in-force policy because Amazon's onboarding requires continuous coverage history.",
+            q: "Does my company qualify if insurance is currently lapsed?",
+            a: "It depends on whether the company has an active Amazon Relay contract. A Relay carrier can have lapsed coverage — Relay blocks booking while insurance is off, but access resumes once coverage is re-bound, and that happens as part of closing. A company without Relay needs an in-force policy, because Amazon's 180-day onboarding clock measures continuous coverage and a lapse resets what that record shows.",
           },
           {
-            q: "Why does Veritor require 180 days of active MC authority and insurance?",
-            a: "Amazon Relay won't onboard a carrier until the MC authority and the BIPD insurance policy attached to it have been continuously active for at least 180 days. Veritor specifically looks for LLCs past that 6-month mark — the authority is mature enough for Relay onboarding but still fresh enough to have a clean operating record.",
+            q: "Why does the 180-day mark matter so much?",
+            a: "Amazon Relay will not onboard a carrier until the MC authority and the BIPD insurance policy attached to it have been continuously active for at least 180 days. That is Amazon's own published rule, and it is the single hardest gate to get through. A company past that mark is worth materially more than one approaching it, because the waiting is already done.",
           },
           {
-            q: "What does 'good standing on violations' mean for a trucking LLC sale?",
-            a: "Veritor pulls FMCSA records as part of diligence. Minor or resolved violations are usually fine. Out-of-service orders, unsafe-driving thresholds, or Hours-of-Service pattern violations make an LLC much harder to operate post-close, and Veritor generally passes on those.",
+            q: "What violation history disqualifies a trucking company?",
+            a: "FMCSA records get pulled as part of diligence. Minor or resolved violations are usually fine. What is not a fit: a Conditional or Unsatisfactory safety rating, authority that has been revoked or is not authorised to operate, and a high out-of-service rate. Amazon's own thresholds run stricter than the federal ones — under 60% on Unsafe Driving and Hours-of-Service, under 75% on Vehicle Maintenance, Controlled Substances and Driver Fitness — so a record that clears FMCSA can still fail Relay.",
           },
           {
-            q: "Can I sell a trucking LLC that has an active loan on a truck?",
-            a: "Yes, if the truck is titled to the LLC and the lien is paid off at closing. Veritor coordinates the payoff wire directly with the lender — the purchase price splits between the lender (for payoff) and the seller (for the remainder). If the seller wants to keep the truck, the truck and loan are excluded from the LLC sale.",
+            q: "Can I sell a trucking company that has an active loan on a truck?",
+            a: "Yes, if the truck is titled to the LLC and the lien is paid off at closing. The payoff is coordinated directly with the lender: the price splits between the lender and you, and you take the remainder. If you would rather keep the truck, the truck and the loan are excluded from the sale.",
           },
           {
             q: "What transfers when a trucking LLC is sold?",
@@ -103,43 +103,48 @@ export default function RequirementsPage() {
           }
         >
           <p>
-            We acquire two distinct types of US logistics LLCs because they map to two
-            different operating plans on our side. An LLC that already runs Amazon Relay
-            is the contract — we step into an existing book of work the moment the
-            ownership transfer closes. An LLC with at least six months of paid insurance
-            and active MC authority is a clean operating shell we can onboard into
-            Amazon Relay or other freight networks the moment we take over.
+            Two profiles qualify, and both of them come back to the same thing: Amazon
+            Relay. A company already running Relay carries the contract itself, which is
+            the most valuable configuration there is. A company past 180 days with
+            continuous insurance is one that can get through Relay onboarding. Everything
+            below is downstream of Amazon&rsquo;s own published rules, not ours.
           </p>
-          <h3>Active vs. inactive insurance</h3>
+          <h3>Lapsed vs. active insurance</h3>
           <p>
-            Carriers with an active Amazon Relay contract can have inactive insurance —
-            we re-bind coverage as part of closing. Carriers without Relay must have an
-            in-force policy, because Amazon&rsquo;s onboarding requires continuous
-            coverage history.
+            These are two different answers depending on Relay. A carrier that already
+            holds a Relay contract can have lapsed coverage — Amazon blocks booking while
+            insurance is off, but the account isn&rsquo;t gone, and access resumes once
+            coverage is re-bound at closing. A carrier <strong>without</strong> Relay
+            needs a policy in force, because the 180-day clock measures continuous
+            coverage and a lapse is exactly what it&rsquo;s looking for.
           </p>
-          <h3>The six-month minimum (insurance + MC authority)</h3>
+          <h3>The 180-day minimum</h3>
           <p>
-            Amazon Relay won&rsquo;t onboard a carrier until the MC authority and the
-            BIPD insurance policy attached to it have been continuously active for at
-            least 180 days. They look for a real paper trail: six months of premium
-            payments, six months of FMCSA standing, six months without lapses. That&rsquo;s
-            why we&rsquo;re specifically looking for LLCs that are <strong>past</strong>{" "}
-            that 6-month mark — the authority is mature enough for Relay onboarding but
-            still fresh enough to have a clean operating record. If your MC has been
-            paying insurance and active for six months or more, you&rsquo;re in the
-            sweet spot.
+            Amazon won&rsquo;t onboard a carrier until the MC authority and the BIPD
+            policy attached to it have been continuously active for at least 180 days.
+            They want a real paper trail: six months of premium payments, six months of
+            FMCSA standing, six months without a gap. A company <strong>past</strong>{" "}
+            that mark is worth materially more than one approaching it, because the
+            waiting is already done and it can&rsquo;t be shortcut.
           </p>
-          <h3>What &ldquo;good standing on violations&rdquo; means</h3>
+          <h3>Safety rating and violations</h3>
           <p>
-            We pull FMCSA records as part of diligence. Minor or resolved violations are
-            usually fine. Out-of-service orders, unsafe-driving thresholds, or HOS
-            pattern violations make an LLC much harder to operate post-close, and we
-            generally pass on those.
+            FMCSA records get pulled as part of diligence, and minor or resolved
+            violations are usually fine. What isn&rsquo;t a fit: a{" "}
+            <strong>Conditional or Unsatisfactory safety rating</strong>, authority that
+            has been <strong>revoked or is not authorised to operate</strong>, and a{" "}
+            <strong>high out-of-service rate</strong>. Amazon screens tighter than the
+            federal thresholds — under 60% on Unsafe Driving and Hours-of-Service, under
+            75% on Vehicle Maintenance, Controlled Substances and Driver Fitness — plus,
+            since early 2026, a driver violation rate at or under 35% and a vehicle
+            violation rate at or under 50%. A record that clears FMCSA can still fail
+            Relay. If yours is in that territory you&rsquo;ll hear so the same day rather
+            than being strung along.
           </p>
           <h3>Active loans</h3>
           <p>
             Outstanding equipment or working-capital loans are not a deal-breaker.
-            Disclose them up front and we structure the payoff at closing — funds wired
+            Disclose them up front and the payoff is structured at closing — funds wired
             direct to the lender, remainder to you.
           </p>
         </EditorialBlock>

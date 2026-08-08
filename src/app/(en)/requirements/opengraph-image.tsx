@@ -5,11 +5,11 @@ export const revalidate = false;
 export const size = SIZE;
 export const contentType = CONTENT_TYPE;
 export const alt =
-  "Veritor Group — Clear requirements. No guesswork. What we buy.";
+  "Veritor Group — Clear requirements. No guesswork. What qualifies.";
 
 export default function OgImage() {
   return makeOgImage({
-    eyebrow: "WHAT WE BUY",
+    eyebrow: "WHAT QUALIFIES",
     headlineLine1: "Clear requirements.",
     headlineLine2: "No guesswork.",
     trustRow: [

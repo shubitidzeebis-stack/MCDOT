@@ -14,9 +14,9 @@ export const metadata: Metadata = {
   // `absolute` bypasses the layout's "%s · Veritor Group" template — the
   // brand is already in this title, and letting the template run appends
   // it a second time.
-  title: { absolute: "Veritor Group — Выкупаем логистические LLC в США" },
+  title: { absolute: "Veritor Group — Продайте транспортную компанию за 3–5 дней" },
   description:
-    "Veritor Group покупает логистические LLC в США, в том числе с действующим контрактом Amazon Relay. Быстрое закрытие, честная цена. Более 40 успешных сделок.",
+    "Продайте свою транспортную компанию в США — включая перевозчиков, работающих с Amazon Relay. Бесплатная оценка по данным FMCSA, письменный оффер за 24 часа, закрытие за 3–5 рабочих дней. Без комиссий.",
   alternates: {
     canonical: "/ru",
     languages: {

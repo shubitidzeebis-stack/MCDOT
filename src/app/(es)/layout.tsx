@@ -25,11 +25,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE.name} — Compramos LLCs de logística en EE. UU.`,
+    default: `${SITE.name} — Venda su empresa de transporte, cierre en 3–5 días`,
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Veritor Group adquiere LLCs de logística en EE. UU. y carriers con Amazon Relay activo. Ofertas por escrito, cierre en 3–5 días hábiles.",
+    "Venda su empresa de transporte en EE. UU. — incluyendo transportistas con Amazon Relay activo. Valuación gratis por FMCSA, oferta por escrito en 24 horas, cierre en persona en su banco en 3–5 días hábiles. Sin honorarios, sin comisión. Más de 400 ventas cerradas en todo el país.",
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
   generator: "Next.js",

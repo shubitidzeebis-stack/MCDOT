@@ -28,9 +28,9 @@ export function AreaServiceSchema({
       data={{
         "@context": "https://schema.org",
         "@type": "Service",
-        name: `Trucking LLC Acquisition in ${cityName}, ${stateName}`,
-        serviceType: "Business Acquisition",
-        description: `Veritor Group acquires trucking LLCs and logistics companies in ${cityName}, ${stateName}. Direct buyer — not a broker. Wire transfer at closing, 3–5 business days.`,
+        name: `Trucking Company Sales in ${cityName}, ${stateName}`,
+        serviceType: "Business Sale",
+        description: `Sell your trucking company in ${cityName}, ${stateName}. Veritor Group handles the valuation, the paperwork, and the ownership transfer end to end. Written offer, wire at closing, 3–5 business days.`,
         provider: {
           "@type": "Organization",
           "@id": `${BASE_URL}#organization`,
@@ -53,7 +53,7 @@ export function AreaServiceSchema({
         offers: {
           "@type": "Offer",
           availability: "https://schema.org/InStock",
-          description: "Written cash offer within 24 hours. Close in 3–5 business days.",
+          description: "Written offer within 24 hours. Close in 3–5 business days.",
         },
       }}
     />

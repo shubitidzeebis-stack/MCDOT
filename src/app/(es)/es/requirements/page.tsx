@@ -7,9 +7,9 @@ import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 
 export const metadata: Metadata = {
-  title: "Requisitos — Qué LLCs compramos",
+  title: "Requisitos — Qué LLCs califican",
   description:
-    "Veritor Group adquiere LLCs de logística en EE. UU. Dos perfiles: con contrato activo de Amazon Relay, o autoridad MC nueva (menos de 180 días). Vea los criterios exactos.",
+    "Dos perfiles: carriers con Amazon Relay (seguro vencido es manejable), o autoridad y seguro activos de forma continua 180+ días. Historial de violaciones limpio, calificación de seguridad no Conditional. Traspaso completo al cierre.",
   alternates: {
     canonical: "/es/requirements",
     languages: {

@@ -9,10 +9,10 @@ import { listPosts } from "@/lib/posts";
 export const metadata: Metadata = {
   title: "Insights — trucking LLC seller field notes",
   description:
-    "Field notes on selling US trucking LLCs — MC authority, Amazon Relay, insurance, FMCSA filings, and owner-operator exits. Written by operators.",
+    "Field notes on selling US trucking LLCs — MC authority, Amazon Relay, insurance, and owner-operator exits. Written for the people who own them.",
   keywords: [
     "trucking LLC sale blog",
-    "Amazon Relay acquisition guide",
+    "Amazon Relay carrier sale guide",
     "MC authority transfer guide",
     "owner-operator exit blog",
     "logistics M&A insights",
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/blog" },
   openGraph: {
     title: "Insights — Veritor Group",
-    description: "Long-form field notes on selling US logistics LLCs.",
+    description: "Long-form field notes on selling a US trucking company.",
     url: "/blog",
     images: ["/blog/default-cover.webp"],
   },
@@ -51,11 +51,11 @@ export default async function BlogIndex() {
             </p>
             <h1 className="text-[2rem] font-semibold leading-[1.05] tracking-[-0.035em] text-white sm:text-5xl md:text-6xl">
               Field notes from{" "}
-              <span className="italic font-light text-white/85">the buy side.</span>
+              <span className="italic font-light text-white/85">the closing table.</span>
             </h1>
             <p className="mt-6 max-w-[640px] text-[15px] leading-relaxed text-white/65 md:text-[17px]">
-              What we&rsquo;ve learned acquiring logistics LLCs across the United States — written
-              for the people who own them.
+              What 400+ trucking company sales across the United States have taught us —
+              written for the people who own them.
             </p>
 
             {latest && (

@@ -10,7 +10,7 @@ import { TESTIMONIALS } from "@/lib/testimonials";
 export const metadata: Metadata = {
   title: "Closing stories — sellers we've worked with",
   description:
-    "Anonymized stories from owner-operators who sold their LLCs to Veritor Group — Amazon Relay carriers, fresh-MC sellers, multi-LLC owners, deals with active loans.",
+    "Anonymized stories from owner-operators who sold their trucking companies through Veritor Group — Amazon Relay carriers, non-Relay sellers, multi-LLC owners, deals with active loans.",
   alternates: { canonical: "/case-studies" },
   openGraph: {
     title: "Closing stories — Veritor Group",

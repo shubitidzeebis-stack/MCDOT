@@ -5,7 +5,7 @@ export const revalidate = false;
 export const size = SIZE;
 export const contentType = CONTENT_TYPE;
 export const alt =
-  "Veritor Group — Four steps, 3 to 5 business days. The acquisition process.";
+  "Veritor Group — Four steps, 3 to 5 business days. The sale process.";
 
 export default function OgImage() {
   return makeOgImage({

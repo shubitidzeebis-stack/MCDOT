@@ -10,7 +10,7 @@ import { DEFAULT_OG_IMAGE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contact — Get a free LLC valuation",
   description:
-    "Send your trucking LLC details and get a free written valuation within hours. Phone, email, and WhatsApp available. No obligation, no fee, no broker.",
+    "Send your trucking company details and get a free written valuation within hours. Phone, email, and WhatsApp available. No obligation, no fees, no commission.",
   keywords: [
     "contact Veritor Group",
     "free trucking LLC valuation",

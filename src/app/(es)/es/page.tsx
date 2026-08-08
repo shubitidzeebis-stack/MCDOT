@@ -14,9 +14,9 @@ export const metadata: Metadata = {
   // `absolute` bypasses the layout's "%s · Veritor Group" template — the
   // brand is already in this title, and letting the template run appends
   // it a second time.
-  title: { absolute: "Veritor Group — Compramos LLCs de logística en EE. UU." },
+  title: { absolute: "Veritor Group — Venda su empresa de transporte en 3–5 días" },
   description:
-    "Veritor Group adquiere LLCs de logística en EE. UU., incluyendo aquellas con contrato activo de Amazon Relay. Cierre rápido y oferta justa. Más de 40 adquisiciones completadas.",
+    "Venda su empresa de transporte en EE. UU. — incluidos los carriers que operan con Amazon Relay. Valuación FMCSA gratuita, oferta por escrito en 24 horas, cierre en 3–5 días hábiles. Sin comisiones.",
   alternates: {
     canonical: "/es",
     languages: {

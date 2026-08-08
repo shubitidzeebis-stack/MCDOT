@@ -35,7 +35,7 @@ const COPY: Record<Locale, Strings> = {
       },
       {
         title: "3. Written offer, no games",
-        body: "If your LLC fits our buying criteria, you get one written number — not a starting point for negotiation, not a verbal range. Decide on your own time.",
+        body: "If your company fits the criteria, you get one written number — not a starting point for negotiation, not a verbal range. Decide on your own time.",
       },
     ],
     back: "← Back to home",

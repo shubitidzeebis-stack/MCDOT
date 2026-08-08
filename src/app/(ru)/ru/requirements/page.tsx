@@ -7,9 +7,9 @@ import { Footer } from "@/components/Footer";
 import { MobileCTA } from "@/components/MobileCTA";
 
 export const metadata: Metadata = {
-  title: "Требования — Какие LLC мы покупаем",
+  title: "Требования — Какие LLC подходят",
   description:
-    "Veritor Group выкупает логистические LLC в США. Два профиля: с активным контрактом Amazon Relay или с MC authority младше 180 дней. Точные критерии.",
+    "Два профиля: перевозчики с Amazon Relay (просроченная страховка допустима) или authority и страховка непрерывно активны 180+ дней. Чистая история нарушений, рейтинг безопасности не Conditional. Полная передача при закрытии.",
   alternates: {
     canonical: "/ru/requirements",
     languages: {

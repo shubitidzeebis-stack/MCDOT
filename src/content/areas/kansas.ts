@@ -6,13 +6,13 @@ export const kansas: StateData = {
   abbr: "KS",
   metaTitle: "Sell Your Trucking LLC in Kansas | Veritor Group",
   metaDescription:
-    "Veritor Group buys trucking LLCs across Kansas — Wichita, KC metro and beyond. Wire transfer in 3–5 business days. Direct buyer, no brokers.",
+    "Veritor Group values trucking LLCs across Kansas — Wichita, KC metro and beyond. Wire transfer in 3–5 business days. Written offer in 24 hours.",
   heroLine1: "Ready to Exit the Kansas Trucking Market?",
-  heroLine2: "Veritor Group buys trucking LLCs across Kansas.",
+  heroLine2: "Sell your trucking LLC in Kansas.",
   heroSubhead:
-    "Direct buyer. Wire at your bank. Close in 3–5 business days. No brokers, no delays.",
+    "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days. No fees, no delays.",
   intro:
-    "Kansas carries more miles of I-70 than any other state. That single fact defines the Kansas trucking market: the country's primary east-west freight backbone runs the entire width of the state, from the Kansas City metro on the Missouri border to the Colorado line near Goodland, more than 420 continuous miles of active interstate freight corridor. Every carrier operating in Kansas is working adjacent to that artery in some form.\n\nThe markets that anchor that corridor are distinct. Wichita is the largest city in Kansas and one of the most specialized freight markets in the country — Spirit AeroSystems, Textron Aviation, and Learjet all operate here, generating aerospace parts and materials movements that require carriers familiar with oversized and temperature-sensitive freight protocols. The Kansas City metro, on the Kansas side, is a different story: Overland Park, Olathe, and the Edgerton logistics corridor place Kansas squarely inside one of the Midwest's most active intermodal and Amazon Relay markets.\n\nBeyond the metros, Kansas is the top wheat-producing state in the United States. Grain hopper carriers running between farm elevators and Gulf export terminals, and beef freight carriers supporting the feedlot and processing operations in Liberal, Garden City, and Dodge City, represent a freight base that is agricultural in character but industrial in volume.\n\nVeritor Group is a direct buyer of trucking LLCs throughout Kansas. We have closed 400+ acquisitions nationwide and are actively buying Kansas authorities right now. If your MC is active and your insurance is current, we issue a written offer within 24 hours and wire in 3–5 business days.",
+    "Kansas carries more miles of I-70 than any other state. That single fact defines the Kansas trucking market: the country's primary east-west freight backbone runs the entire width of the state, from the Kansas City metro on the Missouri border to the Colorado line near Goodland, more than 420 continuous miles of active interstate freight corridor. Every carrier operating in Kansas is working adjacent to that artery in some form.\n\nThe markets that anchor that corridor are distinct. Wichita is the largest city in Kansas and one of the most specialized freight markets in the country — Spirit AeroSystems, Textron Aviation, and Learjet all operate here, generating aerospace parts and materials movements that require carriers familiar with oversized and temperature-sensitive freight protocols. The Kansas City metro, on the Kansas side, is a different story: Overland Park, Olathe, and the Edgerton logistics corridor place Kansas squarely inside one of the Midwest's most active intermodal and Amazon Relay markets.\n\nBeyond the metros, Kansas is the top wheat-producing state in the United States. Grain hopper carriers running between farm elevators and Gulf export terminals, and beef freight carriers supporting the feedlot and processing operations in Liberal, Garden City, and Dodge City, represent a freight base that is agricultural in character but industrial in volume.\n\nVeritor Group is active with trucking LLCs throughout Kansas. We've closed 400+ trucking LLC sales nationwide and are actively engaged with Kansas carriers right now. If your MC is active and your insurance is current, we issue a written offer within 24 hours and the wire lands in your account in 3–5 business days.",
   keywords: [
     "sell trucking LLC Kansas",
     "trucking LLC buyer Kansas",
@@ -21,14 +21,14 @@ export const kansas: StateData = {
     "trucking company buyer Kansas City KS",
     "sell Amazon Relay Kansas",
     "owner operator exit Kansas",
-    "sell MC authority Kansas",
+    "trucking company with MC authority Kansas",
     "trucking business acquisition Kansas",
     "sell logistics LLC Kansas",
-    "cash for trucking LLC Kansas",
+    "written offer for trucking LLC Kansas",
     "how to sell trucking company Kansas",
     "sell freight company Kansas",
     "exit trucking business Kansas",
-    "buy trucking LLC Kansas",
+    "quick sale trucking LLC Kansas",
     "I-70 trucking company for sale Kansas",
     "sell grain hauler Kansas",
     "Wichita aviation freight carrier sale",
@@ -39,11 +39,11 @@ export const kansas: StateData = {
       a: "Two things set Kansas apart. First, I-70 runs the full width of the state — more miles than any other state on that corridor — so Kansas carriers have genuine through-freight exposure that carriers in shorter-corridor states do not. Second, Wichita's aerospace manufacturing base creates a specialized freight market for aviation parts and materials that is not replicated anywhere else in the central US. We understand both the I-70 generalist market and the Wichita specialty market.",
     },
     {
-      q: "Does Veritor buy Kansas City KS carriers, and how is that different from Kansas City MO?",
+      q: "Is Veritor interested in Kansas City KS carriers, and how is that different from Kansas City MO?",
       a: "Yes — Overland Park, Olathe, and the broader KCK metro are active markets for us. The Kansas-side KC suburbs sit inside the same intermodal freight ecosystem as Kansas City MO, but they are distinct entities legally and geographically. Our Kansas pages cover the Kansas-side carriers; our Missouri pages cover the MO side. If your authority is registered in Kansas, you are in the right place.",
     },
     {
-      q: "I haul grain or agricultural freight in Kansas. Does Veritor buy agricultural carriers?",
+      q: "I haul grain or agricultural freight in Kansas. Is Veritor interested in agricultural carriers?",
       a: "Yes. Kansas's position as the top wheat state in the country means agricultural freight — grain hoppers, elevator-to-terminal runs, feedlot supply movements — represents a real and active segment of the state's carrier market. We evaluate agricultural carriers on the same criteria as any other authority: MC status, DOT safety record, and active insurance. Freight type does not disqualify a seller.",
     },
     {
@@ -61,26 +61,26 @@ export const kansas: StateData = {
       name: "Wichita",
       metaTitle: "Sell Your Trucking LLC in Wichita KS | Veritor Group",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Wichita. Direct buyer — wire in 3–5 business days. Aerospace freight carriers and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Wichita. Written offer in 24 hours — wire in 3–5 business days. Aerospace freight carriers and companies with fresh MC authority welcome.",
       heroLine1: "Ready to Exit Your Wichita Trucking Business?",
-      heroLine2: "Veritor Group is the direct buyer in Wichita, Kansas.",
+      heroLine2: "Sell your trucking LLC in Wichita, Kansas.",
       heroSubhead:
-        "No brokers. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Wichita is the aviation capital of the United States, and that title shapes its freight market in ways that have no parallel elsewhere in Kansas. Spirit AeroSystems produces fuselages for Boeing aircraft here. Textron Aviation — home to the Cessna and Beechcraft brands — manufactures and delivers business aircraft from facilities across the metro. Learjet, now part of Bombardier, has had a Wichita presence for decades. The result is a specialized freight market built around aerospace components, precision parts, oversized shipments, and temperature-controlled materials that require carriers familiar with aerospace logistics protocols.\n\nThat specialization means Wichita trucking LLCs are not interchangeable with the general freight carriers operating on the I-70 corridor to the north. Carriers who have built relationships with aerospace OEMs, tier-one suppliers, and the airframe manufacturers at Dwight D. Eisenhower National Airport have operational histories that reflect a more complex freight environment than most US markets of comparable size.\n\nKoch Industries, headquartered in Wichita, adds industrial and chemical freight to the local carrier ecosystem. For owner-operators who have served this market and are now evaluating an exit, Veritor Group is the direct buyer. We issue written offers within 24 hours and close with a wire in 3–5 business days.",
+        "Wichita is the aviation capital of the United States, and that title shapes its freight market in ways that have no parallel elsewhere in Kansas. Spirit AeroSystems produces fuselages for Boeing aircraft here. Textron Aviation — home to the Cessna and Beechcraft brands — manufactures and delivers business aircraft from facilities across the metro. Learjet, now part of Bombardier, has had a Wichita presence for decades. The result is a specialized freight market built around aerospace components, precision parts, oversized shipments, and temperature-controlled materials that require carriers familiar with aerospace logistics protocols.\n\nThat specialization means Wichita trucking LLCs are not interchangeable with the general freight carriers operating on the I-70 corridor to the north. Carriers who have built relationships with aerospace OEMs, tier-one suppliers, and the airframe manufacturers at Dwight D. Eisenhower National Airport have operational histories that reflect a more complex freight environment than most US markets of comparable size.\n\nKoch Industries, headquartered in Wichita, adds industrial and chemical freight to the local carrier ecosystem. For owner-operators who have served this market and are now evaluating an exit, Veritor Group is active in Wichita. We issue written offers within 24 hours and close with a wire in 3–5 business days.",
       whySell:
-        "Wichita's aerospace freight market is specialized, which means high entry costs and demanding customers — but it also means the operational history your LLC has built carries real context. If you have served Spirit, Textron, or the Koch supply chain and the overhead no longer pencils out, Veritor converts that history into a direct cash exit. Written offer in 24 hours. Wire in under a week. No broker, no delay.",
+        "Wichita's aerospace freight market is specialized, which means high entry costs and demanding customers — but it also means the operational history your LLC has built carries real context. If you have served Spirit, Textron, or the Koch supply chain and the overhead no longer pencils out, Veritor converts that history into a clean, fast exit. Written offer in 24 hours. Wire in under a week. No delay.",
       keywords: [
         "sell trucking LLC Wichita",
         "trucking company buyer Wichita",
         "sell trucking company Wichita Kansas",
         "owner operator exit Wichita",
-        "sell MC authority Wichita KS",
+        "trucking company with MC authority Wichita KS",
         "trucking business acquisition Wichita",
         "sell logistics LLC Wichita",
-        "cash for trucking LLC Wichita",
+        "written offer for trucking LLC Wichita",
         "sell freight company Wichita",
-        "buy trucking LLC Wichita KS",
+        "quick sale trucking LLC Wichita KS",
         "exit trucking business Wichita",
         "Wichita trucking LLC buyer",
         "aerospace freight carrier sale Wichita",
@@ -88,8 +88,8 @@ export const kansas: StateData = {
       ],
       faqs: [
         {
-          q: "Does Veritor buy carriers that specialize in aerospace or aviation freight in Wichita?",
-          a: "Yes. Aerospace freight carriers — serving Spirit AeroSystems, Textron, Learjet, or their tier-one suppliers — are among the most operationally distinct LLCs we evaluate. The specialized nature of the freight does not complicate the acquisition; it provides context. We evaluate the MC authority, DOT record, and insurance regardless of the freight type.",
+          q: "Is Veritor interested in carriers that specialize in aerospace or aviation freight in Wichita?",
+          a: "Yes. Aerospace freight carriers — serving Spirit AeroSystems, Textron, Learjet, or their tier-one suppliers — are among the most operationally distinct LLCs we evaluate. The specialized nature of the freight does not complicate the deal; it provides context. We evaluate the MC authority, DOT record, and insurance regardless of the freight type.",
         },
         {
           q: "I haul for Koch Industries facilities in Wichita. Does that industrial freight history affect my LLC's value?",
@@ -97,7 +97,7 @@ export const kansas: StateData = {
         },
         {
           q: "Is Wichita's freight market large enough for Veritor to be actively buying?",
-          a: "Yes. Wichita is the largest city in Kansas and its freight market is larger and more specialized than its population size suggests. The aerospace manufacturing base generates freight demand that outpaces comparably sized cities without that industrial concentration. We are actively acquiring in the Wichita market.",
+          a: "Yes. Wichita is the largest city in Kansas and its freight market is larger and more specialized than its population size suggests. The aerospace manufacturing base generates freight demand that outpaces comparably sized cities without that industrial concentration. We're actively engaged in the Wichita market.",
         },
         {
           q: "What documents do I need to get a written offer for my Wichita LLC?",
@@ -115,26 +115,26 @@ export const kansas: StateData = {
       name: "Overland Park",
       metaTitle: "Sell Your Trucking LLC in Overland Park KS | Veritor",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Overland Park. Direct buyer — wire in 3–5 business days. Amazon Relay carriers and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Overland Park. Written offer in 24 hours — wire in 3–5 business days. Amazon Relay carriers and companies with fresh MC authority welcome.",
       heroLine1: "Selling Your Overland Park Trucking Business?",
-      heroLine2: "Veritor Group is the direct buyer in Overland Park, Kansas.",
+      heroLine2: "Sell your trucking LLC in Overland Park, Kansas.",
       heroSubhead:
-        "Direct buyer. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Overland Park is the largest city on the Kansas side of the Kansas City metro and one of the most economically active suburbs in the entire KC region. As a Kansas-side KC suburb, Overland Park carriers have full access to the same intermodal freight infrastructure — the BNSF and Union Pacific ramps, the Amazon fulfillment network, and the I-70 corridor — that makes Kansas City one of the Midwest's most consequential trucking markets, without the operating overhead of the Missouri side of the river.\n\nThe Edgerton and Gardner Amazon logistics corridor, where Amazon operates a major fulfillment and sortation footprint on the Kansas side of the metro, generates consistent Relay route activity for carriers registered in the Overland Park area. I-35 runs directly through Overland Park, connecting it to the broader KC metro and the I-70 interchange north of the city, giving carriers here strong lane access to both the east-west and north-south freight networks.\n\nVeritor Group is a direct buyer of trucking LLCs in Overland Park. We acquire Amazon Relay operators, fresh MC authorities under 180 days old with active insurance, and established KC-metro carriers based on the Kansas side. Written offer within 24 hours, wire in 3–5 business days. No broker, no intermediary.",
+        "Overland Park is the largest city on the Kansas side of the Kansas City metro and one of the most economically active suburbs in the entire KC region. As a Kansas-side KC suburb, Overland Park carriers have full access to the same intermodal freight infrastructure — the BNSF and Union Pacific ramps, the Amazon fulfillment network, and the I-70 corridor — that makes Kansas City one of the Midwest's most consequential trucking markets, without the operating overhead of the Missouri side of the river.\n\nThe Edgerton and Gardner Amazon logistics corridor, where Amazon operates a major fulfillment and sortation footprint on the Kansas side of the metro, generates consistent Relay route activity for carriers registered in the Overland Park area. I-35 runs directly through Overland Park, connecting it to the broader KC metro and the I-70 interchange north of the city, giving carriers here strong lane access to both the east-west and north-south freight networks.\n\nVeritor Group works with trucking LLCs in Overland Park — Amazon Relay operators, companies with fresh MC authority under 180 days old and active insurance, and established KC-metro carriers based on the Kansas side. Written offer within 24 hours, wire in 3–5 business days.",
       whySell:
-        "Overland Park carriers sit inside one of the Midwest's densest freight markets, which means significant competition for every load. If rate pressure from the KC intermodal market has squeezed your margins, Veritor provides a direct exit: written offer in 24 hours, wire in 3–5 days. No broker taking a cut, no delay waiting for a buyer who never shows.",
+        "Overland Park carriers sit inside one of the Midwest's densest freight markets, which means significant competition for every load. If rate pressure from the KC intermodal market has squeezed your margins, Veritor provides a clean, fast exit: written offer in 24 hours, wire in 3–5 days.",
       keywords: [
         "sell trucking LLC Overland Park",
         "trucking company buyer Overland Park KS",
         "sell Amazon Relay Overland Park",
         "owner operator exit Overland Park Kansas",
-        "sell MC authority Overland Park",
+        "trucking company with MC authority Overland Park",
         "trucking business acquisition Overland Park",
         "sell logistics LLC Overland Park KS",
-        "cash for trucking LLC Overland Park",
+        "written offer for trucking LLC Overland Park",
         "sell freight company Overland Park",
-        "buy trucking LLC Overland Park KS",
+        "quick sale trucking LLC Overland Park KS",
         "exit trucking business Overland Park",
         "Overland Park trucking LLC buyer",
         "Kansas City KS trucking company sale",
@@ -145,7 +145,7 @@ export const kansas: StateData = {
           a: "Yes. Overland Park is on the Kansas side of the KC metro, but we evaluate it as part of the broader Kansas City freight ecosystem — same intermodal infrastructure, same Amazon Relay network, same I-70 and I-35 lane access. The state line does not change the operational picture for carriers based here.",
         },
         {
-          q: "I run Amazon Relay out of the Edgerton or Gardner fulfillment center. Is Veritor buying in that corridor?",
+          q: "I run Amazon Relay out of the Edgerton or Gardner fulfillment center. Is Veritor active in that corridor?",
           a: "Actively. Amazon's Kansas-side logistics footprint in Edgerton and Gardner generates consistent Relay lanes for nearby carriers. An active Relay contract with a clean Amazon performance record is among the most straightforward deals we close. Share your MC number and we will have a written offer back within 24 hours.",
         },
         {
@@ -154,7 +154,7 @@ export const kansas: StateData = {
         },
         {
           q: "Can I sell my Overland Park LLC and set up a new Kansas authority afterward?",
-          a: "Yes. We acquire the LLC entity and the MC authority. You are free to form a new entity and apply for fresh authority with FMCSA after closing. Many sellers do exactly this — exit the existing LLC, take the wire, and decide on next steps from a position of liquidity.",
+          a: "Yes. The sale covers the LLC entity and the MC authority. You are free to form a new entity and apply for fresh authority with FMCSA after closing. Many sellers do exactly this — exit the existing LLC, take the wire, and decide on next steps from a position of liquidity.",
         },
         {
           q: "Does Veritor close remotely for Overland Park sellers?",
@@ -168,26 +168,26 @@ export const kansas: StateData = {
       name: "Kansas City",
       metaTitle: "Sell Your Trucking LLC in Kansas City KS | Veritor",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Kansas City KS. Direct buyer — wire in 3–5 business days. Amazon Relay and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Kansas City KS. Written offer in 24 hours — wire in 3–5 business days. Amazon Relay and companies with fresh MC authority welcome.",
       heroLine1: "Looking to Exit Your Kansas City KS Trucking Business?",
-      heroLine2: "Veritor Group buys trucking LLCs in Kansas City, Kansas.",
+      heroLine2: "Sell your trucking LLC in Kansas City, Kansas.",
       heroSubhead:
-        "No brokers. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Kansas City, Kansas occupies the western bank of the Missouri River and sits at the core of the KC metro's industrial and intermodal freight infrastructure. This is the Kansas side — distinct from Kansas City, Missouri across the state line — and it is where significant portions of the metro's rail and intermodal capacity are physically located. The Argentine rail yard, one of BNSF's major Kansas City facilities, operates on the Kansas side, making KCK an anchor of the rail-to-truck freight transfer that makes the KC metro a national intermodal hub.\n\nFor carriers based in Kansas City, Kansas, that intermodal proximity translates into real freight access. BNSF and Union Pacific loads that get broken down at KC ramps are staged for trucking operations that serve the surrounding distribution networks — and carriers on the Kansas side have historically had strong access to those lanes.\n\nAmazon's logistics footprint extends into the Kansas suburbs. Relay routes from the Edgerton and Gardner corridors reach Kansas City KS-based carriers, and the broader KC Relay network is accessible to KCK operators who qualified during the freight expansion.\n\nVeritor Group is a direct buyer of trucking LLCs in Kansas City, Kansas. We are not a broker and we do not list your business — we buy it directly. Written offer in 24 hours, wire in 3–5 business days.",
+        "Kansas City, Kansas occupies the western bank of the Missouri River and sits at the core of the KC metro's industrial and intermodal freight infrastructure. This is the Kansas side — distinct from Kansas City, Missouri across the state line — and it is where significant portions of the metro's rail and intermodal capacity are physically located. The Argentine rail yard, one of BNSF's major Kansas City facilities, operates on the Kansas side, making KCK an anchor of the rail-to-truck freight transfer that makes the KC metro a national intermodal hub.\n\nFor carriers based in Kansas City, Kansas, that intermodal proximity translates into real freight access. BNSF and Union Pacific loads that get broken down at KC ramps are staged for trucking operations that serve the surrounding distribution networks — and carriers on the Kansas side have historically had strong access to those lanes.\n\nAmazon's logistics footprint extends into the Kansas suburbs. Relay routes from the Edgerton and Gardner corridors reach Kansas City KS-based carriers, and the broader KC Relay network is accessible to KCK operators who qualified during the freight expansion.\n\nVeritor Group is active with trucking LLCs in Kansas City, Kansas. Written offer in 24 hours, wire in 3–5 business days.",
       whySell:
-        "Kansas City KS carriers operate inside one of the most freight-dense metros in the Midwest, competing for intermodal and distribution loads alongside hundreds of other carriers. If margin pressure from that competition has made the numbers stop working, Veritor is the direct path out: written offer in 24 hours, wire in 3–5 days. One buyer, no broker, no delay.",
+        "Kansas City KS carriers operate inside one of the most freight-dense metros in the Midwest, competing for intermodal and distribution loads alongside hundreds of other carriers. If margin pressure from that competition has made the numbers stop working, Veritor offers a clean path out: written offer in 24 hours, wire in 3–5 days.",
       keywords: [
         "sell trucking LLC Kansas City Kansas",
         "trucking company buyer Kansas City KS",
         "sell Amazon Relay Kansas City KS",
         "owner operator exit Kansas City Kansas",
-        "sell MC authority Kansas City KS",
+        "trucking company with MC authority Kansas City KS",
         "trucking business acquisition Kansas City Kansas",
         "sell logistics LLC Kansas City KS",
-        "cash for trucking LLC Kansas City Kansas",
+        "written offer for trucking LLC Kansas City Kansas",
         "sell freight company Kansas City KS",
-        "buy trucking LLC Kansas City Kansas",
+        "quick sale trucking LLC Kansas City Kansas",
         "exit trucking business Kansas City KS",
         "KCK trucking LLC buyer",
         "intermodal carrier sale Kansas City Kansas",
@@ -199,12 +199,12 @@ export const kansas: StateData = {
           a: "They are separate legal jurisdictions on opposite sides of the state line. Carriers registered in Kansas file with Kansas and hold Kansas-registered LLCs; Missouri carriers are separate entities. This page covers the Kansas side — KCK, Wyandotte County, and the Kansas-registered carriers in the KC metro. Our Missouri pages cover Kansas City MO. The freight market overlaps; the legal entities do not.",
         },
         {
-          q: "Does Veritor buy carriers tied to the Argentine BNSF yard or the KC intermodal ramps?",
-          a: "Yes. Intermodal-adjacent carriers — whether you pull containers from BNSF's Argentine facility, service other KC-area ramps, or haul distribution loads from metro warehouses — fit our acquisition criteria. We understand the intermodal freight context and it does not complicate the deal.",
+          q: "Is Veritor interested in carriers tied to the Argentine BNSF yard or the KC intermodal ramps?",
+          a: "Yes. Intermodal-adjacent carriers — whether you pull containers from BNSF's Argentine facility, service other KC-area ramps, or haul distribution loads from metro warehouses — fit what we look to value. We understand the intermodal freight context and it does not complicate the deal.",
         },
         {
           q: "I have an active Amazon Relay contract registered to a Kansas City KS address. Is that a straightforward deal?",
-          a: "Active Relay contracts with clean Amazon performance records are among the most straightforward acquisitions we close. Share your MC number and we will have a written offer back within 24 hours. The Kansas-side address does not change the evaluation.",
+          a: "Active Relay contracts with clean Amazon performance records are among the most straightforward deals we close. Share your MC number and we will have a written offer back within 24 hours. The Kansas-side address does not change the evaluation.",
         },
         {
           q: "My authority is 45 days old and registered in Wyandotte County. Is it too early to sell?",
@@ -222,26 +222,26 @@ export const kansas: StateData = {
       name: "Topeka",
       metaTitle: "Sell Your Trucking LLC in Topeka KS | Veritor Group",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Topeka KS. Direct buyer — wire in 3–5 business days. I-70 corridor carriers and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Topeka KS. Written offer in 24 hours — wire in 3–5 business days. I-70 corridor carriers and companies with fresh MC authority welcome.",
       heroLine1: "Ready to Sell Your Topeka Trucking Business?",
-      heroLine2: "Veritor Group buys trucking LLCs in Topeka, Kansas.",
+      heroLine2: "Sell your trucking LLC in Topeka, Kansas.",
       heroSubhead:
-        "Cash buyer. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Topeka sits at the midpoint of the Kansas I-70 corridor, positioned roughly equidistant between the Kansas City metro to the east and Salina to the west. As the state capital, Topeka anchors a freight market shaped by both its geographic position on the country's primary east-west interstate and the institutional demand that comes with being a significant government and administrative center.\n\nFor carriers based in Topeka, I-70 is the operating spine. East runs toward the Kansas City intermodal hub — the BNSF and Union Pacific facilities that make KC a national freight node. West runs toward Salina, Hays, and the agricultural freight corridors feeding into the western Kansas grain markets. Carriers in Topeka frequently run lanes in both directions, giving their authorities a broader operational footprint than single-direction metro-area carriers.\n\nUS-75 and I-335 extend Topeka's freight reach north toward Nebraska and south toward Wichita, adding north-south lane access to what is primarily an east-west corridor market. Carriers who have used that network consistently have built DOT records that reflect genuine multi-directional freight activity.\n\nVeritor Group buys trucking LLCs in Topeka. We are a direct buyer with no intermediary — you deal with Veritor from first call through the wire. Written offer in 24 hours, wire in 3–5 business days.",
+        "Topeka sits at the midpoint of the Kansas I-70 corridor, positioned roughly equidistant between the Kansas City metro to the east and Salina to the west. As the state capital, Topeka anchors a freight market shaped by both its geographic position on the country's primary east-west interstate and the institutional demand that comes with being a significant government and administrative center.\n\nFor carriers based in Topeka, I-70 is the operating spine. East runs toward the Kansas City intermodal hub — the BNSF and Union Pacific facilities that make KC a national freight node. West runs toward Salina, Hays, and the agricultural freight corridors feeding into the western Kansas grain markets. Carriers in Topeka frequently run lanes in both directions, giving their authorities a broader operational footprint than single-direction metro-area carriers.\n\nUS-75 and I-335 extend Topeka's freight reach north toward Nebraska and south toward Wichita, adding north-south lane access to what is primarily an east-west corridor market. Carriers who have used that network consistently have built DOT records that reflect genuine multi-directional freight activity.\n\nVeritor Group works with trucking LLCs in Topeka — you deal with Veritor from first call through closing. Written offer in 24 hours, wire in 3–5 business days.",
       whySell:
-        "Topeka carriers running the I-70 corridor compete with through-freight traffic from both coasts and face the same rate compression that has squeezed owner-operators across the central US. If the math no longer works, Veritor converts your authority into a direct cash exit — written offer in 24 hours, wire in under a week. No broker, no listing, no delay.",
+        "Topeka carriers running the I-70 corridor compete with through-freight traffic from both coasts and face the same rate compression that has squeezed owner-operators across the central US. If the math no longer works, Veritor converts your authority into a clean, fast exit — written offer in 24 hours, wire in under a week. No listing, no delay.",
       keywords: [
         "sell trucking LLC Topeka",
         "trucking company buyer Topeka KS",
         "sell trucking company Topeka Kansas",
         "owner operator exit Topeka",
-        "sell MC authority Topeka KS",
+        "trucking company with MC authority Topeka KS",
         "trucking business acquisition Topeka",
         "sell logistics LLC Topeka KS",
-        "cash for trucking LLC Topeka",
+        "written offer for trucking LLC Topeka",
         "sell freight company Topeka",
-        "buy trucking LLC Topeka Kansas",
+        "quick sale trucking LLC Topeka Kansas",
         "exit trucking business Topeka",
         "Topeka Kansas trucking LLC buyer",
         "I-70 carrier sale Topeka",
@@ -253,11 +253,11 @@ export const kansas: StateData = {
         },
         {
           q: "I run grain freight from central Kansas elevators through Topeka. Is agricultural freight a valid profile?",
-          a: "Yes. Grain and agricultural freight carriers are part of the Kansas market we actively buy in. The freight type does not change our evaluation criteria — we review the MC authority, DOT safety record, and insurance status. Consistent use of the authority for agricultural freight is a documented operational history, which is exactly what we look for.",
+          a: "Yes. Grain and agricultural freight carriers are part of the Kansas market we're actively engaged in. The freight type does not change our evaluation criteria — we review the MC authority, DOT safety record, and insurance status. Consistent use of the authority for agricultural freight is a documented operational history, which is exactly what we look for.",
         },
         {
-          q: "Does Veritor buy carriers running north-south lanes on US-75 or I-335 from Topeka?",
-          a: "Yes. North-south corridor activity on US-75 toward Nebraska or I-335 toward Wichita represents real operational freight history. Carriers running documented lanes in any direction with a clean DOT record and active insurance fit our acquisition criteria.",
+          q: "Is Veritor interested in carriers running north-south lanes on US-75 or I-335 from Topeka?",
+          a: "Yes. North-south corridor activity on US-75 toward Nebraska or I-335 toward Wichita represents real operational freight history. Carriers running documented lanes in any direction with a clean DOT record and active insurance fit what we look to value.",
         },
         {
           q: "What happens if my Topeka authority has a minor safety event in its history?",
@@ -275,26 +275,26 @@ export const kansas: StateData = {
       name: "Olathe",
       metaTitle: "Sell Your Trucking LLC in Olathe KS | Veritor Group",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Olathe KS. Direct buyer — wire in 3–5 business days. Amazon Relay carriers and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Olathe KS. Written offer in 24 hours — wire in 3–5 business days. Amazon Relay carriers and companies with fresh MC authority welcome.",
       heroLine1: "Selling Your Olathe Trucking Business?",
-      heroLine2: "Veritor Group is the direct buyer in Olathe, Kansas.",
+      heroLine2: "Sell your trucking LLC in Olathe, Kansas.",
       heroSubhead:
-        "No brokers. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Olathe is the county seat of Johnson County, the most populous county in Kansas, and sits at the southern end of the Kansas City metro's I-35 corridor. For trucking carriers, Olathe's position is defined by its access to two of the Kansas side's most active freight drivers: the Amazon logistics corridor anchored in nearby Edgerton and Gardner, and the broader KC metro's intermodal freight network accessible via I-35 and I-435.\n\nAmazon's Kansas-side logistics infrastructure — sortation centers, delivery stations, and fulfillment operations in the Edgerton area — generates consistent Relay route activity for carriers in Olathe. The short distance to Edgerton has made Olathe one of the most active Kansas-side cities for Amazon Relay carriers during the freight expansion years, and that operational history is something Veritor evaluates directly.\n\nI-35 connects Olathe north to Kansas City and south through the Kansas corridor toward Wichita — a straight freight lane that carriers in Olathe use for both north-south distribution and metro-area delivery. I-435 provides east-west metro connectivity, allowing Olathe-based carriers to service the full KC ring without running through the urban core.\n\nVeritor Group buys trucking LLCs in Olathe. Direct buyer, no broker, no intermediary. Written offer in 24 hours, wire in 3–5 business days.",
+        "Olathe is the county seat of Johnson County, the most populous county in Kansas, and sits at the southern end of the Kansas City metro's I-35 corridor. For trucking carriers, Olathe's position is defined by its access to two of the Kansas side's most active freight drivers: the Amazon logistics corridor anchored in nearby Edgerton and Gardner, and the broader KC metro's intermodal freight network accessible via I-35 and I-435.\n\nAmazon's Kansas-side logistics infrastructure — sortation centers, delivery stations, and fulfillment operations in the Edgerton area — generates consistent Relay route activity for carriers in Olathe. The short distance to Edgerton has made Olathe one of the most active Kansas-side cities for Amazon Relay carriers during the freight expansion years, and that operational history is something Veritor evaluates directly.\n\nI-35 connects Olathe north to Kansas City and south through the Kansas corridor toward Wichita — a straight freight lane that carriers in Olathe use for both north-south distribution and metro-area delivery. I-435 provides east-west metro connectivity, allowing Olathe-based carriers to service the full KC ring without running through the urban core.\n\nVeritor Group works with trucking LLCs in Olathe. Written offer in 24 hours, wire in 3–5 business days.",
       whySell:
-        "Olathe carriers in the Amazon Relay network built their businesses during the freight expansion and now face a normalized rate environment with fixed overhead that was sized for peak demand. If the exit math makes more sense than the continue math, Veritor is the direct path: written offer in 24 hours, wire in 3–5 business days. No broker, no platform, no auction — just one buyer and one wire.",
+        "Olathe carriers in the Amazon Relay network built their businesses during the freight expansion and now face a normalized rate environment with fixed overhead that was sized for peak demand. If the exit math makes more sense than the continue math, Veritor offers a clean path: written offer in 24 hours, wire in 3–5 business days.",
       keywords: [
         "sell trucking LLC Olathe",
         "trucking company buyer Olathe KS",
         "sell Amazon Relay Olathe Kansas",
         "owner operator exit Olathe KS",
-        "sell MC authority Olathe",
+        "trucking company with MC authority Olathe",
         "trucking business acquisition Olathe Kansas",
         "sell logistics LLC Olathe KS",
-        "cash for trucking LLC Olathe",
+        "written offer for trucking LLC Olathe",
         "sell freight company Olathe Kansas",
-        "buy trucking LLC Olathe KS",
+        "quick sale trucking LLC Olathe KS",
         "exit trucking business Olathe",
         "Olathe Kansas trucking LLC buyer",
         "Amazon Relay carrier sale Olathe",
@@ -307,7 +307,7 @@ export const kansas: StateData = {
         },
         {
           q: "I run Amazon Relay routes out of the Edgerton area from an Olathe address. Is that a deal Veritor closes?",
-          a: "Yes, and that is one of the most active profiles we buy in this market. Active Relay contracts with clean Amazon performance records are straightforward acquisitions for us. Share your MC number and we will have a written offer back within 24 hours.",
+          a: "Yes, and that is one of the most active profiles we see in this market. Active Relay contracts with clean Amazon performance records are straightforward for us to evaluate. Share your MC number and we will have a written offer back within 24 hours.",
         },
         {
           q: "How does I-35 through Olathe factor into a carrier's operational profile?",
@@ -319,7 +319,7 @@ export const kansas: StateData = {
         },
         {
           q: "Can I sell a fresh authority that is only 30 days old and registered in Olathe?",
-          a: "Yes. Fresh authorities under 180 days old with active insurance are explicitly what we target. A 30-day-old authority in good standing with current insurance is an acquisition-eligible profile. We have closed many deals on authorities younger than 90 days.",
+          a: "Yes. Fresh authorities under 180 days old with active insurance are explicitly what we target. A 30-day-old authority in good standing with current insurance is exactly the profile we look for. We have closed many deals on authorities younger than 90 days.",
         },
       ],
       nearbySlugs: ["overland-park", "kansas-city-ks", "topeka"],
@@ -329,26 +329,26 @@ export const kansas: StateData = {
       name: "Lawrence",
       metaTitle: "Sell Your Trucking LLC in Lawrence KS | Veritor Group",
       metaDescription:
-        "Veritor Group buys trucking LLCs in Lawrence KS. Direct buyer — wire in 3–5 business days. I-70 corridor carriers and fresh MC authorities welcome.",
+        "Veritor Group values trucking LLCs in Lawrence KS. Written offer in 24 hours — wire in 3–5 business days. I-70 corridor carriers and companies with fresh MC authority welcome.",
       heroLine1: "Ready to Sell Your Lawrence Trucking LLC?",
-      heroLine2: "Veritor Group buys trucking LLCs in Lawrence, Kansas.",
+      heroLine2: "Sell your trucking LLC in Lawrence, Kansas.",
       heroSubhead:
-        "Cash buyer. Wire at your bank. Close in 3–5 business days.",
+        "Written offer in 24 hours. Wire at your bank. Close in 3–5 business days.",
       intro:
-        "Lawrence sits on I-70 between Topeka and the Kansas City metro, 40 miles west of the KC state line and 30 miles east of Topeka. For trucking carriers, that position is precisely what defines the Lawrence market: it is an I-70 corridor city with near-metro access to both the Kansas City intermodal hub to the east and the Topeka institutional freight market to the west.\n\nCarriers based in Lawrence have historically used their I-70 position to capture through-freight and short-haul distribution loads that do not require a metro-area base. Operating costs in Lawrence tend to be lower than in the KC suburbs, while lane access is comparable — I-70 east reaches Overland Park and the broader KC network in under an hour, and I-70 west provides access to the central Kansas agricultural and grain freight corridors.\n\nThe University of Kansas presence in Lawrence generates institutional freight demand — equipment moves, distribution, event logistics — that provides a degree of baseload consistency that purely market-rate freight markets do not offer. Carriers who have served the university's supply chain or the broader Douglas County institutional market have documented utilization that supports a clean DOT record.\n\nVeritor Group buys trucking LLCs in Lawrence. We are a direct buyer — no broker, no listing, no intermediary. Written offer in 24 hours, wire in 3–5 business days.",
+        "Lawrence sits on I-70 between Topeka and the Kansas City metro, 40 miles west of the KC state line and 30 miles east of Topeka. For trucking carriers, that position is precisely what defines the Lawrence market: it is an I-70 corridor city with near-metro access to both the Kansas City intermodal hub to the east and the Topeka institutional freight market to the west.\n\nCarriers based in Lawrence have historically used their I-70 position to capture through-freight and short-haul distribution loads that do not require a metro-area base. Operating costs in Lawrence tend to be lower than in the KC suburbs, while lane access is comparable — I-70 east reaches Overland Park and the broader KC network in under an hour, and I-70 west provides access to the central Kansas agricultural and grain freight corridors.\n\nThe University of Kansas presence in Lawrence generates institutional freight demand — equipment moves, distribution, event logistics — that provides a degree of baseload consistency that purely market-rate freight markets do not offer. Carriers who have served the university's supply chain or the broader Douglas County institutional market have documented utilization that supports a clean DOT record.\n\nVeritor Group works with trucking LLCs in Lawrence. Written offer in 24 hours, wire in 3–5 business days.",
       whySell:
-        "Lawrence carriers on the I-70 corridor run against through-freight competition and KC metro rate pressure simultaneously. If the lower operating costs of a Lawrence base are no longer enough to offset the rate environment, Veritor converts your authority into a direct cash exit in under a week. Written offer in 24 hours. One wire, no broker, and the business is done.",
+        "Lawrence carriers on the I-70 corridor run against through-freight competition and KC metro rate pressure simultaneously. If the lower operating costs of a Lawrence base are no longer enough to offset the rate environment, Veritor converts your authority into a clean, fast exit in under a week. Written offer in 24 hours, and the business is done.",
       keywords: [
         "sell trucking LLC Lawrence Kansas",
         "trucking company buyer Lawrence KS",
         "sell trucking company Lawrence Kansas",
         "owner operator exit Lawrence KS",
-        "sell MC authority Lawrence Kansas",
+        "trucking company with MC authority Lawrence Kansas",
         "trucking business acquisition Lawrence KS",
         "sell logistics LLC Lawrence Kansas",
-        "cash for trucking LLC Lawrence",
+        "written offer for trucking LLC Lawrence",
         "sell freight company Lawrence KS",
-        "buy trucking LLC Lawrence Kansas",
+        "quick sale trucking LLC Lawrence Kansas",
         "exit trucking business Lawrence KS",
         "Lawrence Kansas trucking LLC buyer",
         "I-70 carrier sale Lawrence Kansas",
@@ -356,7 +356,7 @@ export const kansas: StateData = {
       faqs: [
         {
           q: "Is Lawrence a viable market for Veritor's acquisitions, or is it too small?",
-          a: "Market size does not determine whether we buy. We evaluate the MC authority, DOT safety record, and insurance status — not the population of the city. Lawrence carriers with active I-70 corridor histories and clean DOT records are exactly the profile we acquire. We have bought carriers in markets smaller than Lawrence.",
+          a: "Market size does not determine our interest. We evaluate the MC authority, DOT safety record, and insurance status — not the population of the city. Lawrence carriers with active I-70 corridor histories and clean DOT records are exactly the profile we look to value. We've closed deals in markets smaller than Lawrence.",
         },
         {
           q: "Lawrence is between Topeka and Kansas City. Does that position affect my LLC's value?",

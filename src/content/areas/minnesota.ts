@@ -6,13 +6,13 @@ export const minnesota: StateData = {
   abbr: "MN",
   metaTitle: "Sell Your Trucking LLC in Minnesota | Veritor Group",
   metaDescription:
-    "Veritor Group buys Minnesota trucking LLCs direct — Twin Cities Amazon Relay, Duluth port freight, I-35 NAFTA corridor. Wire transfer in 3–5 days.",
+    "Veritor Group values Minnesota trucking LLCs — Twin Cities Amazon Relay, Duluth port freight, I-35 NAFTA corridor. Wire transfer in 3–5 days.",
   heroLine1: "Twin Cities distribution hub.",
-  heroLine2: "We buy Minnesota trucking LLCs.",
+  heroLine2: "Sell your Minnesota trucking LLC.",
   heroSubhead:
-    "From the I-35W/I-94 convergence in Minneapolis to the Port of Duluth, Minnesota runs serious freight. Veritor Group is a direct buyer — no brokers, wire in 3–5 days.",
+    "From the I-35W/I-94 convergence in Minneapolis to the Port of Duluth, Minnesota runs serious freight. Veritor Group gets you a written offer fast — wire in 3–5 days.",
   intro:
-    "Minnesota sits at the northern anchor of the I-35 NAFTA corridor, the freight artery that runs from Laredo, Texas through the heart of the Midwest all the way to Duluth — I-35's northern terminus and the Great Lakes gateway to Canadian freight. The Twin Cities metro is where most of that freight concentrates: I-35W and I-94 converge in Minneapolis, creating one of the most active distribution hubs between Chicago and the Pacific Northwest. Target's global headquarters in Minneapolis, Best Buy's HQ in Richfield, and 3M's campus in Maplewood generate enormous corporate freight demand that keeps regional carriers busy year-round. Amazon runs active fulfillment and Relay operations out of Shakopee and Eagan, drawing in owner-operators across the metro.\n\nMinnesota winters are not incidental — they are a major operating cost factor that sets carriers here apart from most of the country. Diesel fuel additives, engine block heaters, battery heaters, and accelerated maintenance cycles are standard requirements from November through March. Those costs compress margins, and many Minneapolis-area carriers who formed during the post-COVID freight surge are now reassessing the business case. Minnesota's high income tax burden adds a second layer of financial pressure that motivates sellers to pursue a clean exit rather than a slow wind-down.\n\nVeritor Group buys trucking LLCs across Minnesota — Amazon Relay carriers in the Twin Cities, port-adjacent freight companies near Duluth, agricultural reefer operators in the outstate counties, and fresh MC authority statewide. We're a direct buyer. Wire transfer. Offer in writing within 24 hours.",
+    "Minnesota sits at the northern anchor of the I-35 NAFTA corridor, the freight artery that runs from Laredo, Texas through the heart of the Midwest all the way to Duluth — I-35's northern terminus and the Great Lakes gateway to Canadian freight. The Twin Cities metro is where most of that freight concentrates: I-35W and I-94 converge in Minneapolis, creating one of the most active distribution hubs between Chicago and the Pacific Northwest. Target's global headquarters in Minneapolis, Best Buy's HQ in Richfield, and 3M's campus in Maplewood generate enormous corporate freight demand that keeps regional carriers busy year-round. Amazon runs active fulfillment and Relay operations out of Shakopee and Eagan, drawing in owner-operators across the metro.\n\nMinnesota winters are not incidental — they are a major operating cost factor that sets carriers here apart from most of the country. Diesel fuel additives, engine block heaters, battery heaters, and accelerated maintenance cycles are standard requirements from November through March. Those costs compress margins, and many Minneapolis-area carriers who formed during the post-COVID freight surge are now reassessing the business case. Minnesota's high income tax burden adds a second layer of financial pressure that motivates sellers to pursue a clean exit rather than a slow wind-down.\n\nVeritor Group values trucking LLCs across Minnesota — Amazon Relay carriers in the Twin Cities, port-adjacent freight companies near Duluth, agricultural reefer operators in the outstate counties, and seasoned MC authority statewide. Wire transfer. Written offer within 24 hours.",
   keywords: [
     "sell trucking LLC Minnesota",
     "sell trucking company Minneapolis",
@@ -21,7 +21,7 @@ export const minnesota: StateData = {
     "owner operator exit Minnesota",
     "sell trucking LLC Twin Cities",
     "Minnesota trucking company buyer",
-    "sell MC authority Minnesota",
+    "sell trucking company Minnesota",
     "trucking LLC acquisition Minnesota",
     "sell logistics LLC Minnesota",
     "sell trucking business Minneapolis",
@@ -36,19 +36,19 @@ export const minnesota: StateData = {
   faqs: [
     {
       q: "Why is the Twin Cities such an active market for trucking LLC sales?",
-      a: "Minneapolis-St. Paul is a major Midwest distribution hub anchored by Target, Best Buy, and 3M corporate freight lanes, plus Amazon's fulfillment operations in Shakopee and Eagan. The post-COVID boom brought a large wave of new LLCs into the market. Many of those companies are now at an exit inflection point — rates normalized, cold-weather maintenance costs are high, and Minnesota's income tax burden is among the steepest in the country. A direct buyer like Veritor provides a clean wire-transfer exit that a slow wind-down never delivers.",
+      a: "Minneapolis-St. Paul is a major Midwest distribution hub anchored by Target, Best Buy, and 3M corporate freight lanes, plus Amazon's fulfillment operations in Shakopee and Eagan. The post-COVID boom brought a large wave of new LLCs into the market. Many of those companies are now at an exit inflection point — rates normalized, cold-weather maintenance costs are high, and Minnesota's income tax burden is among the steepest in the country. A clean, direct sale provides a wire-transfer exit that a slow wind-down never delivers.",
     },
     {
-      q: "Do you buy trucking LLCs operating near the Port of Duluth?",
-      a: "Yes. The Port of Duluth is the largest freshwater port in the world by tonnage, handling grain, coal, and iron ore that moves by barge and then transfers to over-the-road carriers. LLCs running freight adjacent to Duluth's port operations — whether drayage, regional bulk, or outbound grain loads — are fully within our acquisition scope. MC authority age and FMCSA record matter more than cargo type.",
+      q: "Is operating near the Port of Duluth a fit for a trucking LLC sale?",
+      a: "Yes. The Port of Duluth is the largest freshwater port in the world by tonnage, handling grain, coal, and iron ore that moves by barge and then transfers to over-the-road carriers. LLCs running freight adjacent to Duluth's port operations — whether drayage, regional bulk, or outbound grain loads — are fully eligible. MC authority age and FMCSA record matter more than cargo type.",
     },
     {
       q: "How do Minnesota's extreme winters affect what my LLC is worth?",
       a: "Cold-weather operating costs — diesel additives, block heaters, battery systems, accelerated tire wear — are real and we account for them in how we evaluate Minnesota carriers. Those costs also motivate sellers, which is part of why we see a consistent deal flow out of this state. If your equipment has higher maintenance expense because of Minnesota winters, that's a disclosure item in diligence, not a disqualifier.",
     },
     {
-      q: "Do you buy Amazon Relay carriers operating in Shakopee or Eagan?",
-      a: "Yes — Twin Cities Relay carriers are among the most common LLCs we buy in Minnesota. Amazon's Shakopee and Eagan facilities generate steady Relay contract activity. If your LLC holds an active Relay contract and your MC is in good standing with FMCSA, close timeline is typically on the short end of our 3–5 day window — the Relay dashboard verifies contract status quickly and removes the main diligence variable.",
+      q: "Are Amazon Relay carriers operating in Shakopee or Eagan a fit?",
+      a: "Yes — Twin Cities Relay carriers are among the most common LLCs we see in Minnesota. Amazon's Shakopee and Eagan facilities generate steady Relay contract activity. If your LLC holds an active Relay contract and your MC is in good standing with FMCSA, close timeline is typically on the short end of our 3–5 day window — the Relay dashboard verifies contract status quickly and removes the main diligence variable.",
     },
     {
       q: "Does Rochester's medical freight market affect LLC valuations there?",
@@ -61,20 +61,20 @@ export const minnesota: StateData = {
       name: "Minneapolis",
       metaTitle: "Sell Your Trucking LLC in Minneapolis | Veritor Group",
       metaDescription:
-        "Minneapolis trucking LLC for sale? Veritor Group buys direct — Amazon Relay Shakopee, I-35W/I-94 corridor, Target freight lanes. Wire in 3–5 days.",
+        "Minneapolis trucking LLC for sale? Veritor Group values it direct — Amazon Relay Shakopee, I-35W/I-94 corridor, Target freight lanes. Wire in 3–5 days.",
       heroLine1: "I-35W meets I-94.",
-      heroLine2: "We buy Minneapolis trucking LLCs.",
+      heroLine2: "Sell your Minneapolis trucking LLC.",
       heroSubhead:
-        "Minneapolis is the northern anchor of the NAFTA freight corridor and the Twin Cities distribution core. Veritor Group is a direct buyer — no brokers, wire in 3–5 days.",
+        "Minneapolis is the northern anchor of the NAFTA freight corridor and the Twin Cities distribution core. Veritor Group gets you a written offer fast — wire in 3–5 days.",
       intro:
-        "Minneapolis is the freight hub of the Upper Midwest. I-35W and I-94 converge here, connecting the city south toward the Iowa border, east toward Wisconsin, and west toward the Dakotas. Target's global headquarters drives substantial inbound and outbound freight demand throughout the metro, and Amazon's fulfillment operations in Shakopee — less than 25 miles southwest — keep Relay carriers active on the southwest suburban corridors. The Minneapolis-St. Paul International Airport adds air cargo transfer demand on the south side of the city.\n\nVeritor Group buys Minneapolis trucking LLCs across all carrier types — Amazon Relay operators, general truckload carriers running the I-35W corridor, and corporate freight LLCs tied to the city's major distribution customers. Post-COVID margin compression from fuel costs, high Minnesota insurance rates, and the state's steep income tax burden have created a consistent wave of motivated sellers. If you're ready to exit, submit your MC/DOT number and we'll return a written offer within 24 hours.",
+        "Minneapolis is the freight hub of the Upper Midwest. I-35W and I-94 converge here, connecting the city south toward the Iowa border, east toward Wisconsin, and west toward the Dakotas. Target's global headquarters drives substantial inbound and outbound freight demand throughout the metro, and Amazon's fulfillment operations in Shakopee — less than 25 miles southwest — keep Relay carriers active on the southwest suburban corridors. The Minneapolis-St. Paul International Airport adds air cargo transfer demand on the south side of the city.\n\nVeritor Group values Minneapolis trucking LLCs across all carrier types — Amazon Relay operators, general truckload carriers running the I-35W corridor, and corporate freight LLCs tied to the city's major distribution customers. Post-COVID margin compression from fuel costs, high Minnesota insurance rates, and the state's steep income tax burden have created a consistent wave of motivated sellers. If you're ready to exit, submit your MC/DOT number and we'll return a written offer within 24 hours.",
       whySell:
-        "Minneapolis saw one of the larger LLC formation waves in the Upper Midwest during 2020–2022. Many of those companies are now facing compressed margins from cold-weather maintenance overhead, insurance costs, and Minnesota's high state income tax. Selling to a direct buyer while your MC authority is active and your Relay contract is current captures the full value of what you built — value that dissolves the day you dissolve the LLC.",
+        "Minneapolis saw one of the larger LLC formation waves in the Upper Midwest during 2020–2022. Many of those companies are now facing compressed margins from cold-weather maintenance overhead, insurance costs, and Minnesota's high state income tax. Selling while your MC authority is active and your Relay contract is current captures the full value of what you built — value that dissolves the day you dissolve the LLC.",
       keywords: [
         "sell trucking LLC Minneapolis",
         "sell Amazon Relay Minneapolis Minnesota",
         "trucking company buyer Minneapolis MN",
-        "sell MC authority Minneapolis",
+        "sell trucking company Minneapolis",
         "owner operator exit Minneapolis",
         "sell logistics LLC Minneapolis",
         "Minneapolis Minnesota trucking acquisition",
@@ -89,8 +89,8 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Amazon Relay LLCs based in the Minneapolis area?",
-          a: "Yes — Minneapolis Relay carriers running out of the Shakopee fulfillment corridor are among the most frequent LLCs we acquire in Minnesota. If your Relay contract is active and your MC is in good FMCSA standing, we can typically move to a written offer within 24 hours of receiving your details.",
+          q: "Are Amazon Relay LLCs based in the Minneapolis area a fit?",
+          a: "Yes — Minneapolis Relay carriers running out of the Shakopee fulfillment corridor are among the most frequent LLCs we see in Minnesota. If your Relay contract is active and your MC is in good FMCSA standing, we can typically move to a written offer within 24 hours of receiving your details.",
         },
         {
           q: "Does the I-35W and I-94 corridor affect my LLC's value?",
@@ -116,19 +116,19 @@ export const minnesota: StateData = {
       name: "St. Paul",
       metaTitle: "Sell Your Trucking LLC in St. Paul, MN | Veritor Group",
       metaDescription:
-        "St. Paul trucking LLC for sale? Veritor Group buys direct — east-metro freight, Mississippi River corridor, I-94 lanes. Wire closes in 3–5 days.",
+        "St. Paul trucking LLC for sale? Veritor Group values it direct — east-metro freight, Mississippi River corridor, I-94 lanes. Wire closes in 3–5 days.",
       heroLine1: "Minnesota's capital freight market.",
-      heroLine2: "We buy St. Paul trucking LLCs.",
+      heroLine2: "Sell your St. Paul trucking LLC.",
       heroSubhead:
-        "St. Paul anchors the east Twin Cities metro with the Mississippi River corridor, state government freight demand, and I-94 access east to Wisconsin. Direct buyer. Wire in 3–5 days.",
+        "St. Paul anchors the east Twin Cities metro with the Mississippi River corridor, state government freight demand, and I-94 access east to Wisconsin. Written offer fast. Wire in 3–5 days.",
       intro:
-        "St. Paul is the state capital and the eastern anchor of the Twin Cities metro, with a distinct freight profile from Minneapolis. The Mississippi River corridor runs through the city's east side, and historically river-to-truck transfer freight has shaped the carrier market here. I-94 connects St. Paul east toward the Wisconsin border and west through downtown Minneapolis, while I-35E splits north and south through the capital district. State government and healthcare institutions — Regions Hospital, HealthEast, and the dense St. Paul medical corridor along University Avenue — generate consistent specialized freight demand that larger metro-wide carriers often overlook.\n\nVeritor Group buys St. Paul trucking LLCs across all carrier sizes and freight types. East-metro carriers running I-94 Wisconsin lanes, 3M freight out of Maplewood, and general truckload operations in Ramsey County are all within our acquisition scope. Minnesota's high income tax burden and post-COVID margin compression have motivated a steady stream of St. Paul sellers — if you're ready to exit, submit your MC/DOT and we'll return a written offer within 24 hours.",
+        "St. Paul is the state capital and the eastern anchor of the Twin Cities metro, with a distinct freight profile from Minneapolis. The Mississippi River corridor runs through the city's east side, and historically river-to-truck transfer freight has shaped the carrier market here. I-94 connects St. Paul east toward the Wisconsin border and west through downtown Minneapolis, while I-35E splits north and south through the capital district. State government and healthcare institutions — Regions Hospital, HealthEast, and the dense St. Paul medical corridor along University Avenue — generate consistent specialized freight demand that larger metro-wide carriers often overlook.\n\nVeritor Group values St. Paul trucking LLCs across all carrier sizes and freight types. East-metro carriers running I-94 Wisconsin lanes, 3M freight out of Maplewood, and general truckload operations in Ramsey County are all eligible. Minnesota's high income tax burden and post-COVID margin compression have motivated a steady stream of St. Paul sellers — if you're ready to exit, submit your MC/DOT and we'll return a written offer within 24 hours.",
       whySell:
-        "St. Paul carriers face the same high-cost operating environment as the rest of the Twin Cities — extreme winter maintenance overhead, steep Minnesota income tax, and post-COVID margin compression. If your MC authority is active and your LLC is in good standing, that authority retains real dollar value today. A direct buyer captures that value in a single wire-transfer transaction rather than letting it lapse when you wind down.",
+        "St. Paul carriers face the same high-cost operating environment as the rest of the Twin Cities — extreme winter maintenance overhead, steep Minnesota income tax, and post-COVID margin compression. If your MC authority is active and your LLC is in good standing, that authority retains real dollar value today. A written offer captures that value in a single wire-transfer transaction rather than letting it lapse when you wind down.",
       keywords: [
         "sell trucking LLC St. Paul Minnesota",
         "trucking company buyer St. Paul MN",
-        "sell MC authority St. Paul Minnesota",
+        "sell trucking company St. Paul Minnesota",
         "owner operator exit St. Paul",
         "sell logistics LLC St. Paul",
         "St. Paul Minnesota trucking acquisition",
@@ -143,12 +143,12 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy St. Paul trucking LLCs running I-94 east into Wisconsin?",
+          q: "Is I-94 authority east into Wisconsin a fit for a St. Paul LLC sale?",
           a: "Yes. Multi-state operating history is not a complication — it's standard for Twin Cities carriers running east on I-94. What we evaluate is the FMCSA record, MC authority age, and LLC standing in Minnesota. Cross-state lane history is fine.",
         },
         {
-          q: "Does St. Paul's location on the Mississippi River affect what you buy?",
-          a: "River-adjacent freight — barge-to-truck transfer, port drayage, bulk cargo — is within our acquisition footprint. The cargo type doesn't determine eligibility. The MC authority, FMCSA safety record, and LLC structure are what we assess.",
+          q: "Does St. Paul's location on the Mississippi River affect eligibility?",
+          a: "River-adjacent freight — barge-to-truck transfer, port drayage, bulk cargo — is fully eligible. The cargo type doesn't determine eligibility. The MC authority, FMCSA safety record, and LLC structure are what we assess.",
         },
         {
           q: "My St. Paul LLC was formed in 2021 and has been quiet for the past six months. Is it still sellable?",
@@ -156,7 +156,7 @@ export const minnesota: StateData = {
         },
         {
           q: "What banks do you use for closings in St. Paul?",
-          a: "We wire to whatever bank you already use. US Bank and Wells Fargo both have strong St. Paul branch networks, and we've also closed through local credit unions. Funds clear same-day on the closing date — no new accounts required.",
+          a: "Funds wire to whatever bank you already use. US Bank and Wells Fargo both have strong St. Paul branch networks, and we've also closed through local credit unions. Funds clear same-day on the closing date — no new accounts required.",
         },
         {
           q: "Can I sell a St. Paul LLC that runs 3M freight out of Maplewood?",
@@ -170,19 +170,19 @@ export const minnesota: StateData = {
       name: "Rochester",
       metaTitle: "Sell Your Trucking LLC in Rochester, MN | Veritor Group",
       metaDescription:
-        "Rochester MN trucking LLC for sale? Veritor Group buys direct — Mayo Clinic medical freight, US-52 corridor, southeast MN lanes. Wire in 3–5 days.",
+        "Rochester MN trucking LLC for sale? Veritor Group values it direct — Mayo Clinic medical freight, US-52 corridor, southeast MN lanes. Wire in 3–5 days.",
       heroLine1: "Mayo Clinic freight market.",
-      heroLine2: "We buy Rochester trucking LLCs.",
+      heroLine2: "Sell your Rochester trucking LLC.",
       heroSubhead:
-        "Rochester's Mayo Clinic ecosystem creates specialized medical freight demand unlike anywhere else in Minnesota. Veritor Group is a direct buyer — written offer in 24 hours.",
+        "Rochester's Mayo Clinic ecosystem creates specialized medical freight demand unlike anywhere else in Minnesota. Written offer in 24 hours.",
       intro:
-        "Rochester occupies a unique position in Minnesota freight because of the Mayo Clinic. The clinic's sprawling campus draws patients, researchers, and medical supply chains from across the world, and that concentration creates specialized freight demand — pharmaceutical cold chain, laboratory equipment, medical device logistics, and hospital supply distribution — that doesn't exist at this scale anywhere else in the state. US-52 runs north from Rochester toward the Twin Cities and carries a steady flow of medical and general truckload freight, while US-63 connects south into Iowa, giving Rochester carriers straightforward access to both the metro and cross-border lanes.\n\nVeritor Group buys Rochester trucking LLCs running Mayo-adjacent medical freight, general truckload on the US-52 corridor, and agricultural freight from Olmsted County and the surrounding southeast Minnesota counties. Minnesota's high income tax environment and compressed post-COVID margins have motivated many Rochester-area owner-operators to evaluate exits. If your LLC has operated in this market and you're ready to move, submit your MC/DOT number and we'll return a written offer within 24 hours.",
+        "Rochester occupies a unique position in Minnesota freight because of the Mayo Clinic. The clinic's sprawling campus draws patients, researchers, and medical supply chains from across the world, and that concentration creates specialized freight demand — pharmaceutical cold chain, laboratory equipment, medical device logistics, and hospital supply distribution — that doesn't exist at this scale anywhere else in the state. US-52 runs north from Rochester toward the Twin Cities and carries a steady flow of medical and general truckload freight, while US-63 connects south into Iowa, giving Rochester carriers straightforward access to both the metro and cross-border lanes.\n\nVeritor Group values Rochester trucking LLCs running Mayo-adjacent medical freight, general truckload on the US-52 corridor, and agricultural freight from Olmsted County and the surrounding southeast Minnesota counties. Minnesota's high income tax environment and compressed post-COVID margins have motivated many Rochester-area owner-operators to evaluate exits. If your LLC has operated in this market and you're ready to move, submit your MC/DOT number and we'll return a written offer within 24 hours.",
       whySell:
-        "Rochester LLCs running medical freight lanes often carry documented, specialized operating history that a direct buyer can value more precisely than a general truckload carrier's records. Specialized lane history — especially consistent routes tied to the Mayo campus supply chain — is a positive pricing input. Selling now while that history is current captures more value than waiting for the authority to age or the freight relationships to fade.",
+        "Rochester LLCs running medical freight lanes often carry documented, specialized operating history that's easier to value precisely than a general truckload carrier's records. Specialized lane history — especially consistent routes tied to the Mayo campus supply chain — is a positive pricing input. Selling now while that history is current captures more value than waiting for the authority to age or the freight relationships to fade.",
       keywords: [
         "sell trucking LLC Rochester Minnesota",
         "trucking company buyer Rochester MN",
-        "sell MC authority Rochester MN",
+        "sell trucking company Rochester MN",
         "owner operator exit Rochester Minnesota",
         "sell logistics LLC Rochester MN",
         "Rochester Minnesota trucking acquisition",
@@ -196,8 +196,8 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy trucking LLCs that run freight for the Mayo Clinic supply chain?",
-          a: "Yes. Medical freight carriers in Rochester — pharmaceutical cold chain, laboratory equipment, hospital supply distribution — are fully within our acquisition scope. The specialized lane history that comes with Mayo-adjacent routes is a positive input in our valuation because it documents consistent, verifiable freight demand.",
+          q: "Is freight for the Mayo Clinic supply chain a fit for a trucking LLC sale?",
+          a: "Yes. Medical freight carriers in Rochester — pharmaceutical cold chain, laboratory equipment, hospital supply distribution — are fully eligible. The specialized lane history that comes with Mayo-adjacent routes is a positive input in our valuation because it documents consistent, verifiable freight demand.",
         },
         {
           q: "Does running medical or pharmaceutical freight affect how you evaluate my LLC?",
@@ -208,8 +208,8 @@ export const minnesota: StateData = {
           a: "Yes. Consistent lane history on US-52 documents that the authority is actively used on a defined, repeatable route. That's a positive input compared to sporadic or inconsistent operations. We pull FMCSA operating data as part of diligence, and regular US-52 activity shows up as a clean, traceable record.",
         },
         {
-          q: "Does Veritor buy Rochester LLCs running Iowa cross-border lanes on US-63?",
-          a: "Yes. Multi-state authority is standard across southern Minnesota, and we buy carriers with Iowa operating history regularly. What we assess is the FMCSA record, the LLC's standing in Minnesota, and insurance status — the Iowa lanes are not a complication.",
+          q: "Is Iowa cross-border authority on US-63 a fit for a Rochester LLC?",
+          a: "Yes. Multi-state authority is standard across southern Minnesota, and we see carriers with Iowa operating history regularly. What we assess is the FMCSA record, the LLC's standing in Minnesota, and insurance status — the Iowa lanes are not a complication.",
         },
         {
           q: "How quickly can you close on a Rochester LLC?",
@@ -223,19 +223,19 @@ export const minnesota: StateData = {
       name: "Duluth",
       metaTitle: "Sell Your Trucking LLC in Duluth, MN | Veritor Group",
       metaDescription:
-        "Duluth trucking LLC for sale? Veritor Group buys direct — largest freshwater port, I-35 terminus, iron range freight. Wire closes in 3–5 days.",
+        "Duluth trucking LLC for sale? Veritor Group values it direct — largest freshwater port, I-35 terminus, iron range freight. Wire closes in 3–5 days.",
       heroLine1: "Largest freshwater port in the world.",
-      heroLine2: "We buy Duluth trucking LLCs.",
+      heroLine2: "Sell your Duluth trucking LLC.",
       heroSubhead:
-        "The Port of Duluth anchors the northern end of the I-35 NAFTA corridor. Veritor Group buys Duluth trucking LLCs direct — barge freight, iron range, ore. Wire in 3–5 days.",
+        "The Port of Duluth anchors the northern end of the I-35 NAFTA corridor. Veritor Group values Duluth trucking LLCs — barge freight, iron range, ore. Wire in 3–5 days.",
       intro:
-        "Duluth sits at the terminus of I-35 and the western tip of Lake Superior — the entry point where the I-35 NAFTA corridor, running from Laredo, Texas through the Midwest, meets the Great Lakes shipping system. The Port of Duluth is the largest freshwater port in the world by tonnage, moving grain, coal, iron ore, and limestone between lake freighters and over-the-road carriers. That barge-to-truck transfer dynamic creates a distinct drayage and bulk freight carrier market that doesn't exist anywhere else in Minnesota.\n\nThe Iron Range to the north and west — Hibbing, Virginia, Eveleth — generates mining freight that flows through Duluth on its way to Great Lakes shipping. Agricultural grain from northwestern Minnesota also terminates at Duluth's port grain elevators. Veritor Group buys Duluth-area trucking LLCs whether you're running port drayage, Iron Range bulk freight, or general truckload on I-35 south toward the Twin Cities. Submit your MC/DOT and we'll give you a written offer within 24 hours.",
+        "Duluth sits at the terminus of I-35 and the western tip of Lake Superior — the entry point where the I-35 NAFTA corridor, running from Laredo, Texas through the Midwest, meets the Great Lakes shipping system. The Port of Duluth is the largest freshwater port in the world by tonnage, moving grain, coal, iron ore, and limestone between lake freighters and over-the-road carriers. That barge-to-truck transfer dynamic creates a distinct drayage and bulk freight carrier market that doesn't exist anywhere else in Minnesota.\n\nThe Iron Range to the north and west — Hibbing, Virginia, Eveleth — generates mining freight that flows through Duluth on its way to Great Lakes shipping. Agricultural grain from northwestern Minnesota also terminates at Duluth's port grain elevators. Veritor Group values Duluth-area trucking LLCs whether you're running port drayage, Iron Range bulk freight, or general truckload on I-35 south toward the Twin Cities. Submit your MC/DOT and we'll give you a written offer within 24 hours.",
       whySell:
         "Duluth carriers operate in one of the most cost-intensive environments in the state. Extreme Lake Superior winters, high equipment maintenance overhead, and Minnesota's steep income tax burden compress margins that were already tightening post-2022. If your LLC is in good standing and your MC authority is active, there is real dollar value in that authority today — value that doesn't survive if you simply dissolve the company.",
       keywords: [
         "sell trucking LLC Duluth Minnesota",
         "trucking company buyer Duluth MN",
-        "sell MC authority Duluth Minnesota",
+        "sell trucking company Duluth Minnesota",
         "owner operator exit Duluth MN",
         "sell logistics LLC Duluth",
         "Duluth Minnesota trucking acquisition",
@@ -250,16 +250,16 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy trucking LLCs operating near the Port of Duluth?",
-          a: "Yes. Port-adjacent carriers — drayage, bulk freight, barge-to-truck transfer — are within our acquisition scope. The Port of Duluth is the largest freshwater port in the world by tonnage, and the carrier market it supports is real and distinct from the rest of the state. We evaluate these LLCs on authority age, FMCSA record, and LLC standing, same as any other carrier.",
+          q: "Is operating near the Port of Duluth a fit for a trucking LLC sale?",
+          a: "Yes. Port-adjacent carriers — drayage, bulk freight, barge-to-truck transfer — are fully eligible. The Port of Duluth is the largest freshwater port in the world by tonnage, and the carrier market it supports is real and distinct from the rest of the state. We evaluate these LLCs on authority age, FMCSA record, and LLC standing, same as any other carrier.",
         },
         {
           q: "Does running Iron Range mining freight affect my LLC's value?",
           a: "Iron Range freight — bulk ore, mining equipment, aggregate — generates documented operating history on consistent northern Minnesota lanes. That route record is a positive input in diligence. Carriers with traceable, repeatable lane history are easier to value accurately, and accurate valuation typically results in a stronger offer.",
         },
         {
-          q: "My Duluth LLC is at the end of I-35. Does that affect what you pay?",
-          a: "Location at the I-35 terminus is a geographic reality, not a penalty. Duluth carriers running south toward the Twin Cities on I-35 have documented NAFTA corridor lane history, which is valuable. Carriers running primarily local or port-adjacent freight have a different but equally evaluable record. We price based on what the FMCSA record shows, not where the terminal sits on a map.",
+          q: "My Duluth LLC is at the end of I-35. Does that affect the offer?",
+          a: "Location at the I-35 terminus is a geographic reality, not a penalty. Duluth carriers running south toward the Twin Cities on I-35 have documented NAFTA corridor lane history, which is valuable. Carriers running primarily local or port-adjacent freight have a different but equally evaluable record. We value based on what the FMCSA record shows, not where the terminal sits on a map.",
         },
         {
           q: "How do Duluth's extreme winters factor into the deal?",
@@ -267,7 +267,7 @@ export const minnesota: StateData = {
         },
         {
           q: "What banks do you use for Duluth closings?",
-          a: "We wire to whatever bank you already use in Duluth — Bremer Bank, Wells Fargo, and US Bank all have solid local presence. Funds transfer same-day on the closing date. You close at your own branch; no new accounts or out-of-state institutions required.",
+          a: "Funds wire to whatever bank you already use in Duluth — Bremer Bank, Wells Fargo, and US Bank all have solid local presence. Funds transfer same-day on the closing date. You close at your own branch; no new accounts or out-of-state institutions required.",
         },
       ],
       nearbySlugs: ["minneapolis", "st-paul", "rochester"],
@@ -277,19 +277,19 @@ export const minnesota: StateData = {
       name: "Bloomington",
       metaTitle: "Sell Your Trucking LLC in Bloomington, MN | Veritor",
       metaDescription:
-        "Bloomington MN trucking LLC for sale? Veritor Group buys direct — MSP Airport cargo, Amazon Relay, I-494 corridor. Wire closes in 3–5 days.",
+        "Bloomington MN trucking LLC for sale? Veritor Group values it direct — MSP Airport cargo, Amazon Relay, I-494 corridor. Wire closes in 3–5 days.",
       heroLine1: "MSP Airport and I-494 corridor.",
-      heroLine2: "We buy Bloomington trucking LLCs.",
+      heroLine2: "Sell your Bloomington trucking LLC.",
       heroSubhead:
-        "Bloomington hosts MSP Airport, the Mall of America, and sits on the I-494 freight ring around the Twin Cities south. Veritor Group is a direct buyer — wire in 3–5 days.",
+        "Bloomington hosts MSP Airport, the Mall of America, and sits on the I-494 freight ring around the Twin Cities south. Written offer fast — wire in 3–5 days.",
       intro:
-        "Bloomington anchors the south metro freight market and carries a distinct profile within the Twin Cities ring. Minneapolis-St. Paul International Airport sits on Bloomington's northern border, generating air cargo transfer and ground courier demand that keeps regional carriers active. The Mall of America — the largest mall in the US by retail floor space — drives substantial inbound freight and last-mile distribution activity. I-494 runs east-west through Bloomington as the southern segment of the Twin Cities beltway, connecting to Eagan and the Amazon fulfillment corridor on the east side.\n\nVeritor Group buys Bloomington trucking LLCs running MSP cargo transfer, I-494 beltway lanes, and Amazon Relay routes out of the Eagan fulfillment network. Post-COVID margin pressure has hit south-metro carriers as hard as anywhere in the Twin Cities, and we see a consistent flow of motivated sellers from this area. Submit your MC/DOT number and we'll return a written offer within 24 hours.",
+        "Bloomington anchors the south metro freight market and carries a distinct profile within the Twin Cities ring. Minneapolis-St. Paul International Airport sits on Bloomington's northern border, generating air cargo transfer and ground courier demand that keeps regional carriers active. The Mall of America — the largest mall in the US by retail floor space — drives substantial inbound freight and last-mile distribution activity. I-494 runs east-west through Bloomington as the southern segment of the Twin Cities beltway, connecting to Eagan and the Amazon fulfillment corridor on the east side.\n\nVeritor Group values Bloomington trucking LLCs running MSP cargo transfer, I-494 beltway lanes, and Amazon Relay routes out of the Eagan fulfillment network. Post-COVID margin pressure has hit south-metro carriers as hard as anywhere in the Twin Cities, and we see a consistent flow of motivated sellers from this area. Submit your MC/DOT number and we'll return a written offer within 24 hours.",
       whySell:
-        "Bloomington carriers benefit from proximity to MSP Airport and the Amazon Eagan fulfillment network — two of the highest-frequency freight demand sources in the Twin Cities metro. If your LLC holds an active Relay contract or documented airport cargo lanes, that operating history carries real dollar value today. A direct buyer captures that value in a wire-transfer transaction rather than letting it expire when you dissolve the LLC.",
+        "Bloomington carriers benefit from proximity to MSP Airport and the Amazon Eagan fulfillment network — two of the highest-frequency freight demand sources in the Twin Cities metro. If your LLC holds an active Relay contract or documented airport cargo lanes, that operating history carries real dollar value today. A written offer captures that value in a wire-transfer transaction rather than letting it expire when you dissolve the LLC.",
       keywords: [
         "sell trucking LLC Bloomington Minnesota",
         "trucking company buyer Bloomington MN",
-        "sell MC authority Bloomington MN",
+        "sell trucking company Bloomington MN",
         "owner operator exit Bloomington Minnesota",
         "sell logistics LLC Bloomington MN",
         "Bloomington Minnesota trucking acquisition",
@@ -304,12 +304,12 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy Bloomington trucking LLCs running MSP Airport cargo lanes?",
-          a: "Yes. Airport cargo transfer and ground support freight are within our acquisition scope. MSP is one of the busiest cargo airports in the Midwest, and carriers running documented airport-adjacent lanes have verifiable operating history. That history factors positively into our valuation.",
+          q: "Is running MSP Airport cargo lanes a fit for a Bloomington trucking LLC sale?",
+          a: "Yes. Airport cargo transfer and ground support freight are fully eligible. MSP is one of the busiest cargo airports in the Midwest, and carriers running documented airport-adjacent lanes have verifiable operating history. That history factors positively into our valuation.",
         },
         {
           q: "Does proximity to the Amazon Eagan facility affect my Bloomington LLC's value?",
-          a: "If your LLC holds an active Amazon Relay contract running out of Eagan, that contract is the single most valuable element of the transaction. Eagan is close enough to Bloomington that many south-metro carriers run both the MSP corridor and Relay routes. Active Relay contracts shorten our diligence timeline significantly.",
+          a: "If your LLC holds an active Amazon Relay contract running out of Eagan, that contract is one of the most valuable elements in the offer. Eagan is close enough to Bloomington that many south-metro carriers run both the MSP corridor and Relay routes. Active Relay contracts shorten our diligence timeline significantly.",
         },
         {
           q: "My Bloomington LLC runs I-494 beltway lanes. Does that corridor history matter?",
@@ -331,19 +331,19 @@ export const minnesota: StateData = {
       name: "Brooklyn Park",
       metaTitle: "Sell Your Trucking LLC in Brooklyn Park, MN | Veritor",
       metaDescription:
-        "Brooklyn Park MN trucking LLC for sale? Veritor Group buys direct — north-metro distribution, Amazon Relay, I-94 access. Wire closes in 3–5 days.",
+        "Brooklyn Park MN trucking LLC for sale? Veritor Group values it direct — north-metro distribution, Amazon Relay, I-94 access. Wire closes in 3–5 days.",
       heroLine1: "North-metro distribution corridor.",
-      heroLine2: "We buy Brooklyn Park trucking LLCs.",
+      heroLine2: "Sell your Brooklyn Park trucking LLC.",
       heroSubhead:
-        "Brooklyn Park sits on the north edge of the Twin Cities distribution ring with direct I-94 access and a dense warehouse and logistics footprint. Direct buyer. Wire in 3–5 days.",
+        "Brooklyn Park sits on the north edge of the Twin Cities distribution ring with direct I-94 access and a dense warehouse and logistics footprint. Written offer fast. Wire in 3–5 days.",
       intro:
-        "Brooklyn Park is one of the Twin Cities' most active north-suburban freight markets. The city hosts a dense concentration of warehouse and distribution facilities along the Bottineau Boulevard and 85th Avenue industrial corridors, and its position between Minneapolis and the northern suburbs gives carriers quick I-94 access in either direction. Medtronic's operational footprint in and around the north metro generates medical device and life sciences freight demand that has kept specialized carriers active for decades.\n\nVeritor Group buys Brooklyn Park trucking LLCs running north-metro distribution lanes, Amazon Relay routes out of the Twin Cities network, and general truckload operations on I-94 and US-169. Many north-metro carriers formed during 2020–2022 are now at an exit decision point — high winter maintenance costs, Minnesota's income tax, and normalized freight rates have compressed the margins that made the business case in 2021. If you're ready to exit, submit your MC/DOT number and we'll return a written offer within 24 hours.",
+        "Brooklyn Park is one of the Twin Cities' most active north-suburban freight markets. The city hosts a dense concentration of warehouse and distribution facilities along the Bottineau Boulevard and 85th Avenue industrial corridors, and its position between Minneapolis and the northern suburbs gives carriers quick I-94 access in either direction. Medtronic's operational footprint in and around the north metro generates medical device and life sciences freight demand that has kept specialized carriers active for decades.\n\nVeritor Group values Brooklyn Park trucking LLCs running north-metro distribution lanes, Amazon Relay routes out of the Twin Cities network, and general truckload operations on I-94 and US-169. Many north-metro carriers formed during 2020–2022 are now at an exit decision point — high winter maintenance costs, Minnesota's income tax, and normalized freight rates have compressed the margins that made the business case in 2021. If you're ready to exit, submit your MC/DOT number and we'll return a written offer within 24 hours.",
       whySell:
-        "Brooklyn Park's north-metro location and warehouse density mean carriers here often have documented, repeatable route history within the Twin Cities freight ring. That consistency — regular lanes, verifiable FMCSA activity — is exactly what a direct buyer values. Selling now captures the full worth of that authority and operating history in a single wire-transfer transaction rather than watching it dissolve in a slow wind-down.",
+        "Brooklyn Park's north-metro location and warehouse density mean carriers here often have documented, repeatable route history within the Twin Cities freight ring. That consistency — regular lanes, verifiable FMCSA activity — is exactly what shows up in a strong written offer. Selling now captures the full worth of that authority and operating history in a single wire-transfer transaction rather than watching it dissolve in a slow wind-down.",
       keywords: [
         "sell trucking LLC Brooklyn Park Minnesota",
         "trucking company buyer Brooklyn Park MN",
-        "sell MC authority Brooklyn Park MN",
+        "sell trucking company Brooklyn Park MN",
         "owner operator exit Brooklyn Park Minnesota",
         "sell logistics LLC Brooklyn Park",
         "Brooklyn Park Minnesota trucking acquisition",
@@ -358,8 +358,8 @@ export const minnesota: StateData = {
       ],
       faqs: [
         {
-          q: "Do you buy trucking LLCs based in Brooklyn Park running Amazon Relay?",
-          a: "Yes. North-metro Relay carriers feeding into the Twin Cities Amazon fulfillment network are within our standard acquisition scope. If your LLC holds an active Relay contract, the diligence process is faster — the Relay dashboard verifies contract status quickly and removes the largest variable from the timeline.",
+          q: "Is Amazon Relay a fit for trucking LLCs based in Brooklyn Park?",
+          a: "Yes. North-metro Relay carriers feeding into the Twin Cities Amazon fulfillment network are fully eligible. If your LLC holds an active Relay contract, the diligence process is faster — the Relay dashboard verifies contract status quickly and removes the largest variable from the timeline.",
         },
         {
           q: "Does running Medtronic or life sciences freight affect my LLC's value?",
@@ -375,7 +375,7 @@ export const minnesota: StateData = {
         },
         {
           q: "What banks do you use for Brooklyn Park closings?",
-          a: "We wire to whatever bank you already use — US Bank, Wells Fargo, and Bremer Bank all have north-metro presence. Funds transfer same-day on the closing date. You close at your own branch; no new accounts required.",
+          a: "Funds wire to whatever bank you already use — US Bank, Wells Fargo, and Bremer Bank all have north-metro presence. Funds transfer same-day on the closing date. You close at your own branch; no new accounts required.",
         },
       ],
       nearbySlugs: ["minneapolis", "bloomington", "st-paul"],

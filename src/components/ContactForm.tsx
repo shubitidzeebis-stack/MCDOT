@@ -687,11 +687,11 @@ function Qualifier({
       {phase === "relay" && (
         <>
           <h3 className="mt-5 text-[1.5rem] font-semibold leading-tight tracking-[-0.015em] text-white md:text-[1.875rem]">
-            Does your LLC have an active Amazon Relay contract?
+            Does your company have an active Amazon Relay contract?
           </h3>
           <p className="mt-3 text-[14px] leading-relaxed text-white/55">
-            Active Amazon Relay carriers are our highest priority — fastest close, best
-            terms, insurance flexibility.
+            An active Relay contract is the single biggest thing that moves your number —
+            fastest close, best terms, and lapsed insurance isn&rsquo;t a problem.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
@@ -701,7 +701,7 @@ function Qualifier({
             >
               <span className="text-[16px] font-semibold text-white">Yes, active Relay</span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
-                You&rsquo;re in our highest-priority bucket.
+                The strongest position there is. Straight to the next step.
               </span>
             </button>
             <button
@@ -721,12 +721,12 @@ function Qualifier({
       {phase === "mc-age" && (
         <>
           <h3 className="mt-5 text-[1.5rem] font-semibold leading-tight tracking-[-0.015em] text-white md:text-[1.875rem]">
-            How long has your MC authority + insurance been active?
+            How long have your MC authority <em>and</em> insurance been continuously active?
           </h3>
           <p className="mt-3 text-[14px] leading-relaxed text-white/55">
-            Amazon Relay only onboards carriers with at least 6 months of continuously
-            paid insurance and active MC authority. That&rsquo;s the bar we look for
-            on non-Relay LLCs.
+            Amazon won&rsquo;t onboard a carrier until both have run without a gap for at
+            least 180 days. Without a Relay contract already in place, that&rsquo;s the bar
+            — and a lapse in coverage resets what the record shows.
           </p>
           <div className="mt-6 grid gap-3">
             <button
@@ -735,10 +735,10 @@ function Qualifier({
               className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-[#ff8a1a]/50 hover:bg-[#ff8a1a]/[0.06]"
             >
               <span className="text-[16px] font-semibold text-white">
-                6 months or longer
+                180 days or longer, no gaps
               </span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
-                You&rsquo;re a fit. Tell us a little more on the next step.
+                That&rsquo;s the bar cleared. Tell us a little more on the next step.
               </span>
             </button>
             <button
@@ -747,11 +747,11 @@ function Qualifier({
               className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:border-white/30 hover:bg-white/[0.08]"
             >
               <span className="text-[16px] font-semibold text-white">
-                Less than 6 months
+                Under 180 days, or there&rsquo;s been a lapse
               </span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
-                We&rsquo;ll still answer questions — submit and we&rsquo;ll be honest about
-                whether it works.
+                Probably too early. Send it anyway and you&rsquo;ll get a straight answer
+                today, plus what would need to change.
               </span>
             </button>
             <button
@@ -761,7 +761,7 @@ function Qualifier({
             >
               <span className="text-[16px] font-semibold text-white">I&rsquo;m not sure</span>
               <span className="mt-1 text-[13px] text-white/55 group-hover:text-white/75">
-                Submit anyway — we pull FMCSA records ourselves to check.
+                No problem — your FMCSA record gets pulled either way.
               </span>
             </button>
           </div>

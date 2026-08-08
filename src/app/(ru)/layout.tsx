@@ -26,11 +26,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE.name} — Выкупаем логистические LLC в США`,
+    default: `${SITE.name} — Продайте свою транспортную компанию, закрытие за 3–5 дней`,
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Veritor Group покупает логистические LLC в США, в том числе с действующим контрактом Amazon Relay. Письменные офферы, закрытие за 3–5 рабочих дней.",
+    "Продайте свою транспортную компанию в США — включая перевозчиков с активным Amazon Relay. Бесплатная оценка по FMCSA, письменное предложение за 24 часа, личное закрытие в вашем банке за 3–5 рабочих дней. Без сборов, без комиссии. Более 400 закрытых продаж по всей стране.",
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
   generator: "Next.js",

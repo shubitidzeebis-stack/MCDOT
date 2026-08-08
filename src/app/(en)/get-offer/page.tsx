@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `Free valuation — ${SITE.name}`,
     description:
-      "Enter your MC or DOT. We pull FMCSA and return a value range. Written offer in 48 hours, in-person close in 3–5 business days.",
+      "Enter your MC or DOT. We pull FMCSA and return a value range. Written offer in 24 hours, close in 3–5 business days.",
     url: "/get-offer",
     images: [DEFAULT_OG_IMAGE],
   },
@@ -36,7 +36,7 @@ export default function GetOfferPage() {
     <>
       <ServiceSchema
         name="Free trucking LLC valuation — FMCSA-powered"
-        description="Free valuation for US logistics LLCs. Enter MC or DOT number, we pull FMCSA data and return a written value range. Written offer in 48 hours, in-person bank close in 3–5 business days."
+        description="Free valuation for US logistics LLCs. Enter MC or DOT number, we pull FMCSA data and return a written value range. Written offer in 24 hours, close in 3–5 business days."
         url="/get-offer"
       />
       <BreadcrumbSchema

@@ -58,7 +58,7 @@ export const SIGNATURE_TEXT = `The ${SITE.name} team
 
 ${SITE.email}
 ${SITE.phoneDisplay}
-${SITE.legalName} — operator-led acquirer of US logistics LLCs`;
+${SITE.legalName} — written offers on trucking companies, 3–5 day closings`;
 
 export type Cta = {
   label: string;
@@ -182,7 +182,7 @@ export function emailShell({
                   <a href="mailto:${safe(SITE.email)}" style="color:${COLORS.accent}; text-decoration:none;">${safe(SITE.email)}</a><br />
                   ${safe(SITE.phoneDisplay)}<br />
                   <a href="${safe(siteUrl)}" style="color:${COLORS.accent}; text-decoration:none;">${safe(siteUrl.replace(/^https?:\/\//, ""))}</a><br />
-                  <span style="color:${COLORS.textMuted};">${safe(SITE.trust.acquisitionsCompleted)} acquisitions · ${safe(SITE.trust.averageCloseDays)} · operator-led</span>
+                  <span style="color:${COLORS.textMuted};">${safe(SITE.trust.acquisitionsCompleted)} acquisitions · ${safe(SITE.trust.averageCloseDays)} · escrow-backed</span>
                 </p>
               </td>
             </tr>

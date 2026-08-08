@@ -132,7 +132,7 @@ export default async function CityPage({
 
                 {/* Keywords/topics covered */}
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#ff8a1a] mb-4 md:text-[11px]">We buy</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.42em] text-[#ff8a1a] mb-4 md:text-[11px]">What qualifies</p>
                   <div className="flex flex-wrap gap-2">
                     {["Trucking LLCs", "Amazon Relay carriers", "Fresh MC authority", "Owner-operator exits", "Small fleets", "Sole proprietor DOTs"].map((tag) => (
                       <span key={tag} className="text-xs px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/55">

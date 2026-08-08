@@ -30,29 +30,29 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3100";
 const KEYWORDS = [
   "sell my trucking LLC",
   "sell logistics company",
-  "buy Amazon Relay LLC",
+  "sell Amazon Relay LLC",
   "sell Amazon Relay business",
-  "MC authority for sale",
-  "sell MC number",
-  "buy trucking LLC",
-  "logistics LLC acquisition",
-  "Amazon Relay acquisition",
-  "trucking company buyer",
+  "sell my trucking company",
+  "sell trucking LLC with MC authority",
+  "how to sell a trucking company",
+  "trucking company valuation",
+  "Amazon Relay carrier sale",
+  "what is my trucking company worth",
   "owner-operator exit",
-  "DOT authority transfer",
+  "trucking LLC ownership transfer",
   "trucking M&A",
   "sell trucking business with insurance",
-  "fresh MC authority sale",
+  "sell trucking company fast",
 ];
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE.name} — We buy US logistics LLCs & Amazon Relay carriers`,
+    default: `${SITE.name} — Sell your trucking company, closed in 3–5 days`,
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Veritor Group acquires US logistics LLCs and Amazon Relay carriers. Written offers, close in 3–5 business days. 400+ LLCs closed nationwide.",
+    "Sell your US trucking company — including carriers running Amazon Relay. Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank in 3–5 business days. No fees, no commission. 400+ sales closed nationwide.",
   keywords: KEYWORDS,
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
@@ -64,16 +64,16 @@ export const metadata: Metadata = {
     locale: "en_US",
     alternateLocale: ["es", "ru"],
     url: SITE_URL,
-    title: `${SITE.name} — We buy US logistics LLCs & Amazon Relay carriers`,
+    title: `${SITE.name} — Sell your trucking company, closed in 3–5 days`,
     description:
-      "Veritor Group acquires US logistics LLCs — written offers, closed in 3–5 business days. 400+ LLCs closed.",
+      "Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank. You keep 100% of the number you accept. 400+ sales closed.",
     images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — We buy US logistics LLCs`,
+    title: `${SITE.name} — Sell your trucking company`,
     description:
-      "Operator-led acquirer of US logistics LLCs and Amazon Relay carriers. Written offers, close in 3–5 business days.",
+      "Free FMCSA valuation, written offer in 24 hours, close in 3–5 business days. No fees, no commission.",
   },
   alternates: {
     canonical: "/",

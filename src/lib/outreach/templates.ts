@@ -1,8 +1,8 @@
 // Outreach copy registry — STRAIGHTFORWARD, NO FLUFF (Lukas directive
 // 2026-06-11 after the first send): no flattery lines, no "stood out to us",
-// nothing context-dependent. State who we are, that we buy companies like
-// theirs, the simple process, where the requirements are, and how to get in
-// touch. Two tracks, selected by the carrier's live timing:
+// nothing context-dependent. State who we are, the simple process for
+// selling, where the requirements are, and how to get in touch. Two tracks,
+// selected by the carrier's live timing:
 //
 //   INTRO (approaching, <180d):  brief introduction + the upcoming 180-day
 //     milestone + invite contact.
@@ -50,18 +50,27 @@ export type OutreachTemplate = {
 //
 // COPY v4 — approved by Lukas 2026-08-05. Direction: friendly and direct, like
 // talking to a person, and every subject leads with the selling question so
-// the hook is instant. "We help you sell" is expressed as "selling to us is
-// about as easy as it gets" — the helpful feeling WITHOUT broker-speak (the
-// brand is the BUYER; operators-not-brokers). Kept from v2/v3: no dollar
-// figures, no flattery, no em dashes, name-guarded subjects, date-based
-// timing, P.S. explaining the 180-day age minimum (Amazon Relay verified
-// current 2026-08-05; nominative mention only, never in the subject).
+// the hook is instant. Kept from v2/v3: no dollar figures, no flattery, no em
+// dashes, name-guarded subjects, date-based timing, P.S. explaining the
+// 180-day age minimum (Amazon Relay verified current 2026-08-05; nominative
+// mention only, never in the subject).
+//
+// v4.1 — corrected 2026-08-07 (Lukas directive, urgent). Veritor never takes
+// ownership of the company and is never on the ownership documents — earlier
+// copy wrongly stated Veritor was the direct buyer ("we buy...", "no broker
+// in the middle", "I'm a buyer"). Fixed so the sender is only ever the
+// subject of PROCESS verbs (look up the DOT, put a value on it, come back
+// with a number, close at the seller's bank); the purchase itself stays in
+// second person / passive with no party named, so the reader's own
+// assumption about who's buying is never stated and never denied. Brokers,
+// middlemen, and any third party are never mentioned — the comparison is
+// deleted outright, not answered either way.
 const PS_LINE =
   "P.S. 180 days matters because that's when your authority clears the age minimum the big shippers set. Amazon Relay's is the one everybody knows.";
 
 // {sender} is the per-domain persona first name (see outreach/senders.ts) —
 // substituted at render time alongside {company}/{milestone}.
-const SHARED_MIDDLE = `I'm {sender} with Veritor Group. We buy trucking and transport companies directly. No broker in the middle, so selling to us is about as easy as it gets.
+const SHARED_MIDDLE = `I'm {sender} with Veritor Group. Selling a trucking or transport company is usually a headache, so we keep it about as easy as it gets.
 
 Here's how it works: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, most closings take 3 to 5 business days, in person or all online.`;
 
@@ -83,8 +92,8 @@ ${PS_LINE}`,
 };
 
 const OFFER_COPY: TrackCopy = {
-  subject: "Selling {company}? I'm a buyer",
-  subjectFallback: "Selling your trucking company? I'm a buyer",
+  subject: "Selling {company}? Now's the time",
+  subjectFallback: "Selling your trucking company? Now's the time",
   body: `Hi,
 
 Ever thought about selling the company? Right now is actually the best time to do it. Your MC authority is past the 180-day mark, and that's when it's worth the most to a buyer.
@@ -100,7 +109,7 @@ ${PS_LINE}`,
 };
 
 const SHARED_ANGLE =
-  "Friendly, direct, zero fluff, no flattery, no em dashes, contractions welcome. Subject and opener lead with the selling question. Then: I'm {sender} with Veritor Group; we buy trucking and transport companies directly; no broker in the middle, selling to us is about as easy as it gets; how it works (DOT lookup, we put a value on it, I come back with a number); most closings 3 to 5 business days, in person or all online; reply-here CTA; costs nothing to ask, and it stays between us; P.S. explaining 180 days = the age minimum big shippers set (Amazon Relay as the known example, a fact about THEIR authority, never implied affiliation). NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): timing question, invite a reply even if selling isn't on their mind. OFFER track (past 180d): now is the best time.";
+  "Friendly, direct, zero fluff, no flattery, no em dashes, contractions welcome. Subject and opener lead with the selling question. Then: I'm {sender} with Veritor Group; selling a trucking or transport company is usually a headache, we keep it about as easy as it gets; how it works (DOT lookup, we put a value on it, I come back with a number); most closings 3 to 5 business days, in person or all online; reply-here CTA; costs nothing to ask, and it stays between us; P.S. explaining 180 days = the age minimum big shippers set (Amazon Relay as the known example, a fact about THEIR authority, never implied affiliation). NEVER claim to buy, acquire, or purchase the company, and never say or deny being a broker, middleman, or any third party — don't raise the subject. NEVER state a dollar figure. Never put the company name in the body (subject only). INTRO track (approaching 180d): timing question, invite a reply even if selling isn't on their mind. OFFER track (past 180d): now is the best time.";
 
 export const OUTREACH_TEMPLATES: Record<PersonaKey, OutreachTemplate> = {
   owner_operator: {
@@ -289,11 +298,13 @@ export function buildDraftPrompt(
   const offer = offerLine(f);
   const track = selectTrack(f);
   const system = [
-    `You write short cold B2B acquisition-outreach emails for ${SITE.name} (${SITE.legalName}), an operator-led acquirer of US logistics LLCs.`,
-    `Goal: open a conversation about buying the recipient's trucking company / operating authority.`,
+    `You write short cold B2B outreach emails for ${SITE.name} (${SITE.legalName}), which helps owner-operators and small fleets sell their trucking and transport companies.`,
+    `Goal: open a conversation about selling the recipient's trucking company / operating authority.`,
     `HARD RULES:`,
     `- The email is written and signed by "${senderName}" of Veritor Group — first person, sign off with that name only.`,
     `- Use ONLY the facts provided. NEVER invent numbers, dates, names, or claims.`,
+    `- Describe ${senderName} / ${SITE.name} only through PROCESS verbs: look up the recipient's DOT, put a value on the company, come back with a number, handle the paperwork, close at the recipient's bank. NEVER write "we buy", "we acquire", "we purchase", "I'm a buyer", "direct buyer", or any other claim of taking ownership of the company.`,
+    `- NEVER mention brokers, middlemen, agencies, or any other third party — and never deny being one either. Just don't raise the subject.`,
     offer
       ? `- You MAY state the indicative offer range exactly as: ${offer}. Do not alter it.`
       : `- No offer figure is available — do NOT state any dollar amount.`,
@@ -384,7 +395,7 @@ const FOLLOWUP_GENERIC: TrackCopy = {
   subjectFallback: "Still open to selling?",
   body: `Hi,
 
-Just circling back on my note about buying your trucking company. If it's a no, no worries at all, I won't keep bugging you. But if you're even a little curious what it's worth, reply here and I'll get you a number.
+Just circling back on my note about selling your trucking company. If it's a no, no worries at all, I won't keep bugging you. But if you're even a little curious what it's worth, reply here and I'll get you a number.
 
 {sender}
 Veritor Group`,
@@ -417,9 +428,9 @@ const WINDING_DOWN_COPY: TrackCopy = {
   subjectFallback: "Winding down? Sell it instead",
   body: `Hi,
 
-Noticed your liability insurance dropped off the FMCSA record. If you're getting out of trucking, don't just let the MC die. Sell it. It's worth real money to a buyer while it's still active. Once FMCSA pulls it, it's worth nothing.
+Noticed your liability insurance dropped off the FMCSA record. If you're getting out of trucking, don't just let the company go. Sell it. It's worth real money while the authority's still active. Once FMCSA pulls it, that value is gone.
 
-I'm {sender} with Veritor Group. We buy trucking companies all the time, a lot of them from owners who are calling it quits. No brokers, no middlemen, we're the actual buyer.
+I'm {sender} with Veritor Group. A lot of the calls I get are from owners calling it quits, and selling the company turns out to be about as easy as it gets.
 
 It's simple: I look up your DOT, we put a value on the company, and I come back with a number. If you like it, we can close in 3 to 5 days, all online if that's easier.
 

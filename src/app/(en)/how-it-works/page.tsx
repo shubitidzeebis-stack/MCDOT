@@ -15,13 +15,13 @@ import {
 export const metadata: Metadata = {
   title: "Selling your trucking LLC — the 4-step process",
   description:
-    "Four steps: MC/DOT lookup, written offer, diligence, in-person bank wire. Close in 3–5 business days. No third-party buyers, no broker fees.",
+    "Four steps: MC/DOT lookup, written offer, diligence, in-person bank wire. Close in 3–5 business days. No fees, no commission — you keep 100% of the number you accept.",
   keywords: [
     "how to sell trucking LLC",
-    "selling logistics company process",
-    "Amazon Relay LLC sale process",
-    "MC authority transfer",
-    "DOT number transfer",
+    "how to sell a trucking company",
+    "Amazon Relay carrier sale process",
+    "trucking LLC ownership transfer",
+    "sell trucking company steps",
     "trucking LLC closing",
     "purchase agreement trucking LLC",
     "wire transfer trucking sale",
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "How to sell your logistics LLC — the Veritor process",
+    title: "How to sell your trucking company — the Veritor process",
     description:
-      "Four-step acquisition process: check, valuation, sign, in-person wire. Average 3–5 business days.",
+      "Four steps: check, valuation, sign, in-person wire at your own bank. Average 3–5 business days.",
     url: "/how-it-works",
     images: ["/how-it-works/handshake-keys.png"],
   },
@@ -49,13 +49,13 @@ export default function HowItWorksPage() {
   return (
     <>
       <ServiceSchema
-        name="LLC acquisition process — buy-side"
-        description="Four-step acquisition process from initial check to in-person wire transfer at the bank. Average close in 3–5 business days. Veritor pays legal fees on our side."
+        name="Trucking company sale process"
+        description="Four steps from the initial FMCSA check to an in-person wire at the seller's own bank. Average close in 3–5 business days. No fees or commission to the seller."
         url="/how-it-works"
       />
       <HowToSchema
-        name="How to sell your trucking LLC to Veritor Group"
-        description="Four-step process from FMCSA check to in-person bank wire. Average 3–5 business days. Veritor pays its own legal fees."
+        name="How to sell your trucking company through Veritor Group"
+        description="Four steps from FMCSA check to in-person bank wire. Average 3–5 business days. Nothing is deducted from the seller's number."
         steps={[
           {
             name: "Check your MC or DOT number",
@@ -63,15 +63,15 @@ export default function HowItWorksPage() {
           },
           {
             name: "Receive a written offer",
-            text: "If the LLC qualifies, Veritor sends a written offer with a specific dollar amount and a short Letter of Intent. No verbal commitments — everything is on paper before any documents are signed.",
+            text: "If the company qualifies, a written offer with a specific dollar amount comes back along with a short Letter of Intent. No verbal commitments — everything is on paper before any documents are signed.",
           },
           {
             name: "Sign and complete diligence",
-            text: "Both parties sign the Membership Interest Purchase Agreement. Veritor pays legal fees on its side. Standard diligence: tax filings current, no undisclosed liens, violation history matches what was disclosed. Typically 2–3 business days.",
+            text: "The Membership Interest Purchase Agreement is signed by both parties. Standard diligence: tax filings current, no undisclosed liens, violation history matching what was disclosed. Typically 2–3 business days, and legal costs don't come out of the seller's number.",
           },
           {
             name: "In-person bank wire and transfer",
-            text: "The close happens in person at the seller's bank. Veritor wires the closing payment from its account to the seller's account while both parties are at the counter. The bank updates account signatories. MC authority, DOT records, phone, email, and bank account all hand over per the closing checklist.",
+            text: "Closing happens at the seller's own bank in person, or remotely if that suits better. Either way funds move through a closing attorney's escrow account and release on signature, so the money lands as the documents execute rather than after. The bank updates account signatories, and the company phone, email, and bank account hand over per the closing checklist.",
           },
         ]}
       />
@@ -106,55 +106,55 @@ export default function HowItWorksPage() {
           </p>
           <h3>Day 1 — Check and triage</h3>
           <p>
-            You enter your MC or DOT number. Within hours, every day of the week, we
-            pull your FMCSA record, verify the MC authority is in good standing, and
-            check insurance status. If the LLC has an active Amazon Relay contract, we
-            verify it through standard channels. We come back with either &ldquo;we
-            want to move&rdquo; (with a specific number) or &ldquo;here&rsquo;s why
-            we&rsquo;re passing.&rdquo;
+            You enter your MC or DOT number — nothing else, because nothing else is
+            needed at this stage. Within hours, every day of the week, we pull your
+            FMCSA record, check the authority is in good standing, and look at insurance
+            status, safety rating and violation history. You get one of two answers: a
+            specific number, or a straight explanation of why it isn&rsquo;t a fit. The
+            second answer comes the same day. Nobody gets strung along.
           </p>
           <h3>Day 2 — Written offer and LOI</h3>
           <p>
-            If we&rsquo;re moving, you get a written offer and a short letter of intent
-            that locks the price and outlines what transfers at closing: the LLC itself,
-            MC authority, DOT records, company phone number, company email account,
-            company bank account, and any vehicle titles if applicable. No verbal
-            commitments — everything is on paper.
+            If it&rsquo;s a fit, you get a written offer and a short letter of intent
+            that locks the price and sets out what transfers at closing: the LLC itself,
+            its authority and DOT records, the company phone number, email account, bank
+            account, and any vehicle titles if they apply. No verbal commitments —
+            everything on paper, before you commit to anything.
           </p>
           <h3>Day 2&ndash;3 — Diligence and document prep</h3>
           <p>
             Standard diligence: tax filings current, no undisclosed liens, violation
-            history matches what you told us. Our legal counsel drafts the purchase
-            agreement; we pay those fees. You review with your own counsel if you want,
-            and we go back and forth on edits.
+            history matching what you disclosed. Legal counsel drafts the purchase
+            agreement and those costs don&rsquo;t come out of your number. Take it to
+            your own lawyer — you should, and the agreement is sent over precisely so
+            you can.
           </p>
           <h3>Day 3&ndash;5 — Signing, wire, and the in-person handover</h3>
           <p>
-            <strong>The close happens in person.</strong> We meet you at the bank that
-            holds the LLC&rsquo;s account — typically the same bank that&rsquo;s
-            attached to the Amazon Relay payments — and we run the transfer at the
-            counter together. Final purchase agreement signed face to face, the bank
-            updates signatories on the spot, and we wire the closing payment from our
-            account to yours while we&rsquo;re both standing there. You walk out with
-            the funds in your account, we walk out with the LLC. Phone number, email,
-            and FMCSA portal credentials hand over according to the closing checklist;
-            MC authority re-registration paperwork is filed by us in the days after.
+            <strong>Most sellers close in person.</strong> We meet you at the bank that
+            holds the company&rsquo;s account and run the transfer at the counter
+            together. Final purchase agreement signed face to face, the bank updates
+            signatories on the spot, and the closing funds move through a closing
+            attorney&rsquo;s escrow account into your account while everyone is standing
+            there. You walk out with the money already in your account. Phone number,
+            email, and portal credentials hand over according to the closing checklist.
           </p>
           <p>
-            The reason we close at the bank, in person: it removes every ambiguity that
-            normally drags a small-business sale out for weeks. No remote signature
-            chasing, no &ldquo;the wire didn&rsquo;t arrive yet,&rdquo; no waiting on
-            scanned IDs. The teller sees you, sees us, and the transfer is final
-            before any of us leaves the branch.
+            If getting to a branch is impractical, the whole thing runs remotely instead
+            — signed electronically, same escrow, same timeline. The protection was never
+            the handshake; it&rsquo;s the escrow releasing on signature, so the money
+            lands as the documents execute rather than after. That&rsquo;s the part worth
+            insisting on wherever you sell, because it&rsquo;s the part a fraud operation
+            cannot agree to. Anyone who wants the entity, the documents, or the logins
+            moved before the funds are yours is telling you what they are.
           </p>
           <p className="!text-[12px] !leading-relaxed !text-white/40">
             <strong className="font-medium text-white/55">A note on
             timing.</strong>{" "}
-            Bottlenecks are usually outside our control: the bank takes a day to
-            update signatories, FMCSA portal access has to transfer, an active loan
-            needs lender consent. We&rsquo;ve seen all of these and we know how to
-            handle them. Our job is to keep the wire on track no matter what shows up
-            in diligence.
+            Bottlenecks are usually outside anyone&rsquo;s control: the bank takes a day
+            to update signatories, portal access has to transfer, an active loan needs
+            lender consent. All of these are familiar and none of them are surprises. The
+            job is to keep the wire on track no matter what shows up in diligence.
           </p>
         </EditorialBlock>
 

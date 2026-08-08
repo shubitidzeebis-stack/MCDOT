@@ -5,7 +5,7 @@
 export const SITE = {
   name: "Veritor Group",
   legalName: "Veritor Group LLC",
-  tagline: "We buy US logistics LLCs.",
+  tagline: "Sell your US trucking company. Closed in 3–5 business days.",
 
   // Contact
   phoneDisplay: "+1 (326) 467-0388",
@@ -71,7 +71,7 @@ export const DEFAULT_OG_IMAGE = {
   url: "/opengraph-image",
   width: 1200,
   height: 630,
-  alt: "Veritor Group — We buy US logistics LLCs. Closed in 3–5 business days.",
+  alt: "Veritor Group — Sell your trucking company. Closed in 3–5 business days.",
 };
 
 // Single-line address for use in legal-doc footers, CAN-SPAM blocks, etc.

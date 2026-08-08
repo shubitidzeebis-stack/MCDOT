@@ -5,18 +5,18 @@ export const revalidate = false;
 export const size = SIZE;
 export const contentType = CONTENT_TYPE;
 export const alt =
-  "Veritor Group — Operator-led. Acquirer-focused. About Veritor Group.";
+  "Veritor Group — Built by drivers, for owner-operators. About Veritor Group.";
 
 export default function OgImage() {
   return makeOgImage({
     eyebrow: "ABOUT",
-    headlineLine1: "Operator-led.",
-    headlineLine2: "Acquirer-focused.",
+    headlineLine1: "Built by drivers.",
+    headlineLine2: "For owner-operators.",
     trustRow: [
       "Founded by drivers",
-      "400+ LLCs closed",
-      "Operate every LLC we buy",
-      "Not brokers",
+      "400+ sales closed",
+      "In-person bank closing",
+      "No fees, no commission",
     ],
   });
 }

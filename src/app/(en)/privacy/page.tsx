@@ -42,7 +42,7 @@ export default function PrivacyPage() {
 
               <h2>1. Who we are</h2>
               <p>
-                {SITE.legalName} is a US-based acquirer of logistics LLCs and Amazon Relay
+                {SITE.legalName} handles the sale of US trucking companies and Amazon Relay
                 carriers. We operate this Site as the controller of personal information you
                 provide. Our business address is: {address}.
               </p>

@@ -15,22 +15,22 @@ import {
 import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "About — operator-led LLC acquirer",
+  title: "About — built by drivers, for owner-operators",
   description:
-    "Operator-led US acquirer of logistics LLCs and Amazon Relay carriers. Founded by drivers and owner-operators. 400+ LLCs closed nationwide, average close in 3–5 business days.",
+    "Veritor Group handles US trucking company sales, including carriers running Amazon Relay. Founded by drivers and owner-operators. 400+ sales closed nationwide, average close in 3–5 business days.",
   keywords: [
     "about Veritor Group",
-    "operator-led LLC acquirer",
-    "trucking company buyer USA",
-    "Amazon Relay carrier acquirer",
+    "Veritor Group reviews",
+    "sell trucking company USA",
+    "Amazon Relay carrier sale",
     "owner-operator exit partner",
     "logistics M&A firm",
   ],
   alternates: { canonical: "/about" },
   openGraph: {
-    title: `About ${SITE.name} — operator-led LLC acquirer`,
+    title: `About ${SITE.name} — built by drivers, for owner-operators`,
     description:
-      "Founded by operators, not brokers. We acquire US logistics LLCs and operate them ourselves. Every deal goes into our book — that's why we close fast and pay fair.",
+      "Founded by people who started as drivers and became owner-operators. 400+ trucking company sales closed, average 3–5 business days, in person at the seller's own bank.",
     url: "/about",
     // Image is auto-injected by `src/app/about/opengraph-image.tsx`. Don't
     // set `images` here or it overrides the dynamic OG card.
@@ -48,15 +48,15 @@ export default function AboutPage() {
         items={[
           {
             q: "Who is Veritor Group?",
-            a: "Veritor Group is a US operator-led acquirer of logistics LLCs and Amazon Relay carriers. We buy LLCs and run them ourselves — we are not a broker. Founded by drivers and owner-operators. 400+ LLCs acquired across the United States. Headquartered in Dayton, Ohio.",
+            a: "Veritor Group handles the sale of US trucking companies, including carriers running Amazon Relay contracts. Founded by people who started as drivers and became owner-operators. 400+ sales closed across the United States. Headquartered in Dayton, Ohio.",
           },
           {
-            q: "Is Veritor Group a broker?",
-            a: "No. Veritor Group is the direct buyer. Every LLC we acquire goes into our operating book. We close in person at the seller's bank with a wire transfer — no remote signatures, no flips to a third party. Veritor pays its own legal fees on every closing.",
+            q: "What does Veritor Group actually do?",
+            a: "Veritor Group runs the sale of your trucking company end to end. That means pulling your FMCSA record and valuing the company, coming back with a written number, preparing the purchase agreement, coordinating any lender payoff, and closing in person at your own bank with the funds moving through a closing attorney's escrow account. You keep 100% of the number you accept — no fees, no commission, nothing deducted at closing.",
           },
           {
-            q: "How many trucking LLCs has Veritor Group acquired?",
-            a: "Veritor Group has acquired over 400 trucking LLCs across the United States, with an average close time of 3 to 5 business days.",
+            q: "How many trucking company sales has Veritor Group closed?",
+            a: "Over 400 across the United States, with an average close time of 3 to 5 business days.",
           },
           {
             q: "Where is Veritor Group based?",
@@ -74,9 +74,9 @@ export default function AboutPage() {
           image="/about/founder-context.webp"
           alt="Veritor Group dispatcher's office at first light — desk with ledger, printouts and a closed laptop, an out-of-focus white semi-truck visible through the window"
           eyebrow="About"
-          headlineLine1="Operator-led."
-          headlineLine2="Acquirer-focused."
-          subhead={`${SITE.name} acquires US logistics LLCs — with a focus on those running Amazon Relay contracts and those holding fresh MC authority we can put to work immediately.`}
+          headlineLine1="Built by drivers."
+          headlineLine2="For owner-operators."
+          subhead={`${SITE.name} handles the sale of US trucking companies — with a focus on carriers running Amazon Relay contracts and those already past the 180-day mark.`}
           objectPosition="object-[50%_60%]"
         />
 
@@ -108,7 +108,7 @@ export default function AboutPage() {
                     Luka S.
                   </h3>
                   <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
-                    Drives every acquisition personally — from the first seller
+                    Drives every sale personally — from the first seller
                     call through the final wire transfer. Decade in
                     owner-operator and small-fleet operations.
                   </p>
@@ -136,7 +136,7 @@ export default function AboutPage() {
                     Temuka K.
                   </h3>
                   <p className="mt-3 text-[14px] leading-relaxed text-white/65 md:text-[15px]">
-                    Co-leads every acquisition with Luka. Owns the deal
+                    Co-leads every deal with Luka. Owns the
                     pipeline, diligence playbook, and the in-person bank-floor
                     handover that defines a Veritor close.
                   </p>
@@ -174,34 +174,37 @@ export default function AboutPage() {
           eyebrow="The story"
           heading={
             <>
-              Operators buying <span className="italic font-light text-white/85">from operators.</span>
+              We started <span className="italic font-light text-white/85">in the seat.</span>
             </>
           }
         >
           <p>
-            We&rsquo;re not brokers and we&rsquo;re not flippers. Every LLC we buy goes
-            into our operating book. That&rsquo;s why we close fast and pay fairly:
-            we&rsquo;re not waiting on a third-party buyer or shopping your deal around.
+            Veritor was founded by people who started as drivers, became owner-operators,
+            and grew into running several companies at once. That history is the whole
+            reason the valuations are honest: we know what a trucking company is actually
+            worth because we know what it takes to run one.
           </p>
-          <h3>How we got here</h3>
+          <h3>Why the process is deliberately boring</h3>
           <p>
-            Veritor was founded by operators who started as drivers, became
-            owner-operators, and grew into multi-LLC fleet management. We know exactly
-            what an LLC is worth because we know exactly how to run it.
+            Nothing here is designed to be exciting. Clear requirements, a written number,
+            standard paperwork, a bank counter. That&rsquo;s on purpose. In a market where
+            trade press keeps documenting authorities being acquired for cargo-theft
+            schemes, boring is the feature. Every step leaves something you can check.
           </p>
           <p>
-            Today we&rsquo;ve completed {SITE.trust.acquisitionsCompleted} acquisitions
-            across the United States, with an average close time of{" "}
-            {SITE.trust.averageCloseDays.toLowerCase()}. Our process is deliberately
-            boring: clear requirements, written offers, standard paperwork. No surprises.
+            To date that&rsquo;s {SITE.trust.acquisitionsCompleted} sales closed across the
+            United States, with an average close time of{" "}
+            {SITE.trust.averageCloseDays.toLowerCase()}.
           </p>
-          <h3>What we promise sellers</h3>
+          <h3>What you get from us, every time</h3>
           <ul>
             <li>A response within hours, not days</li>
-            <li>A written offer, not a verbal handshake</li>
-            <li>Full discretion — your identity stays private</li>
-            <li>We pay our own legal fees</li>
-            <li>If you don&rsquo;t qualify, we&rsquo;ll tell you why</li>
+            <li>A written offer, never a verbal handshake</li>
+            <li>Funds through a closing attorney&rsquo;s escrow account</li>
+            <li>Funds landing as the documents execute — at your bank or online, your call</li>
+            <li>100% of the number you accept — no fees, no commission, no deductions</li>
+            <li>Full discretion — your identity stays private and nothing is shopped around</li>
+            <li>If your company isn&rsquo;t a fit, you hear that the same day, with the reason</li>
           </ul>
         </EditorialBlock>
 

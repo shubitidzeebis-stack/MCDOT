@@ -43,14 +43,14 @@ const EMPLOYEES: Array<{
     name: "Luka S.",
     jobTitle: "Founder",
     description:
-      "Drives every acquisition personally — from the first seller call through the final wire transfer. Decade in owner-operator and small-fleet operations.",
+      "Drives every sale personally — from the first seller call through the final wire transfer. Decade in owner-operator and small-fleet operations.",
     image: "/about/team-luka.webp",
   },
   {
     name: "Temuka K.",
     jobTitle: "Managing Partner",
     description:
-      "Co-leads every acquisition with Luka. Owns the deal pipeline, diligence playbook, and the in-person bank-floor handover that defines a Veritor close.",
+      "Co-leads every deal with Luka. Owns the pipeline, the diligence playbook, and the in-person bank-floor handover that defines a Veritor close.",
     image: "/about/team-managing-partner.jpg",
   },
   {
@@ -74,12 +74,12 @@ export function OrganizationSchema() {
         url: BASE_URL,
         logo: `${BASE_URL}/brand/logo-color.png`,
         description: SITE.tagline,
-        slogan: "Operators buying from operators.",
+        slogan: "Your sale, handled end to end.",
         knowsAbout: [
-          "Logistics LLC acquisition",
-          "Amazon Relay carrier acquisitions",
-          "MC authority transfer",
-          "DOT number transfer",
+          "Trucking company sale",
+          "Amazon Relay carrier sale",
+          "Ownership transfer of an LLC holding MC authority",
+          "FMCSA ownership change filing",
           "Trucking business sale",
           "Owner-operator exit",
         ],
@@ -87,7 +87,7 @@ export function OrganizationSchema() {
           {
             "@type": "ContactPoint",
             telephone: SITE.phoneTel,
-            contactType: "Acquisitions",
+            contactType: "Seller support",
             email: SITE.email,
             areaServed: "US",
             availableLanguage: ["English", "Spanish", "Russian"],
@@ -121,7 +121,7 @@ export function LocalBusinessSchema() {
         logo: `${BASE_URL}/brand/logo-color.png`,
         image: `${BASE_URL}/brand/logo-color.png`,
         description:
-          "Operator-led acquirer of US logistics LLCs and Amazon Relay carriers. Written offers, average close in 3–5 business days. 400+ LLCs acquired nationwide.",
+          "Trucking company sales handled end to end for US owner-operators and small fleets, including carriers running Amazon Relay. Written offer, in-person bank closing, average 3–5 business days. 400+ sales closed nationwide.",
         telephone: SITE.phoneTel,
         email: SITE.email,
         address: POSTAL_ADDRESS,
@@ -142,20 +142,20 @@ export function LocalBusinessSchema() {
         areaServed: { "@type": "Country", name: "United States" },
         hasOfferCatalog: {
           "@type": "OfferCatalog",
-          name: "Logistics LLC acquisition services",
+          name: "Trucking company sale services",
           itemListElement: [
             {
               "@type": "Offer",
               itemOffered: {
                 "@type": "Service",
-                name: "Amazon Relay LLC acquisition",
+                name: "Amazon Relay carrier sale",
               },
             },
             {
               "@type": "Offer",
               itemOffered: {
                 "@type": "Service",
-                name: "MC authority LLC acquisition",
+                name: "Trucking company sale (LLC holding MC authority)",
               },
             },
           ],
@@ -197,7 +197,7 @@ export function ServiceSchema({
       data={{
         "@context": "https://schema.org",
         "@type": "Service",
-        serviceType: "Logistics LLC acquisition",
+        serviceType: "Trucking company sale",
         provider: { "@id": `${BASE_URL}#organization` },
         name,
         description,
@@ -206,12 +206,12 @@ export function ServiceSchema({
         audience: {
           "@type": "Audience",
           audienceType:
-            "Owner-operator trucking LLC owners with or without active Amazon Relay contracts",
+            "Owner-operators and small fleet owners selling a trucking company, with or without an active Amazon Relay contract",
         },
         category: [
           "Trucking M&A",
-          "Logistics LLC acquisition",
-          "Amazon Relay carrier acquisition",
+          "Trucking company sale",
+          "Amazon Relay carrier sale",
         ],
       }}
     />
