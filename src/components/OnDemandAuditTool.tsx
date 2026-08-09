@@ -218,7 +218,7 @@ export function OnDemandAuditTool({
       {(kind === "email" || kind === "phone") && (
         <p className="mt-2 text-[11px] leading-relaxed text-white/40">
           Searches your leads and prospect list first, then the FMCSA census. The
-          census only holds the MCS-150 <em>filing</em> contact — often a
+          census only holds the MCS-150 <em>filing</em>{" "}contact — often a
           dispatcher, insurance agent or filing service — so one value can front
           many carriers, and a seller&apos;s personal mobile or inbox may not be in
           it at all. You&apos;ll get a list to pick from.

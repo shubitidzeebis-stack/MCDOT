@@ -350,8 +350,43 @@ export async function findContactMatches(raw: string): Promise<{
     ),
   ]);
 
-  const merged = local.map(fromLocal);
-  const seen = new Set(merged.map((m) => m.dotNumber).filter((d) => d.length > 0));
+  // Fold our own duplicates FIRST. One seller who ran the wizard four times has
+  // four valuations rows on the same DOT, and listing the same carrier four
+  // times is worse than useless — it buries any genuinely different carrier
+  // further down the picker. Coalesce field-by-field rather than keeping the
+  // newest row wholesale: the newest submission is often the sparsest, while an
+  // earlier one may be the only row carrying the contact's name.
+  const byDot = new Map<string, ContactMatch>();
+  const noDot: ContactMatch[] = [];
+  for (const m of local.map(fromLocal)) {
+    if (!m.dotNumber) {
+      noDot.push(m);
+      continue;
+    }
+    const prev = byDot.get(m.dotNumber);
+    if (!prev) {
+      byDot.set(m.dotNumber, m);
+      continue;
+    }
+    byDot.set(m.dotNumber, {
+      ...prev,
+      legalName: prev.legalName ?? m.legalName,
+      dbaName: prev.dbaName ?? m.dbaName,
+      city: prev.city ?? m.city,
+      state: prev.state ?? m.state,
+      phone: prev.phone ?? m.phone,
+      email: prev.email ?? m.email,
+      mcNumber: prev.mcNumber ?? m.mcNumber,
+      contactName: prev.contactName ?? m.contactName,
+      status: prev.status ?? m.status,
+      // An inbound lead outranks a cold monitor row for the same carrier.
+      source: prev.source === "lead" || m.source === "lead" ? "lead" : prev.source,
+      valuationId: prev.valuationId ?? m.valuationId,
+    });
+  }
+
+  const merged = [...byDot.values(), ...noDot];
+  const seen = new Set(byDot.keys());
   for (const c of census.rows) {
     if (seen.has(c.dotNumber)) continue;
     seen.add(c.dotNumber);
