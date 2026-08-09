@@ -161,6 +161,16 @@ export default async function AdminPage() {
             Agent dashboard →
           </a>
         )}
+        {/* Calls carries recordings + transcripts, so it is full-admin only —
+            /api/admin/calls* enforces the same boundary server-side. */}
+        {isFullAdmin && (
+          <a
+            href="/admin/calls"
+            className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+          >
+            Calls →
+          </a>
+        )}
         <a
           href="/admin/audit"
           className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
