@@ -50,13 +50,16 @@ export async function quoFetch(
  * harmless extra header on a pre-signed URL, and the difference between
  * working and 403 if they ever switch to bearer-auth media.
  */
-export async function fetchRecording(url: string): Promise<Response> {
+export async function fetchRecording(
+  url: string,
+  range?: string | null,
+): Promise<Response> {
   const key = apiKey();
   const isQuoHost = /(^|\.)(openphone|quo)\.com$/i.test(new URL(url).hostname);
-  return fetch(url, {
-    headers: key && isQuoHost ? { Authorization: key } : {},
-    signal: AbortSignal.timeout(30_000),
-  });
+  const headers: Record<string, string> = {};
+  if (key && isQuoHost) headers.Authorization = key;
+  if (range) headers.Range = range;
+  return fetch(url, { headers, signal: AbortSignal.timeout(30_000) });
 }
 
 /** Send an SMS from the business line. Phase 2 — needs 10DLC approval first. */

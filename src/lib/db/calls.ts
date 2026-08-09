@@ -251,6 +251,25 @@ export type CallRow = {
   dot_number: string | null;
 };
 
+// Timestamps go out as strict ISO-8601 UTC ("2026-08-09T20:34:41Z") rather
+// than Postgres ::text ("2026-08-09 20:34:41.123+00"): V8 parses both, but
+// Safari has historically rejected the space-separated form, and this is the
+// page most likely to be checked from a phone.
+const SELECT_CALL_ROW = `
+  SELECT c.id,
+         to_char(c.created_at  AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
+         c.direction, c.status, c.external_number,
+         to_char(c.answered_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS answered_at,
+         c.duration_sec, c.recording_url, c.voicemail_url,
+         c.transcript, c.summary,
+         to_char(c.handled_at  AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS handled_at,
+         c.handled_by, c.valuation_id, c.match_source,
+         v.legal_name, v.dba_name, v.contact_name,
+         v.status AS lead_status, v.mc_number, v.dot_number
+    FROM quo_calls c
+    LEFT JOIN valuations v ON v.id = c.valuation_id
+`;
+
 /**
  * Call log for the admin page. LEFT JOIN so a call from an unknown number
  * still shows — those are the ones worth triaging into the pipeline.
@@ -260,22 +279,41 @@ export async function listCalls(limit = 200): Promise<CallRow[]> {
   if (!sql) return [];
   try {
     await ensureCallsSchema();
-    return (await sql`
-      SELECT c.id, c.created_at::text AS created_at, c.direction, c.status,
-             c.external_number, c.answered_at::text AS answered_at,
-             c.duration_sec, c.recording_url, c.voicemail_url,
-             c.transcript, c.summary,
-             c.handled_at::text AS handled_at, c.handled_by,
-             c.valuation_id, c.match_source,
-             v.legal_name, v.dba_name, v.contact_name,
-             v.status AS lead_status, v.mc_number, v.dot_number
-        FROM quo_calls c
-        LEFT JOIN valuations v ON v.id = c.valuation_id
-       ORDER BY c.created_at DESC
-       LIMIT ${limit}
-    `) as CallRow[];
+    return (await sql.query(
+      `${SELECT_CALL_ROW} ORDER BY c.created_at DESC LIMIT $1`,
+      [limit],
+    )) as CallRow[];
   } catch (err) {
     console.error("[listCalls] read failed", err);
+    return [];
+  }
+}
+
+/**
+ * The recovery board, as its own query. Deliberately NOT derived from the
+ * last-N call log: an unhandled missed call must stay visible until someone
+ * deals with it, even after hundreds of newer calls push it out of the log
+ * window. Matches (and uses) the quo_calls_unhandled_idx partial index; the
+ * completed_at IS NOT NULL guard keeps media-event stub rows and any
+ * still-in-progress calls off the board.
+ */
+export async function listMissedUnrecovered(limit = 50): Promise<CallRow[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  try {
+    await ensureCallsSchema();
+    return (await sql.query(
+      `${SELECT_CALL_ROW}
+        WHERE c.direction = 'incoming'
+          AND c.answered_at IS NULL
+          AND c.handled_at IS NULL
+          AND c.completed_at IS NOT NULL
+        ORDER BY c.created_at DESC
+        LIMIT $1`,
+      [limit],
+    )) as CallRow[];
+  } catch (err) {
+    console.error("[listMissedUnrecovered] read failed", err);
     return [];
   }
 }

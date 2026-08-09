@@ -68,20 +68,25 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const upstream = await fetchRecording(mediaUrl);
+    // Forward Range so <audio> can seek (206 passthrough). Without this every
+    // scrub restarts the download and duration display is browser-dependent.
+    const range = req.headers.get("range");
+    const upstream = await fetchRecording(mediaUrl, range);
     if (!upstream.ok || !upstream.body) {
       console.error("[admin/calls/recording] upstream", upstream.status);
       return NextResponse.json({ error: "Audio unavailable." }, { status: 502 });
     }
-    return new Response(upstream.body, {
-      status: 200,
-      headers: {
-        "Content-Type": upstream.headers.get("content-type") ?? "audio/mpeg",
-        // Private: this must never be cached by a CDN or shared proxy.
-        "Cache-Control": "private, max-age=0, no-store",
-        "Content-Disposition": "inline",
-      },
+    const headers = new Headers({
+      "Content-Type": upstream.headers.get("content-type") ?? "audio/mpeg",
+      // Private: this must never be cached by a CDN or shared proxy.
+      "Cache-Control": "private, max-age=0, no-store",
+      "Content-Disposition": "inline",
     });
+    for (const h of ["content-length", "content-range", "accept-ranges"]) {
+      const v = upstream.headers.get(h);
+      if (v) headers.set(h, v);
+    }
+    return new Response(upstream.body, { status: upstream.status, headers });
   } catch (err) {
     console.error("[admin/calls/recording] stream failed", err);
     return NextResponse.json({ error: "Audio unavailable." }, { status: 502 });

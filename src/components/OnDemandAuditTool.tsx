@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { stashBosPrefill } from "@/lib/bos/prefill";
 
 // On-demand audit: enter any MC/DOT → full audit + rating + UCC handoff,
@@ -122,6 +122,8 @@ function errorMessage(x: unknown): string {
 export function OnDemandAuditTool({
   adminKey,
   canDraftBos = false,
+  initialKind,
+  initialNumber,
 }: {
   adminKey?: string;
   /**
@@ -131,13 +133,28 @@ export function OnDemandAuditTool({
    * Defaults to false so a caller that forgets to pass it fails closed.
    */
   canDraftBos?: boolean;
+  /** Deep-link seeds (?kind=…&number=… on /admin/audit). When both are
+   *  present the audit fires on mount, so "Look up this number →" on the
+   *  calls page lands on results, not an empty form. */
+  initialKind?: AuditKind;
+  initialNumber?: string;
 }) {
-  const [number, setNumber] = useState("");
-  const [kind, setKind] = useState<AuditKind>("mc");
+  const [number, setNumber] = useState(initialNumber ?? "");
+  const [kind, setKind] = useState<AuditKind>(initialKind ?? "mc");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResponse | null>(null);
   const [matches, setMatches] = useState<ContactMatch[] | null>(null);
+
+  // Auto-run a deep-linked lookup exactly once. The ref (not state) guards
+  // React 18+ dev StrictMode double-mount from burning two FMCSA-quota calls.
+  const autoRan = useRef(false);
+  useEffect(() => {
+    if (!initialNumber || !initialKind || autoRan.current) return;
+    autoRan.current = true;
+    void run({ kind: initialKind, number: initialNumber });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // `override` exists so the match picker can fire an audit with a DOT it just
   // set on state — reading `kind`/`number` here would see the stale closure.

@@ -598,7 +598,9 @@ function Row({
   }
   return (
     <>
-      <tr className="hover:bg-white/[0.02]">
+      {/* id anchors deep-links from /admin/calls ("Open lead #N →");
+          scroll-mt clears the sticky-ish top padding when jumped to. */}
+      <tr id={`valuation-${v.id}`} className="scroll-mt-6 hover:bg-white/[0.02]">
         <td className="whitespace-nowrap px-3 py-3 text-white/65">
           {new Date(v.created_at).toLocaleString("en-US", {
             month: "short",

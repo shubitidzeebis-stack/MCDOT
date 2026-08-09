@@ -6,7 +6,11 @@
 
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { listCalls, markCallHandled } from "@/lib/db/calls";
+import {
+  listCalls,
+  listMissedUnrecovered,
+  markCallHandled,
+} from "@/lib/db/calls";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +23,11 @@ export async function GET() {
   if (session.role !== "admin") {
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
-  return NextResponse.json({ ok: true, calls: await listCalls() });
+  const [calls, missed] = await Promise.all([
+    listCalls(),
+    listMissedUnrecovered(),
+  ]);
+  return NextResponse.json({ ok: true, calls, missed });
 }
 
 type Body = { id: string; handled: boolean };

@@ -15,7 +15,13 @@
 import { Fragment, useMemo, useState } from "react";
 import type { CallRow } from "@/lib/db/calls";
 
-type Props = { initial: CallRow[] };
+type Props = {
+  initial: CallRow[];
+  /** Unhandled missed calls from the DEDICATED query, not sliced from the
+   *  log: an old missed call must stay on the board even after newer calls
+   *  push it out of the last-200 window. */
+  initialMissed: CallRow[];
+};
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -45,9 +51,14 @@ function isIncoming(c: CallRow): boolean {
   return c.direction !== "outgoing";
 }
 
-/** A call that rang in and nobody picked up. The only outcome that costs money. */
+/**
+ * A call that rang in, ENDED, and nobody picked up — the only outcome that
+ * costs money. direction must be the literal 'incoming' (a media-event stub
+ * row has direction NULL and must not read as missed), and status
+ * 'completed' excludes anything still in progress.
+ */
 function isMissed(c: CallRow): boolean {
-  return isIncoming(c) && !c.answered_at;
+  return c.direction === "incoming" && c.status === "completed" && !c.answered_at;
 }
 
 function outcomeOf(c: CallRow): { label: string; tone: string } {
@@ -147,14 +158,16 @@ function Stat({
   value,
   tone = "text-white",
   hint,
+  className = "",
 }: {
   label: string;
   value: string | number;
   tone?: string;
   hint?: string;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl bg-white/[0.025] p-4 ring-1 ring-white/10">
+    <div className={`rounded-xl bg-white/[0.025] p-4 ring-1 ring-white/10 ${className}`}>
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
         {label}
       </p>
@@ -166,8 +179,9 @@ function Stat({
 
 /* ------------------------------------------------------------------ panel */
 
-export function AdminCallsPanel({ initial }: Props) {
+export function AdminCallsPanel({ initial, initialMissed }: Props) {
   const [rows, setRows] = useState<CallRow[]>(initial);
+  const [missedRows, setMissedRows] = useState<CallRow[]>(initialMissed);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [dir, setDir] = useState<"all" | "incoming" | "outgoing">("all");
   const [outcome, setOutcome] = useState<"all" | "missed" | "answered">("all");
@@ -181,7 +195,8 @@ export function AdminCallsPanel({ initial }: Props) {
     const today = new Date().toDateString();
     const todays = rows.filter((r) => new Date(r.created_at).toDateString() === today);
     const answered = todays.filter((r) => r.answered_at).length;
-    const unrecovered = rows.filter((r) => isMissed(r) && !r.handled_at).length;
+    // From the dedicated query — the log window may not contain all of them.
+    const unrecovered = missedRows.filter((r) => !r.handled_at).length;
     const answeredCalls = rows.filter((r) => isIncoming(r) && r.answered_at);
     const linkedPct = rows.length
       ? Math.round((rows.filter((r) => r.valuation_id).length / rows.length) * 100)
@@ -195,11 +210,11 @@ export function AdminCallsPanel({ initial }: Props) {
         : "—",
       linkedPct: `${linkedPct}%`,
     };
-  }, [rows]);
+  }, [rows, missedRows]);
 
   const missed = useMemo(
-    () => rows.filter((r) => isMissed(r) && !r.handled_at).slice(0, 10),
-    [rows],
+    () => missedRows.filter((r) => !r.handled_at).slice(0, 10),
+    [missedRows],
   );
 
   const filtered = useMemo(() => {
@@ -228,6 +243,7 @@ export function AdminCallsPanel({ initial }: Props) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "refresh failed");
       setRows(data.calls as CallRow[]);
+      setMissedRows(data.missed as CallRow[]);
       setFlash({ kind: "ok", msg: "Refreshed." });
     } catch (err) {
       console.error(err);
@@ -238,11 +254,22 @@ export function AdminCallsPanel({ initial }: Props) {
   }
 
   async function setHandled(id: string, handled: boolean) {
-    const prev = rows;
+    // Optimistic per-row patch. Rollback is by id inside a functional
+    // updater — restoring a whole-array snapshot would clobber a concurrent
+    // update to a DIFFERENT row that succeeded in the meantime.
+    const stamp = handled ? new Date().toISOString() : null;
+    const patch = (rs: CallRow[]) =>
+      rs.map((r) => (r.id === id ? { ...r, handled_at: stamp } : r));
+    const rollback = (prevStamp: string | null) => (rs: CallRow[]) =>
+      rs.map((r) => (r.id === id ? { ...r, handled_at: prevStamp } : r));
+    const prevStamp =
+      rows.find((r) => r.id === id)?.handled_at ??
+      missedRows.find((r) => r.id === id)?.handled_at ??
+      null;
+
     setBusy(id);
-    setRows((rs) =>
-      rs.map((r) => (r.id === id ? { ...r, handled_at: handled ? new Date().toISOString() : null } : r)),
-    );
+    setRows(patch);
+    setMissedRows(patch);
     try {
       const res = await fetch("/api/admin/calls", {
         method: "POST",
@@ -253,7 +280,8 @@ export function AdminCallsPanel({ initial }: Props) {
       if (!res.ok) throw new Error(data.error || "update failed");
     } catch (err) {
       console.error(err);
-      setRows(prev);
+      setRows(rollback(prevStamp));
+      setMissedRows(rollback(prevStamp));
       setFlash({ kind: "err", msg: "Could not save — your change was rolled back." });
     } finally {
       setBusy(null);
@@ -263,22 +291,25 @@ export function AdminCallsPanel({ initial }: Props) {
   return (
     <>
       {/* ---------------------------------------------------- status strip */}
+      {/* Missed-and-unrecovered leads the row (it's the money metric) and
+          spans both columns on mobile — 2-2-2, no orphan tile. */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <Stat label="Calls today" value={stats.today} />
-        <Stat label="Answered today" value={stats.answered} />
         <Stat
           label="Missed & unrecovered"
           value={stats.unrecovered}
           tone={stats.unrecovered > 0 ? "text-red-300" : "text-white"}
           hint={stats.unrecovered > 0 ? "needs a callback" : "all clear"}
+          className="col-span-2 md:col-span-1"
         />
+        <Stat label="Calls today" value={stats.today} />
+        <Stat label="Answered today" value={stats.answered} />
         <Stat label="Answer rate" value={stats.answerRate} hint="inbound, all time" />
         <Stat label="Matched to a lead" value={stats.linkedPct} hint="auto-linked by phone" />
       </section>
 
       {/* --------------------------------------- missed & unrecovered board */}
       {missed.length > 0 && (
-        <section className="mt-10">
+        <section className="mt-12">
           <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.32em] text-red-300">
             ⚠ Missed &amp; unrecovered
           </h2>
@@ -329,7 +360,7 @@ export function AdminCallsPanel({ initial }: Props) {
       )}
 
       {/* -------------------------------------------------------- call log */}
-      <section className="mt-10">
+      <section className="mt-12">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
             Call log
@@ -436,16 +467,31 @@ export function AdminCallsPanel({ initial }: Props) {
                   <Fragment key={c.id}>
                     <tr
                       onClick={() => setExpanded(open ? null : c.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setExpanded(open ? null : c.id);
+                        }
+                      }}
+                      tabIndex={0}
                       className="cursor-pointer hover:bg-white/[0.02]"
                     >
                       <td className="whitespace-nowrap px-3 py-3 font-mono text-[12px] text-white/65">
                         {fmtWhen(c.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-white/65">
+                      <td
+                        title={isIncoming(c) ? "Inbound" : "Outbound"}
+                        className="whitespace-nowrap px-3 py-3 text-white/65"
+                      >
                         {isIncoming(c) ? "←" : "→"}
                       </td>
                       <td className="px-3 py-3">
-                        <span className="font-medium text-white/85">{callerOf(c)}</span>
+                        <span
+                          title={callerOf(c)}
+                          className="inline-block max-w-[260px] truncate align-bottom font-medium text-white/85"
+                        >
+                          {callerOf(c)}
+                        </span>
                         {c.match_source && SOURCE_LABEL[c.match_source] && (
                           <span
                             className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ${SOURCE_CLASS[c.match_source]}`}
@@ -484,10 +530,13 @@ export function AdminCallsPanel({ initial }: Props) {
                                   </p>
                                   {/* Streams through our own authenticated proxy —
                                       never a raw Quo URL in the DOM. */}
+                                  {/* [color-scheme:dark]: audio controls are an
+                                      OS-painted widget, same as <option> popups —
+                                      without this they render as a white pill. */}
                                   <audio
                                     controls
                                     preload="none"
-                                    className="w-full"
+                                    className="w-full [color-scheme:dark]"
                                     src={`/api/admin/calls/recording?id=${encodeURIComponent(c.id)}&kind=${c.recording_url ? "recording" : "voicemail"}`}
                                   />
                                 </div>
@@ -549,8 +598,10 @@ export function AdminCallsPanel({ initial }: Props) {
                               )}
                               {c.summary == null && c.transcript == null && (
                                 <p className="text-[12px] text-white/40">
-                                  No transcript yet — Quo delivers it a minute or two after
-                                  the call ends.
+                                  {Date.now() - new Date(c.created_at).getTime() <
+                                  10 * 60 * 1000
+                                    ? "No transcript yet — Quo delivers it a minute or two after the call ends."
+                                    : "No transcript available for this call."}
                                 </p>
                               )}
                             </div>

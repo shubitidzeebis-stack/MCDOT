@@ -12,9 +12,20 @@
 // findLocalByContact() — so a call from a carrier already in the pipeline
 // arrives pre-linked to their valuation instead of as an anonymous number.
 //
-// ALWAYS returns 2xx once the signature checks out, even if our own
-// processing throws. Quo retries non-2xx, and a poison payload that we can't
-// parse would otherwise be redelivered forever. Failures are logged instead.
+// SIGNING SCHEME — legacy, on purpose. Quo also ships a beta webhook system
+// (May 2026) with a different envelope (data.resource) and Standard-Webhooks
+// signing (`webhook-signature` header, `whsec_…` keys) that their changelog
+// says is NOT interchangeable with the legacy openphone-signature header this
+// route verifies. Webhooks created in the Quo dashboard use the legacy scheme.
+// If deliveries ever 401 across the board, check whether the webhook was
+// recreated through the beta flow before suspecting the secret.
+//
+// Error handling: processing failures return 5xx so Quo redelivers (its retry
+// ladder runs ~3 days and each retry is re-signed with a fresh timestamp, so
+// the replay window doesn't block them). That's safe because every write here
+// is an idempotent upsert — a duplicate delivery converges to the same row.
+// For the same reason the webhook_events insert is a dedupe HINT, not a gate:
+// if it errors we process anyway rather than risk dropping a missed call.
 
 import { NextResponse } from "next/server";
 import { verifyQuoSignature } from "@/lib/quo/verify";
@@ -80,6 +91,20 @@ async function linkToLead(
   }
 }
 
+/**
+ * Call length in seconds. The legacy webhook payload carries NO `duration`
+ * field (that exists only on the REST /v1/calls object), so it is derived
+ * from completedAt − answeredAt. Unanswered calls correctly stay null.
+ */
+function durationOf(obj: Record<string, unknown>): number | null {
+  const answered = str(obj.answeredAt);
+  const completed = str(obj.completedAt);
+  if (!answered || !completed) return null;
+  const ms = Date.parse(completed) - Date.parse(answered);
+  if (!Number.isFinite(ms) || ms < 0) return null;
+  return Math.round(ms / 1000);
+}
+
 async function handleCall(obj: Record<string, unknown>): Promise<void> {
   const id = str(obj.id);
   if (!id) return;
@@ -95,7 +120,7 @@ async function handleCall(obj: Record<string, unknown>): Promise<void> {
     quoUserId: str(obj.userId),
     answeredAt: str(obj.answeredAt),
     completedAt: str(obj.completedAt),
-    durationSec: num(obj.duration),
+    durationSec: durationOf(obj),
     valuationId,
     matchSource,
   });
@@ -152,12 +177,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignored: "unparseable" });
   }
 
-  // At-least-once delivery: the PK insert is the dedupe. A replay is a no-op.
+  // Dedupe HINT only. recordWebhookEvent returns false for both "already
+  // seen" and "insert failed", and the two must not be conflated into a 200 —
+  // that would cancel Quo's retries on a transient DB blip and permanently
+  // lose the event. Since every handler below is an idempotent upsert, the
+  // safe posture is: process regardless, and let true duplicates converge.
   const eventId = str(event.id);
-  if (eventId) {
-    const fresh = await recordWebhookEvent(eventId);
-    if (!fresh) return NextResponse.json({ ok: true, duplicate: true });
-  }
+  if (eventId) await recordWebhookEvent(eventId);
 
   const type = str(event.type) ?? "";
   const obj = event.data?.object ?? {};
@@ -170,8 +196,8 @@ export async function POST(req: Request) {
         break;
 
       case "call.recording.completed": {
-        // The recording can be delivered either as `media[]` on the call
-        // object or as a bare url, depending on event shape.
+        // Recording arrives as media[] on the call object (call id at .id);
+        // keep the bare-url fallback for shape drift.
         const id = str(obj.callId) ?? str(obj.id);
         const media = Array.isArray(obj.media) ? obj.media : [];
         const first = (media[0] ?? {}) as Record<string, unknown>;
@@ -181,14 +207,20 @@ export async function POST(req: Request) {
       }
 
       case "call.transcript.completed": {
+        // dialogue is NULLABLE (status "absent"/"failed") — storing the whole
+        // envelope in that case would render as a raw JSON dump in the UI.
         const id = str(obj.callId) ?? str(obj.id);
-        if (id) await attachCallMedia(id, { transcript: obj.dialogue ?? obj });
+        if (id && obj.dialogue != null) {
+          await attachCallMedia(id, { transcript: obj.dialogue });
+        }
         break;
       }
 
       case "call.summary.completed": {
         const id = str(obj.callId) ?? str(obj.id);
-        if (id) await attachCallMedia(id, { summary: obj.summary ?? obj });
+        if (id && obj.summary != null) {
+          await attachCallMedia(id, { summary: obj.summary });
+        }
         break;
       }
 
@@ -203,9 +235,13 @@ export async function POST(req: Request) {
         console.log("[webhooks/quo] unhandled event type:", type);
     }
   } catch (err) {
-    // Swallow deliberately: a retry storm is worse than a dropped event, and
-    // the log tells us what to backfill.
+    // 5xx on purpose: the payload is verified and parseable, so a failure
+    // here is OUR side (usually a transient DB error). Quo's bounded retry
+    // ladder (~3 days, re-signed each attempt) is the recovery mechanism, and
+    // idempotent upserts make redelivery safe. Swallowing this would trade a
+    // few retried requests for silently losing a missed call.
     console.error("[webhooks/quo] processing failed", type, err);
+    return NextResponse.json({ error: "Processing failed." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

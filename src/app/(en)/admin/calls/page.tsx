@@ -12,7 +12,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
-import { listCalls } from "@/lib/db/calls";
+import { listCalls, listMissedUnrecovered } from "@/lib/db/calls";
 import { AdminCallsPanel } from "@/components/AdminCallsPanel";
 
 export const metadata: Metadata = {
@@ -31,7 +31,9 @@ export default async function AdminCallsPage() {
     redirect("/admin");
   }
 
-  const calls = await listCalls();
+  // The recovery board is its own query so an old unhandled missed call
+  // survives being pushed out of the last-200 log window.
+  const [calls, missed] = await Promise.all([listCalls(), listMissedUnrecovered()]);
 
   return (
     <main className="min-h-screen bg-[#0a0a0b] p-6 text-white md:p-10">
@@ -45,7 +47,7 @@ export default async function AdminCallsPage() {
         </p>
       </div>
 
-      <AdminCallsPanel initial={calls} />
+      <AdminCallsPanel initial={calls} initialMissed={missed} />
     </main>
   );
 }
