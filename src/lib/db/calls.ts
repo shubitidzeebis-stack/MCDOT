@@ -234,6 +234,9 @@ export type CallRow = {
   status: string | null;
   external_number: string | null;
   answered_at: string | null;
+  /** Set once the call ENDED — the client missed-call predicate keys on this
+   *  (status is unreliable: Quo sends "no-answer", not "completed"). */
+  completed_at: string | null;
   duration_sec: number | null;
   recording_url: string | null;
   voicemail_url: string | null;
@@ -260,6 +263,7 @@ const SELECT_CALL_ROW = `
          to_char(c.created_at  AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
          c.direction, c.status, c.external_number,
          to_char(c.answered_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS answered_at,
+         to_char(c.completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS completed_at,
          c.duration_sec, c.recording_url, c.voicemail_url,
          c.transcript, c.summary,
          to_char(c.handled_at  AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS handled_at,

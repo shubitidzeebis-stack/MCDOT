@@ -54,11 +54,13 @@ function isIncoming(c: CallRow): boolean {
 /**
  * A call that rang in, ENDED, and nobody picked up — the only outcome that
  * costs money. direction must be the literal 'incoming' (a media-event stub
- * row has direction NULL and must not read as missed), and status
- * 'completed' excludes anything still in progress.
+ * row has direction NULL and must not read as missed). "Ended" is judged by
+ * completed_at, NOT status: live traffic showed Quo marks unanswered calls
+ * status "no-answer" (not "completed"), and completed_at is what the
+ * server-side recovery-board query keys on — the two predicates must agree.
  */
 function isMissed(c: CallRow): boolean {
-  return c.direction === "incoming" && c.status === "completed" && !c.answered_at;
+  return c.direction === "incoming" && !c.answered_at && Boolean(c.completed_at);
 }
 
 function outcomeOf(c: CallRow): { label: string; tone: string } {
