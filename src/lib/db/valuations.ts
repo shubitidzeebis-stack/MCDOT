@@ -255,6 +255,28 @@ export async function adminUpdateValuation(
   }
 }
 
+// Read just the contact address recorded on one lead. The admin email route
+// uses it to prove an agent-role sender is replying to the address already on
+// the row (see the open-relay note there) without loading the whole record.
+// Returns null when the row, the address, or the DB itself is missing — every
+// one of those has to fail the check closed.
+export async function getValuationContactEmail(
+  id: number,
+): Promise<string | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureTable(sql);
+    const rows = (await sql`
+      SELECT contact_email FROM valuations WHERE id = ${id} LIMIT 1
+    `) as Array<{ contact_email: string | null }>;
+    return rows[0]?.contact_email ?? null;
+  } catch (err) {
+    console.error("[getValuationContactEmail] error", err);
+    return null;
+  }
+}
+
 export type CreateValuationInput = {
   sessionId: string;
   carrier: FmcsaCarrier;

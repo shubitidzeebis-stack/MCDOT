@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildBillOfSale,
   DEFAULT_DELIVERABLES,
@@ -32,6 +32,40 @@ type FormState = {
   wireRoutingNumber: string;
   wireAccountNumber: string;
   fillableBuyerFields: boolean;
+};
+
+// Saved-buyer directory (GET /api/admin/buyers). Full-admin only server-side:
+// a non-admin session gets 403 and the whole buyer UI stays unmounted.
+//
+// Only `name` and `address` are ever written into the PDF — the rest is the
+// owner's own contact scratchpad. Nothing resembling government-ID data is
+// modelled here on purpose; see src/lib/db/buyers.ts.
+type Buyer = {
+  id: number;
+  name: string;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+};
+
+// `id: null` = the "add a new buyer" draft; a number = editing that row.
+type BuyerDraft = {
+  id: number | null;
+  name: string;
+  address: string;
+  email: string;
+  phone: string;
+  notes: string;
+};
+
+const EMPTY_BUYER_DRAFT: BuyerDraft = {
+  id: null,
+  name: "",
+  address: "",
+  email: "",
+  phone: "",
+  notes: "",
 };
 
 const EMPTY: FormState = {
@@ -140,6 +174,139 @@ export function BillOfSalePanel() {
       setLookupError("Lookup failed.");
     } finally {
       setLookupBusy(false);
+    }
+  }
+
+  // ── Saved buyer directory ────────────────────────────────────────────
+  // The ONLY server round-trip this page makes. Deal details (price, wire
+  // info, seller, company) stay in the browser — the PDF is built client-side
+  // — so nothing sensitive about a deal is ever posted back.
+  //
+  // `buyersEnabled` flips true only on a successful GET. A 403 (agent-role
+  // session) therefore renders no dropdown and no management UI at all,
+  // rather than dead controls.
+  const [buyers, setBuyers] = useState<Buyer[]>([]);
+  const [buyersEnabled, setBuyersEnabled] = useState(false);
+  const [selectedBuyerId, setSelectedBuyerId] = useState("");
+  const [manageOpen, setManageOpen] = useState(false);
+  const [buyerDraft, setBuyerDraft] = useState<BuyerDraft>(EMPTY_BUYER_DRAFT);
+  const [buyerBusy, setBuyerBusy] = useState(false);
+  const [buyerError, setBuyerError] = useState<string | null>(null);
+
+  const loadBuyers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/buyers");
+      if (!res.ok) {
+        // 403 = not a full admin; 401/5xx = no session or backend trouble.
+        // Either way there is nothing useful to show, so hide the feature.
+        setBuyersEnabled(false);
+        setBuyers([]);
+        return;
+      }
+      const data = (await res.json()) as { buyers?: Buyer[] };
+      setBuyers(Array.isArray(data.buyers) ? data.buyers : []);
+      setBuyersEnabled(true);
+    } catch {
+      setBuyersEnabled(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Fired through an async wrapper so no state is set synchronously during
+    // the effect — the list lands after the fetch resolves.
+    void (async () => {
+      await loadBuyers();
+    })();
+  }, [loadBuyers]);
+
+  // Fill the two buyer fields from the directory. Both stay freely editable
+  // afterwards — a one-off deal may need a variation (a different mailing
+  // address, an entity name instead of a personal one).
+  function applyBuyer(idValue: string) {
+    setSelectedBuyerId(idValue);
+    if (!idValue) return;
+    const buyer = buyers.find((b) => String(b.id) === idValue);
+    if (!buyer) return;
+    setForm((f) => ({
+      ...f,
+      buyerName: buyer.name,
+      // Deliberately overwrite (not merge) — carrying the previous buyer's
+      // address onto a new buyer would be a serious document error.
+      buyerAddress: buyer.address ?? "",
+    }));
+  }
+
+  // Hand-editing either buyer field means the form no longer matches the
+  // saved record, so drop the selection rather than imply it still does.
+  const setParty = (key: "buyerName" | "buyerAddress") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setSelectedBuyerId("");
+      setForm((f) => ({ ...f, [key]: value }));
+    };
+
+  async function saveBuyer() {
+    if (buyerBusy) return;
+    if (!buyerDraft.name.trim()) {
+      setBuyerError("Buyer name is required.");
+      return;
+    }
+    setBuyerBusy(true);
+    setBuyerError(null);
+    try {
+      const editing = buyerDraft.id !== null;
+      const res = await fetch("/api/admin/buyers", {
+        method: editing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(editing ? { id: buyerDraft.id } : {}),
+          name: buyerDraft.name,
+          address: buyerDraft.address,
+          email: buyerDraft.email,
+          phone: buyerDraft.phone,
+          notes: buyerDraft.notes,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setBuyerError(data.error ?? "Could not save buyer.");
+        return;
+      }
+      setBuyerDraft(EMPTY_BUYER_DRAFT);
+      await loadBuyers();
+    } catch {
+      setBuyerError("Could not save buyer.");
+    } finally {
+      setBuyerBusy(false);
+    }
+  }
+
+  async function removeBuyer(id: number) {
+    if (buyerBusy) return;
+    if (!confirm("Remove this buyer from the directory?")) return;
+    setBuyerBusy(true);
+    setBuyerError(null);
+    try {
+      const res = await fetch("/api/admin/buyers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setBuyerError(data.error ?? "Could not remove buyer.");
+        return;
+      }
+      // Clear the dropdown selection but leave whatever is already typed in
+      // the form alone — removing a directory entry must not blank a
+      // document that is mid-draft.
+      if (selectedBuyerId === String(id)) setSelectedBuyerId("");
+      if (buyerDraft.id === id) setBuyerDraft(EMPTY_BUYER_DRAFT);
+      await loadBuyers();
+    } catch {
+      setBuyerError("Could not remove buyer.");
+    } finally {
+      setBuyerBusy(false);
     }
   }
 
@@ -355,15 +522,194 @@ export function BillOfSalePanel() {
         </Fieldset>
 
         <Fieldset title="Parties">
+          {buyersEnabled && (
+            <div className="sm:col-span-2">
+              <label className={`${labelClass} mb-1.5 block`}>
+                Saved buyer (fills the buyer fields)
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={selectedBuyerId}
+                  onChange={(e) => applyBuyer(e.target.value)}
+                  className="flex-1 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50"
+                >
+                  <option value="" className="bg-[#0a0a0b]">
+                    {buyers.length ? "— Pick a saved buyer —" : "— No saved buyers yet —"}
+                  </option>
+                  {buyers.map((b) => (
+                    <option key={b.id} value={String(b.id)} className="bg-[#0a0a0b]">
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setManageOpen((o) => !o)}
+                  className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+                >
+                  {manageOpen ? "Hide buyers" : "Manage buyers"}
+                </button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-white/35">
+                Both buyer fields stay editable after picking — a one-off deal
+                can use a variation without changing the saved record.
+              </p>
+            </div>
+          )}
+
           <Field label="Seller name">
             <input className={inputClass} value={form.sellerName} onChange={set("sellerName")} />
           </Field>
           <Field label="Buyer name">
-            <input className={inputClass} value={form.buyerName} onChange={set("buyerName")} />
+            <input className={inputClass} value={form.buyerName} onChange={setParty("buyerName")} />
           </Field>
           <Field label="Buyer address" full>
-            <input className={inputClass} value={form.buyerAddress} onChange={set("buyerAddress")} />
+            <input
+              className={inputClass}
+              value={form.buyerAddress}
+              onChange={setParty("buyerAddress")}
+            />
           </Field>
+
+          {buyersEnabled && manageOpen && (
+            <div className="sm:col-span-2 rounded-xl bg-white/[0.025] p-4 ring-1 ring-white/10">
+              <p className={labelClass}>Buyer directory</p>
+              <p className="mt-1.5 text-[11px] text-white/35">
+                Only the name and address are printed on the Bill of Sale.
+                Email, phone and notes are for your reference only — never
+                store ID documents, licence numbers or dates of birth here.
+              </p>
+
+              {buyers.length > 0 && (
+                <ul className="mt-3 divide-y divide-white/8 rounded-lg bg-white/[0.02] ring-1 ring-white/10">
+                  {buyers.map((b) => (
+                    <li
+                      key={b.id}
+                      className="flex items-start justify-between gap-3 px-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-white">
+                          {b.name}
+                        </p>
+                        <p className="truncate text-[11px] text-white/45">
+                          {b.address ?? "no address on file"}
+                        </p>
+                        {(b.email || b.phone) && (
+                          <p className="truncate text-[10px] text-white/30">
+                            {[b.email, b.phone].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                        {b.notes && (
+                          <p className="truncate text-[10px] text-white/30">{b.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 gap-1 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setBuyerDraft({
+                              id: b.id,
+                              name: b.name,
+                              address: b.address ?? "",
+                              email: b.email ?? "",
+                              phone: b.phone ?? "",
+                              notes: b.notes ?? "",
+                            })
+                          }
+                          className="rounded-md px-2 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeBuyer(b.id)}
+                          disabled={buyerBusy}
+                          className="rounded-md px-2 py-1 text-red-400/70 hover:bg-red-500/[0.08] hover:text-red-300 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {/* Plain <div>, not a nested <form> — this sits inside the
+                  generator's form and nested forms are invalid HTML. Enter
+                  is intercepted so it saves the buyer instead of submitting
+                  the outer form and generating a PDF. */}
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <p className={`${labelClass} sm:col-span-2`}>
+                  {buyerDraft.id === null ? "Add a buyer" : "Edit buyer"}
+                </p>
+                <BuyerInput
+                  placeholder="Full name *"
+                  value={buyerDraft.name}
+                  onChange={(v) => setBuyerDraft((d) => ({ ...d, name: v }))}
+                  onEnter={saveBuyer}
+                />
+                <BuyerInput
+                  placeholder="Address"
+                  value={buyerDraft.address}
+                  onChange={(v) => setBuyerDraft((d) => ({ ...d, address: v }))}
+                  onEnter={saveBuyer}
+                />
+                <BuyerInput
+                  placeholder="Email (optional)"
+                  value={buyerDraft.email}
+                  onChange={(v) => setBuyerDraft((d) => ({ ...d, email: v }))}
+                  onEnter={saveBuyer}
+                />
+                <BuyerInput
+                  placeholder="Phone (optional)"
+                  value={buyerDraft.phone}
+                  onChange={(v) => setBuyerDraft((d) => ({ ...d, phone: v }))}
+                  onEnter={saveBuyer}
+                />
+                <div className="sm:col-span-2">
+                  <BuyerInput
+                    placeholder="Notes (optional)"
+                    value={buyerDraft.notes}
+                    onChange={(v) => setBuyerDraft((d) => ({ ...d, notes: v }))}
+                    onEnter={saveBuyer}
+                  />
+                </div>
+              </div>
+
+              {buyerError && (
+                <p className="mt-2 rounded-lg bg-red-500/10 px-3 py-2 text-[12px] text-red-300 ring-1 ring-red-500/20">
+                  {buyerError}
+                </p>
+              )}
+
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={saveBuyer}
+                  disabled={buyerBusy || !buyerDraft.name.trim()}
+                  className="rounded-lg bg-[#ff8a1a]/15 px-4 py-2 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25 disabled:opacity-50"
+                >
+                  {buyerBusy
+                    ? "Saving…"
+                    : buyerDraft.id === null
+                      ? "Add buyer"
+                      : "Save changes"}
+                </button>
+                {buyerDraft.id !== null && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBuyerDraft(EMPTY_BUYER_DRAFT);
+                      setBuyerError(null);
+                    }}
+                    className="rounded-lg px-3 py-2 text-[12px] text-white/55 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </Fieldset>
 
         <Fieldset title="Seller's deliverables (one per line)">
@@ -474,6 +820,36 @@ function Fieldset({ title, children }: { title: string; children: React.ReactNod
       </legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>
+  );
+}
+
+// Buyer-directory text input. Lives inside the generator's <form>, so Enter
+// would otherwise submit that form and generate a PDF — intercept it and
+// save the buyer instead.
+function BuyerInput({
+  placeholder,
+  value,
+  onChange,
+  onEnter,
+}: {
+  placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
+  onEnter: () => void;
+}) {
+  return (
+    <input
+      className={inputClass}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onEnter();
+        }
+      }}
+    />
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { stashBosPrefill } from "@/lib/bos/prefill";
+import { SITE } from "@/lib/site";
 
 // Interactive admin panel for the valuations table. Reads initial rows
 // from the server, then supports filtering, status updates, and notes
@@ -94,14 +95,22 @@ export function AdminValuationsPanel({
   initial,
   adminKey,
   role = "admin",
+  fromAddress = SITE.email,
 }: {
   initial: AdminValuationRow[];
   /** Legacy fallback. When empty, the API uses the session cookie. */
   adminKey?: string;
-  /** Session role. "agent" hides delete/notes/email-send (server enforces too). */
+  /** Session role. "agent" hides delete + internal notes (server enforces too). */
   role?: string;
+  /** Mailbox this user's sends leave from — resolved server-side. */
+  fromAddress?: string;
 }) {
+  // Two separate permissions, not one. Deleting a lead and reading/writing
+  // internal notes are owner-only; emailing the lead you're working is the
+  // agent's actual job. Both are re-checked server-side — this only decides
+  // what's worth rendering.
   const canManage = role === "admin";
+  const canEmail = role === "admin" || role === "agent";
   const [rows, setRows] = useState(initial);
   const [filterStatus, setFilterStatus] = useState<"all" | StatusValue>("all");
   const [filterRelay, setFilterRelay] = useState<"all" | "yes" | "no">("all");
@@ -350,6 +359,8 @@ export function AdminValuationsPanel({
                 v={v}
                 expanded={expandedId === v.id}
                 canManage={canManage}
+                canEmail={canEmail}
+                fromAddress={fromAddress}
                 onToggle={() => setExpandedId(expandedId === v.id ? null : v.id)}
                 onUpdate={(patch) => updateRow(v.id, patch)}
                 onDelete={() => deleteRow(v.id)}
@@ -466,6 +477,8 @@ function Row({
   v,
   expanded,
   canManage,
+  canEmail,
+  fromAddress,
   onToggle,
   onUpdate,
   onDelete,
@@ -473,8 +486,12 @@ function Row({
 }: {
   v: AdminValuationRow;
   expanded: boolean;
-  /** false for agent-role users: no delete, no notes editing, no email send. */
+  /** false for agent-role users: no delete, no internal-notes editing. */
   canManage: boolean;
+  /** true for admins and agents alike — emailing the lead is the daily work. */
+  canEmail: boolean;
+  /** Mailbox the composer will send from, shown in the helper copy. */
+  fromAddress: string;
   onToggle: () => void;
   onUpdate: (patch: { status?: StatusValue; notesInternal?: string }) => void;
   onDelete: () => void;
@@ -685,6 +702,9 @@ function Row({
             >
               {expanded ? "Close" : "Detail"}
             </button>
+            {/* Full-admin only — /admin/bill-of-sale bounces agent-role
+                users back to /admin, so this shortcut would be a dead end. */}
+            {canManage && (
             <button
               type="button"
               onClick={() => {
@@ -716,6 +736,7 @@ function Row({
             >
               BoS
             </button>
+            )}
             {canManage && (
               <button
                 type="button"
@@ -917,7 +938,7 @@ function Row({
                   <p className="mt-2 text-[12px] text-white/40">No emails sent yet.</p>
                 )}
 
-                {canManage && (
+                {canEmail && (
                 <>
                 <div className="mt-6 flex items-center justify-between">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/45">
@@ -942,7 +963,7 @@ function Row({
                   <p className="mt-3 text-[12px] text-white/55">
                     Reply to <span className="text-white/85">{v.contact_email}</span>{" "}
                     using a template or write a custom message. Sent from{" "}
-                    <span className="text-white/85">info@groupveritor.com</span>{" "}
+                    <span className="text-white/85">{fromAddress}</span>{" "}
                     with reply-to set to your account.
                   </p>
                 ) : (

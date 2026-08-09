@@ -18,7 +18,11 @@ export default async function AdminAccountPage() {
     redirect("/admin/login?next=/admin/account");
   }
 
-  const users = await listUsers();
+  // Only a full admin manages the team. Agents land here for the
+  // change-password form alone, so don't even read the roster for them —
+  // it now carries each person's send-as identity.
+  const isFullAdmin = session.role === "admin";
+  const users = isFullAdmin ? await listUsers() : [];
 
   return (
     <main className="min-h-screen bg-[#0a0a0b] p-6 text-white md:p-10">
@@ -41,6 +45,7 @@ export default async function AdminAccountPage() {
         <AccountPanel
           currentUserId={session.uid}
           initialUsers={users}
+          isFullAdmin={isFullAdmin}
         />
       </div>
     </main>

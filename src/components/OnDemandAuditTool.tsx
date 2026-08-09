@@ -5,8 +5,32 @@ import { stashBosPrefill } from "@/lib/bos/prefill";
 
 // On-demand audit: enter any MC/DOT → full audit + rating + UCC handoff,
 // reusing the monitor engine via /api/admin/monitor/audit.
+//
+// It also takes an EMAIL or PHONE, resolved against the FMCSA Census MCS-150
+// filing contact. That contact is very often a dispatcher, insurance agent, or
+// compliance-filing service, so one value can front many carriers — the API
+// answers with a `matches` list instead of an audit whenever it's ambiguous,
+// and we render a picker. Clicking a row re-runs as a plain DOT audit.
 
 type Gap = { from: string; to: string; days: number; method: string | null; live?: boolean };
+
+type AuditKind = "mc" | "dot" | "email" | "phone";
+
+// Mirrors ContactMatch in lib/monitor/reverse-lookup.ts. Declared locally (as
+// AuditResponse is) so this client component never imports the server module.
+type ContactMatch = {
+  dotNumber: string;
+  legalName: string | null;
+  dbaName: string | null;
+  city: string | null;
+  state: string | null;
+  phone: string | null;
+  cellPhone: string | null;
+  email: string | null;
+  statusCode: string | null;
+  addDate: string | null;
+  mcNumber: string | null;
+};
 
 type AuditResponse = {
   ok: true;
@@ -46,25 +70,73 @@ type AuditResponse = {
   valuation: { low: number; high: number; flooredReason: string | null };
 };
 
-export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
+// The ambiguous-contact response: a picker instead of an audit.
+type MatchesResponse = { ok: true; matches: ContactMatch[] };
+
+// Mirrors CONTACT_LIMIT in lib/monitor/reverse-lookup.ts. A filing service can
+// front four figures of carriers (one census phone had 1,220 added in 2026
+// alone), so a full list is never shown — say so instead of implying the count
+// is exhaustive.
+const CONTACT_MATCH_LIMIT = 25;
+
+const PLACEHOLDERS: Record<AuditKind, string> = {
+  mc: "Enter MC number",
+  dot: "Enter DOT number",
+  email: "Enter email address, e.g. dispatch@carrier.com",
+  phone: "Enter phone number, e.g. (614) 857-9300",
+};
+
+function isMatchesResponse(x: unknown): x is MatchesResponse {
+  if (!x || typeof x !== "object") return false;
+  return Array.isArray((x as { matches?: unknown }).matches);
+}
+
+function errorMessage(x: unknown): string {
+  if (x && typeof x === "object") {
+    const e = (x as { error?: unknown }).error;
+    if (typeof e === "string" && e.length > 0) return e;
+  }
+  return "Audit failed.";
+}
+
+export function OnDemandAuditTool({
+  adminKey,
+  canDraftBos = false,
+}: {
+  adminKey?: string;
+  /**
+   * Full admins only. /admin/audit is open to every signed-in role, but
+   * /admin/bill-of-sale is owner-only and redirects agents back to /admin —
+   * so the "Draft Bill of Sale" shortcut must not be shown to them.
+   * Defaults to false so a caller that forgets to pass it fails closed.
+   */
+  canDraftBos?: boolean;
+}) {
   const [number, setNumber] = useState("");
-  const [kind, setKind] = useState<"mc" | "dot">("mc");
+  const [kind, setKind] = useState<AuditKind>("mc");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AuditResponse | null>(null);
+  const [matches, setMatches] = useState<ContactMatch[] | null>(null);
 
-  async function run() {
+  // `override` exists so the match picker can fire an audit with a DOT it just
+  // set on state — reading `kind`/`number` here would see the stale closure.
+  async function run(override?: { kind: AuditKind; number: string }) {
+    const query = override ?? { kind, number };
+    if (!query.number.trim()) return;
     setLoading(true);
     setError(null);
     setResult(null);
+    setMatches(null);
     try {
       const res = await fetch("/api/admin/monitor/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: adminKey, number, kind }),
+        body: JSON.stringify({ key: adminKey, number: query.number, kind: query.kind }),
       });
-      const data = await res.json();
-      if (!res.ok) setError(data.error ?? "Audit failed.");
+      const data: unknown = await res.json();
+      if (!res.ok) setError(errorMessage(data));
+      else if (isMatchesResponse(data)) setMatches(data.matches);
       else setResult(data as AuditResponse);
     } catch {
       setError("Audit failed.");
@@ -73,27 +145,42 @@ export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
     }
   }
 
+  function auditMatch(match: ContactMatch) {
+    setKind("dot");
+    setNumber(match.dotNumber);
+    void run({ kind: "dot", number: match.dotNumber });
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={kind}
-          onChange={(e) => setKind(e.target.value as "mc" | "dot")}
+          onChange={(e) => {
+            setKind(e.target.value as AuditKind);
+            // Don't leave a stale picker/result under a different search mode.
+            setError(null);
+            setResult(null);
+            setMatches(null);
+          }}
           className="rounded-lg bg-white/[0.04] px-3 py-2 text-white ring-1 ring-white/10"
         >
           <option value="mc">MC</option>
           <option value="dot">DOT</option>
+          <option value="email">Email</option>
+          <option value="phone">Phone</option>
         </select>
         <input
           value={number}
           onChange={(e) => setNumber(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && run()}
-          placeholder="Enter MC or DOT number"
+          placeholder={PLACEHOLDERS[kind]}
+          inputMode={kind === "phone" ? "tel" : kind === "email" ? "email" : "numeric"}
           className="flex-1 rounded-lg bg-white/[0.04] px-3 py-2 text-white ring-1 ring-white/10 placeholder:text-white/35 focus:outline-none focus:ring-[#ff8a1a]/40"
         />
         <button
           type="button"
-          onClick={run}
+          onClick={() => run()}
           disabled={loading || !number.trim()}
           className="rounded-lg bg-[#ff8a1a]/20 px-5 py-2 font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/30 hover:bg-[#ff8a1a]/30 disabled:opacity-50"
         >
@@ -101,10 +188,63 @@ export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
         </button>
       </div>
 
+      {(kind === "email" || kind === "phone") && (
+        <p className="mt-2 text-[11px] leading-relaxed text-white/40">
+          Searches the FMCSA census MCS-150 filing contact (phone, cell phone and
+          email). That contact is often a dispatcher, insurance agent or
+          compliance-filing service rather than the owner, so one value can front
+          many carriers — you&apos;ll get a list to pick from.
+        </p>
+      )}
+
       {error && (
         <p className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-[13px] text-red-300 ring-1 ring-red-400/20">
           {error}
         </p>
+      )}
+
+      {matches && (
+        <div className="mt-6 rounded-xl bg-white/[0.025] p-5 ring-1 ring-white/10">
+          <h3 className="text-[14px] font-semibold text-white">
+            {matches.length >= CONTACT_MATCH_LIMIT
+              ? `${CONTACT_MATCH_LIMIT}+ carriers share that ${kind === "email" ? "email address" : "phone number"}`
+              : `${matches.length} carriers share that ${kind === "email" ? "email address" : "phone number"}`}
+          </h3>
+          <p className="mt-1 text-[12px] leading-relaxed text-white/45">
+            This is the MCS-150 <em>filing</em> contact, so it is very likely a
+            dispatcher, insurance agent or filing service that files for all of
+            them. Pick the right carrier — each audit fires live FMCSA lookups, so
+            they are not run automatically.
+            {matches.length >= CONTACT_MATCH_LIMIT &&
+              ` Only the ${CONTACT_MATCH_LIMIT} newest are shown; search by MC/DOT if the one you want isn't here.`}
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {matches.map((m) => (
+              <li key={m.dotNumber}>
+                <button
+                  type="button"
+                  onClick={() => auditMatch(m)}
+                  disabled={loading}
+                  className="w-full rounded-lg bg-white/[0.03] px-3 py-2 text-left ring-1 ring-white/8 hover:bg-white/[0.08] disabled:opacity-50"
+                >
+                  <div className="text-[13px] font-medium text-white">
+                    {m.legalName ?? `DOT ${m.dotNumber}`}
+                    {m.dbaName && <span className="text-white/40"> · {m.dbaName}</span>}
+                  </div>
+                  <div className="mt-0.5 text-[11px] text-white/50">
+                    DOT {m.dotNumber}
+                    {m.mcNumber ? ` · MC ${m.mcNumber}` : ""}
+                    {[m.city, m.state].filter(Boolean).length > 0
+                      ? ` · ${[m.city, m.state].filter(Boolean).join(", ")}`
+                      : ""}
+                    {` · ${m.statusCode === "A" ? "active" : (m.statusCode ?? "status ?")}`}
+                    {m.addDate ? ` · added ${m.addDate}` : ""}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {result && (
@@ -127,6 +267,7 @@ export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
                 {` · ${result.carrier.powerUnits ?? "—"} units`}
               </p>
             </div>
+            {canDraftBos && (
             <button
               type="button"
               onClick={() => {
@@ -153,6 +294,7 @@ export function OnDemandAuditTool({ adminKey }: { adminKey?: string }) {
             >
               Draft Bill of Sale
             </button>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">

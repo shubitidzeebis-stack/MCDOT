@@ -12,6 +12,7 @@ import { neon } from "@neondatabase/serverless";
 import { AdminValuationsPanel } from "@/components/AdminValuationsPanel";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { resolveFromAddress } from "@/lib/email/send-as";
 import { ensureValuationsSchema } from "@/lib/db/valuations";
 import { AdminMonitorPanel } from "@/components/AdminMonitorPanel";
 import { OutreachDraftsPanel } from "@/components/OutreachDraftsPanel";
@@ -166,15 +167,26 @@ export default async function AdminPage() {
         >
           On-demand audit tool →
         </a>
-        <a
-          href="/admin/bill-of-sale"
-          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
-        >
-          Bill of Sale generator →
-        </a>
+        {/* Full-admin only: the generator page redirects agent-role users
+            back here, so showing them the link would just bounce them. */}
+        {isFullAdmin && (
+          <a
+            href="/admin/bill-of-sale"
+            className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+          >
+            Bill of Sale generator →
+          </a>
+        )}
       </div>
 
-      <AdminValuationsPanel initial={valuations} role={session.role} />
+      {/* fromAddress is resolved server-side (allowlist-checked) purely so the
+          composer's helper text names the mailbox this person actually sends
+          from — the From header itself is built again inside the send route. */}
+      <AdminValuationsPanel
+        initial={valuations}
+        role={session.role}
+        fromAddress={resolveFromAddress(session.sendAs)}
+      />
 
       {isFullAdmin && <AdminMonitorPanel initial={monitor} />}
 

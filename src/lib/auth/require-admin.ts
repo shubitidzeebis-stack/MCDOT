@@ -13,9 +13,14 @@ import { getUserAccess } from "@/lib/db/admin-users";
 //      access immediately, even though the session cookie is stateless.
 //   3. The ROLE comes from the DB row, not the cookie, so a role change
 //      (admin ⇄ agent) also takes effect on the next request.
+//   4. So does SEND_AS — the mailbox this user's admin-panel email goes out
+//      as. It ends up in a From header, so it must come from the server's
+//      copy of the row on every request; a stale cookie must never be able
+//      to pin a sending identity.
 //
-// Roles: "admin" = full access; "agent" = restricted (no deletes, no user
-// management, no outreach/email sends — they work leads and write comments).
+// Roles: "admin" = full access; "agent" = restricted (no deletes, no
+// internal notes, no user management, no outreach/monitor dashboards — they
+// work leads, write comments, and email the lead they're working).
 // Routes gate destructive actions on `session.role === "admin"`.
 //
 // There is deliberately NO legacy ?key= / ADMIN_KEY bypass here: it put the
@@ -23,7 +28,11 @@ import { getUserAccess } from "@/lib/db/admin-users";
 // sidestepped the per-user audit trail. ADMIN_KEY now only seeds the initial
 // accounts (see admin-users.ts).
 
-export type AdminSession = SessionPayload & { role: string };
+export type AdminSession = SessionPayload & {
+  role: string;
+  /** Verified send-as mailbox, or null to use the shared company From. */
+  sendAs: string | null;
+};
 
 export async function requireAdmin(): Promise<AdminSession | null> {
   const cookieStore = await cookies();
@@ -37,5 +46,8 @@ export async function requireAdmin(): Promise<AdminSession | null> {
     ...session,
     name: access?.name ?? session.name,
     role: access?.role ?? "admin",
+    // No DB (dev) → no send-as identity, so sends fall back to the shared
+    // company From rather than inventing one.
+    sendAs: access?.send_as ?? null,
   };
 }

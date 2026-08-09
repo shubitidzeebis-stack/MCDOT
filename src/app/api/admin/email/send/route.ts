@@ -4,18 +4,27 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { stripCrLf } from "@/lib/security/sanitize";
 import { emailShell } from "@/lib/email/shell";
 import { unsubscribeUrl } from "@/lib/email/queue";
+import { resolveFromHeader } from "@/lib/email/send-as";
 import { logSentEmail } from "@/lib/db/email-history";
+import { getValuationContactEmail } from "@/lib/db/valuations";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { SITE } from "@/lib/site";
 
 // Compose-and-send endpoint for the admin panel. Sends a transactional
-// email via Resend from info@groupveritor.com to a specified seller
-// address. Reply-to defaults to the logged-in admin's email so seller
-// replies land in the right person's inbox.
+// email via Resend to a specified seller address. Reply-to is the logged-in
+// user's own email so seller replies land in the right person's inbox.
+//
+// From: the sender's own verified mailbox when their account has one
+// configured (`send_as`), otherwise the shared company From. The domain
+// allowlist that decides which is which lives in lib/email/send-as.ts —
+// read the comment there before touching it; an unvalidated From is both a
+// silent-delivery-failure bug and a spoofing hole.
 //
 // Auth: session cookie required. No legacy ?key= fallback (this is a
 // write that generates outbound mail — we want a real authenticated
-// user attached for audit purposes).
+// user attached for audit purposes). BOTH roles may send:
+//   - "admin" composes freely, to any recipient.
+//   - "agent" is leashed to the lead: see the valuationId check below.
 
 export const dynamic = "force-dynamic";
 
@@ -62,10 +71,7 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
-    // Sending email as the company is full-admin only.
-    if (session.role !== "admin") {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-    }
+    const isFullAdmin = session.role === "admin";
 
     const ip = getClientIp(req);
     const rl = await rateLimit(`admin-email:${session.email}:${ip}`, LIMIT, WINDOW_MS);
@@ -87,6 +93,34 @@ export async function POST(req: Request) {
       );
     }
 
+    const recipientEmail = raw.to.trim().toLowerCase();
+
+    // Agent-role guardrail: an agent may only email an address ALREADY on a
+    // lead row, and must name the lead. Without this leash an agent login is
+    // an open relay on a domain we own — arbitrary recipient, arbitrary
+    // subject and body, signed with our DKIM key and charged to our sending
+    // reputation. One compromised or disgruntled agent account would be
+    // enough to get the domain blocklisted. Full admins keep the free-form
+    // composer; they already own the domain and the reputation risk.
+    if (!isFullAdmin) {
+      const valuationId = raw.valuationId;
+      if (typeof valuationId !== "number" || !Number.isInteger(valuationId)) {
+        return NextResponse.json(
+          { error: "Pick a lead to reply to." },
+          { status: 400 },
+        );
+      }
+      // Compared against the DB copy, not anything the client sent. Missing
+      // row / missing address / no DB all resolve to null and fail closed.
+      const onFile = await getValuationContactEmail(valuationId);
+      if (!onFile || onFile.trim().toLowerCase() !== recipientEmail) {
+        return NextResponse.json(
+          { error: "You can only email the address on file for this lead." },
+          { status: 403 },
+        );
+      }
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -97,7 +131,6 @@ export async function POST(req: Request) {
 
     const resend = new Resend(apiKey);
     const subject = stripCrLf(raw.subject);
-    const recipientEmail = raw.to.trim().toLowerCase();
 
     // Render the body as paragraphs in a styled HTML shell. Plain-text
     // version stays as-is in the `text` field below for clients that
@@ -117,8 +150,13 @@ export async function POST(req: Request) {
       unsubscribeUrl: unsubscribeUrl(recipientEmail),
     });
 
+    // Falls back to SITE.emailFrom whenever the user has no send-as set, or
+    // has one whose domain isn't Resend-verified. Never sends a From we
+    // haven't vetted — see lib/email/send-as.ts.
+    const from = resolveFromHeader(session.sendAs, session.name);
+
     const result = await resend.emails.send({
-      from: SITE.emailFrom,
+      from,
       to: recipientEmail,
       replyTo: session.email,
       subject,

@@ -1057,15 +1057,38 @@ const CREATIVES: Creative[] = [
   },
 ];
 
-const SIZES = {
+type Frame = {
+  w: number;
+  h: number;
+  pad: number;
+  bottom: number;
+  top: number;
+  s: number;
+  photoSplit: number;
+  // Google mode only: where down the frame the legibility gradient starts.
+  scrim?: number;
+};
+
+// Meta placements. Untouched — these produced the live Meta creatives.
+const SIZES: Record<string, Frame> = {
   "4x5": { w: 1080, h: 1350, pad: 72, bottom: 56, top: 64, s: 1, photoSplit: 0.54 },
   "1x1": { w: 1080, h: 1080, pad: 64, bottom: 52, top: 56, s: 0.9, photoSplit: 0.46 },
   // Stories/Reels: IG chrome covers roughly the top 250px and bottom 320px,
   // so the copy block is lifted clear of both.
   "9x16": { w: 1080, h: 1920, pad: 80, bottom: 300, top: 210, s: 1.14, photoSplit: 0.58 },
-} as const;
+};
 
-type SizeKey = keyof typeof SIZES;
+// Google Ads image assets. Different pixel sizes *and* a different layout —
+// see the `google` branch in GET. `photoSplit` is unused here because the
+// photo is always full-bleed.
+const GSIZES: Record<string, Frame> = {
+  // Google's primary landscape slot, and the shortest canvas in the set: the
+  // type is tightened and the gradient starts higher so the copy still clears
+  // the bottom edge.
+  "1.91x1": { w: 1200, h: 628, pad: 56, bottom: 46, top: 44, s: 0.76, photoSplit: 1, scrim: 0.34 },
+  "1x1": { w: 1200, h: 1200, pad: 76, bottom: 66, top: 66, s: 1.0, photoSplit: 1, scrim: 0.52 },
+  "4x5": { w: 960, h: 1200, pad: 64, bottom: 60, top: 58, s: 0.84, photoSplit: 1, scrim: 0.5 },
+};
 
 // Cover-fit with a focal point, the same math object-fit:cover + object-position
 // would do — satori has neither.
@@ -1088,10 +1111,17 @@ function cover(
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const i = Number(url.searchParams.get("i") ?? 0);
-  const sizeKey = (url.searchParams.get("size") ?? "4x5") as SizeKey;
-  const c = CREATIVES[i];
-  const S = SIZES[sizeKey];
+  // Google mode swaps both the canvas table and the layout. Off by default so
+  // the Meta output is bit-identical to what shipped.
+  const isGoogle = url.searchParams.get("google") === "1";
+  // `id` is the stable handle; `i` is the legacy positional one. Index maths
+  // against a 66-entry array is a footgun when you are exporting a subset.
+  const idParam = url.searchParams.get("id");
+  const c = idParam
+    ? CREATIVES.find((x) => x.id === idParam)
+    : CREATIVES[Number(url.searchParams.get("i") ?? 0)];
+  const sizeKey = url.searchParams.get("size") ?? (isGoogle ? "1.91x1" : "4x5");
+  const S: Frame | undefined = (isGoogle ? GSIZES : SIZES)[sizeKey];
   if (!c || !S) return new Response("bad params", { status: 400 });
 
   const logo = img("public/brand/logo-on-dark.png");
@@ -1128,11 +1158,15 @@ export async function GET(req: Request) {
   const posterCopyH = Math.round(posterFree * (c.list ? 0.62 : 0.52));
   const posterPhotoH = posterFree - posterCopyH;
 
-  const photoBox = isPoster
-    ? { w: S.w, h: posterPhotoH }
-    : isSplit
-      ? { w: S.w, h: Math.round(S.h * S.photoSplit) }
-      : { w: S.w, h: S.h };
+  // Google mode ignores the template's photo treatment entirely — the
+  // photograph is always the full frame.
+  const photoBox = isGoogle
+    ? { w: S.w, h: S.h }
+    : isPoster
+      ? { w: S.w, h: posterPhotoH }
+      : isSplit
+        ? { w: S.w, h: Math.round(S.h * S.photoSplit) }
+        : { w: S.w, h: S.h };
 
   // Fit the *cropped* region, then render the full image shifted so that
   // region lands where the fit put it. satori has no way to clip a source
@@ -1312,6 +1346,169 @@ export async function GET(req: Request) {
     { name: "Inter", data: font("Inter-Bold.ttf"), weight: 700 as const, style: "normal" as const },
     { name: "Inter", data: font("Inter-LightItalic.ttf"), weight: 300 as const, style: "italic" as const },
   ];
+
+  // ── Google Ads image asset ────────────────────────────────────────────────
+  // Google rejects image assets that contain buttons or anything else that
+  // reads as clickable, and penalises frames that are mostly text. The Meta
+  // layouts fail both: they carry an amber CTA pill (or a full-width CTA bar)
+  // and give roughly half the canvas to a solid ink type panel.
+  //
+  // So this branch is not a re-skin of the Meta layout, it is the inverse of
+  // it. The photograph is the whole frame and the copy is a caption on top:
+  //   · no CTA pill, no CTA bar, no arrow glyphs — nothing interactive
+  //   · no amber `band` strip either; a filled rectangle of bold amber text is
+  //     exactly what a button looks like once it is not full-bleed
+  //   · `sub` (and `list`) dropped — the text budget is eyebrow + headline +
+  //     trust strip, which lands the type at roughly a quarter of the frame
+  //   · the gradient tops out at 0.94 instead of solid #0a0a0b, so the photo
+  //     stays visible behind the copy rather than being cut off by a panel
+  if (isGoogle) {
+    const scrimTop = Math.round(S.h * (S.scrim ?? 0.44));
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            width: S.w,
+            height: S.h,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            position: "relative",
+            background: INK,
+            fontFamily: "Inter",
+            padding: S.pad,
+            paddingBottom: S.bottom,
+          }}
+        >
+          {/* The photograph, full bleed — the subject, not the backdrop */}
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: S.w,
+              height: S.h,
+              display: "flex",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={photo.uri}
+              width={fullW}
+              height={fullH}
+              style={{ position: "absolute", left: imgLeft, top: imgTop }}
+            />
+          </div>
+
+          {/* Legibility gradient under the caption */}
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: scrimTop,
+              width: S.w,
+              height: S.h - scrimTop,
+              display: "flex",
+              background:
+                "linear-gradient(to bottom, rgba(10,10,11,0) 0%, rgba(10,10,11,0.42) 32%, rgba(10,10,11,0.78) 62%, rgba(10,10,11,0.94) 100%)",
+            }}
+          />
+
+          {/* Top scrim keeps the logo legible on any plate */}
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: S.w,
+              height: Math.round(S.h * 0.24),
+              display: "flex",
+              background:
+                "linear-gradient(to bottom, rgba(10,10,11,0.72) 0%, rgba(10,10,11,0.28) 50%, rgba(10,10,11,0) 100%)",
+            }}
+          />
+
+          <img
+            src={logo.uri}
+            width={F.logoW}
+            height={logoH}
+            style={{ position: "absolute", left: S.pad, top: S.top }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              position: "relative",
+              width: S.w - S.pad * 2,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontSize: F.eyebrow,
+                fontWeight: 600,
+                letterSpacing: F.eyebrow * 0.34,
+                color: AMBER,
+                marginBottom: Math.round(20 * S.s),
+              }}
+            >
+              {c.eyebrow}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: F.h,
+                fontWeight: 600,
+                letterSpacing: -F.h * 0.04,
+                lineHeight: 0.98,
+                color: "#fff",
+              }}
+            >
+              {c.h1}
+            </div>
+            {c.h2 && (
+              <div
+                style={{
+                  display: "flex",
+                  fontSize: F.h,
+                  fontWeight: 300,
+                  fontStyle: "italic",
+                  letterSpacing: -F.h * 0.04,
+                  lineHeight: 1.02,
+                  color: "rgba(255,255,255,0.85)",
+                }}
+              >
+                {c.h2}
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                marginTop: Math.round(30 * S.s),
+                fontSize: F.trust,
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.62)",
+              }}
+            >
+              {c.trust.flatMap((item, n) => [
+                n > 0 ? (
+                  <span
+                    key={`s${n}`}
+                    style={{ color: AMBER, margin: `0 ${Math.round(13 * S.s)}px` }}
+                  >
+                    ·
+                  </span>
+                ) : null,
+                <span key={item}>{item}</span>,
+              ])}
+            </div>
+          </div>
+        </div>
+      ),
+      { width: S.w, height: S.h, fonts: FONT_SET },
+    );
+  }
 
   if (isPoster) {
     return new ImageResponse(

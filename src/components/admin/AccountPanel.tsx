@@ -7,6 +7,8 @@ type User = {
   email: string;
   name: string | null;
   role: string;
+  /** Mailbox this user's lead email goes out as; null = shared company From. */
+  send_as: string | null;
   created_at: string;
   last_login_at: string | null;
 };
@@ -19,20 +21,31 @@ const labelClass =
 export function AccountPanel({
   currentUserId,
   initialUsers,
+  isFullAdmin,
 }: {
   currentUserId: number;
   initialUsers: User[];
+  /**
+   * Team management is full-admin only. The /api/admin/users routes already
+   * refuse agent-role callers, but this panel is server-rendered with the
+   * roster inlined — so without this flag an agent would still SEE every
+   * account, now including each person's send-as identity, even though every
+   * button on the card would 401. Don't render what they may not have.
+   */
+  isFullAdmin: boolean;
 }) {
   const [users, setUsers] = useState(initialUsers);
 
   return (
     <div className="mt-10 grid gap-10 lg:grid-cols-2">
       <ChangePasswordForm />
-      <TeamMembersPanel
-        currentUserId={currentUserId}
-        users={users}
-        setUsers={setUsers}
-      />
+      {isFullAdmin && (
+        <TeamMembersPanel
+          currentUserId={currentUserId}
+          users={users}
+          setUsers={setUsers}
+        />
+      )}
     </div>
   );
 }
@@ -155,6 +168,7 @@ function TeamMembersPanel({
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newSendAs, setNewSendAs] = useState("");
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
@@ -178,6 +192,7 @@ function TeamMembersPanel({
           email: newEmail,
           name: newName || null,
           password: newPassword,
+          sendAs: newSendAs || null,
         }),
       });
       const data = await res.json();
@@ -189,6 +204,7 @@ function TeamMembersPanel({
       setNewEmail("");
       setNewName("");
       setNewPassword("");
+      setNewSendAs("");
       await reload();
     } catch {
       setFlash({ kind: "err", msg: "Network error." });
@@ -215,6 +231,29 @@ function TeamMembersPanel({
       return;
     }
     alert("Password reset.");
+  }
+
+  // Set or clear the mailbox this user's lead email leaves from. Blank input
+  // clears it back to the shared company From. The server re-validates the
+  // format and the verified-domain allowlist — this prompt is convenience,
+  // not the control.
+  async function editSendAs(u: User) {
+    const next = prompt(
+      `Send lead email as (leave blank to use the shared company address):`,
+      u.send_as ?? "",
+    );
+    if (next === null) return;
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: u.id, sendAs: next.trim() || null }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Update failed.");
+      return;
+    }
+    await reload();
   }
 
   async function removeUser(id: number) {
@@ -262,6 +301,11 @@ function TeamMembersPanel({
                 )}
               </p>
               <p className="truncate text-[11px] text-white/45">{u.email}</p>
+              <p className="truncate text-[10px] text-white/35">
+                {u.send_as
+                  ? `Sends as ${u.send_as}`
+                  : "Sends as the shared company address"}
+              </p>
               <p className="text-[10px] text-white/35">
                 {u.last_login_at
                   ? `Last login ${new Date(u.last_login_at).toLocaleDateString()}`
@@ -269,6 +313,13 @@ function TeamMembersPanel({
               </p>
             </div>
             <div className="flex shrink-0 gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => editSendAs(u)}
+                className="rounded-md px-2 py-1 text-white/60 hover:bg-white/[0.06] hover:text-white"
+              >
+                Send-as
+              </button>
               <button
                 type="button"
                 onClick={() => resetPassword(u.id)}
@@ -316,6 +367,13 @@ function TeamMembersPanel({
           onChange={(e) => setNewPassword(e.target.value)}
           minLength={8}
           required
+          className={inputClass}
+        />
+        <input
+          type="email"
+          placeholder="send lead email as… (optional, verified domain only)"
+          value={newSendAs}
+          onChange={(e) => setNewSendAs(e.target.value)}
           className={inputClass}
         />
         {flash && (
