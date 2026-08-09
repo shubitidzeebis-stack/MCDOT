@@ -165,10 +165,16 @@ export function OnDemandAuditTool({
     }
   }
 
+  // Prefer the MC docket for the same reason the API does: QCMobile serves MC
+  // and DOT from separate endpoints that disagree, and the MC one is materially
+  // more likely to hold the carrier.
   function auditMatch(match: ContactMatch) {
-    setKind("dot");
-    setNumber(match.dotNumber);
-    void run({ kind: "dot", number: match.dotNumber });
+    const next: { kind: AuditKind; number: string } = match.mcNumber
+      ? { kind: "mc", number: match.mcNumber }
+      : { kind: "dot", number: match.dotNumber };
+    setKind(next.kind);
+    setNumber(next.number);
+    void run(next);
   }
 
   return (
@@ -248,10 +254,11 @@ export function OnDemandAuditTool({
           </p>
           <ul className="mt-3 space-y-1.5">
             {matches.map((m, i) => {
-              // Our own rows can lack a DOT (an inbound lead whose FMCSA lookup
-              // never resolved). It still identifies the person, so it is listed
-              // — just not clickable, because there is nothing to audit.
-              const auditable = m.dotNumber.length > 0;
+              // Our own rows can lack both identifiers (an inbound lead whose
+              // FMCSA lookup never resolved). Such a row still identifies the
+              // person, so it is listed — just not clickable, because there is
+              // nothing to look the carrier up by.
+              const auditable = m.dotNumber.length > 0 || !!m.mcNumber;
               return (
                 <li key={`${m.source}-${m.valuationId ?? m.dotNumber}-${i}`}>
                   <button

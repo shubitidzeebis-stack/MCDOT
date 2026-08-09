@@ -66,10 +66,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // MC/DOT go straight through. Email/phone resolve to a DOT first, and the
-    // branch below overwrites both of these before the audit runs.
+    // MC/DOT go straight through. Email/phone resolve to a carrier first, and
+    // the branch below overwrites these before the audit runs.
     let lookupNumber = raw.number;
     let lookupKind: "mc" | "dot" = raw.kind === "mc" ? "mc" : "dot";
+    // Second identifier to retry with when the first comes back not_found —
+    // only ever set on the contact path, where we hold both an MC and a DOT.
+    let fallback: { number: string; kind: "mc" | "dot" } | null = null;
 
     if (raw.kind === "email" || raw.kind === "phone") {
       const label = raw.kind === "email" ? "email address" : "phone number";
@@ -124,15 +127,33 @@ export async function POST(req: Request) {
       // FMCSA lookup never resolved). There is nothing to audit, but the row
       // still identifies the person — return it as a one-row picker rather than
       // pretending we found nothing.
-      if (!matches[0].dotNumber) {
+      const only = matches[0];
+      if (!only.dotNumber && !only.mcNumber) {
         return NextResponse.json({ ok: true, matches, censusFailed });
       }
 
-      lookupNumber = matches[0].dotNumber;
-      lookupKind = "dot";
+      // Prefer the MC docket. QCMobile serves MC and DOT from SEPARATE endpoints
+      // and they genuinely disagree: S & S TRANSPORTATION LLC (DOT 3836634 /
+      // MC 1393707) returns nothing from /carriers/{dot} but a full record from
+      // /carriers/docket-number/{mc}. Since the census hands us docket1 for
+      // free, leading with MC turns a dead end into a working audit. The DOT is
+      // kept as the fallback below.
+      if (only.mcNumber) {
+        lookupNumber = only.mcNumber;
+        lookupKind = "mc";
+        fallback = only.dotNumber ? { number: only.dotNumber, kind: "dot" } : null;
+      } else {
+        lookupNumber = only.dotNumber;
+        lookupKind = "dot";
+      }
     }
 
-    const lookup = await lookupCarrier(lookupNumber, lookupKind);
+    let lookup = await lookupCarrier(lookupNumber, lookupKind);
+    // QCMobile's MC and DOT endpoints disagree about which carriers exist, so a
+    // not_found on one is not proof of absence when we hold the other number.
+    if (!lookup.ok && lookup.reason === "not_found" && fallback) {
+      lookup = await lookupCarrier(fallback.number, fallback.kind);
+    }
     if (!lookup.ok) {
       return NextResponse.json(
         { error: lookup.message, reason: lookup.reason },
