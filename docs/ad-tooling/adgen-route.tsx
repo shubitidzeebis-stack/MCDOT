@@ -113,7 +113,7 @@ const CREATIVES: Creative[] = [
     photo: "visuals/handshake-keys.png",
     focal: [0.5, 0.4],
     template: "cinematic",
-    eyebrow: "US LOGISTICS LLC ACQUISITIONS",
+    eyebrow: "FREE FMCSA VALUATION",
     h1: "Sell your trucking LLC.",
     h2: "Closed in 3–5 days.",
     sub: "Written offer. Wire through attorney escrow — at your bank or online.",

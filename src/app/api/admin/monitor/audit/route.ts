@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { lookupCarrier } from "@/lib/fmcsa";
 import { verifyCandidate } from "@/lib/monitor/verify";
 import {
-  findCarriersByContact,
+  findContactMatches,
   parseContact,
   type ContactMatch,
 } from "@/lib/monitor/reverse-lookup";
@@ -83,15 +83,17 @@ export async function POST(req: Request) {
         );
       }
 
+      // Searches our own leads + monitor prospects AND the FMCSA census, then
+      // merges. Degrades to local-only if Socrata is down rather than failing
+      // the whole request — see findContactMatches().
       let matches: ContactMatch[];
+      let censusFailed: boolean;
       try {
-        matches = await findCarriersByContact(raw.number);
+        ({ matches, censusFailed } = await findContactMatches(raw.number));
       } catch (err) {
-        // socrataQuery throws on API failure by design — never let an outage
-        // masquerade as "no such carrier".
-        console.error("[admin/monitor/audit] census contact lookup failed", err);
+        console.error("[admin/monitor/audit] contact lookup failed", err);
         return NextResponse.json(
-          { error: "FMCSA census lookup failed — try again shortly." },
+          { error: "Contact lookup failed — try again shortly." },
           { status: 502 },
         );
       }
@@ -99,20 +101,31 @@ export async function POST(req: Request) {
       if (matches.length === 0) {
         return NextResponse.json(
           {
-            error:
-              `No carrier in the FMCSA census lists that ${label}. Census holds the ` +
-              `MCS-150 filing contact, so a personal cell or a new inbox often isn't in it.`,
+            error: censusFailed
+              ? `Nothing in our records matches that ${label}, and the FMCSA census ` +
+                `is not responding right now — so this is not a confirmed miss. Try again shortly.`
+              : `No match for that ${label} in our leads, our prospect list, or the ` +
+                `FMCSA census. Census only holds the MCS-150 filing contact, so a ` +
+                `personal mobile or a new inbox often isn't in it — try their MC or DOT.`,
           },
           { status: 404 },
         );
       }
 
-      // Ambiguous on purpose: the Census contact is the MCS-150 FILING contact,
+      // Ambiguous on purpose: the census contact is the MCS-150 FILING contact,
       // so a dispatcher / insurance agent / filing service fronts many
       // carriers. Hand the operator a picker instead of guessing — and do NOT
       // audit them all, since each audit burns live SAFER/QCMobile quota.
       if (matches.length > 1) {
-        return NextResponse.json({ ok: true, matches });
+        return NextResponse.json({ ok: true, matches, censusFailed });
+      }
+
+      // A single hit from our own records may have no DOT (an inbound lead whose
+      // FMCSA lookup never resolved). There is nothing to audit, but the row
+      // still identifies the person — return it as a one-row picker rather than
+      // pretending we found nothing.
+      if (!matches[0].dotNumber) {
+        return NextResponse.json({ ok: true, matches, censusFailed });
       }
 
       lookupNumber = matches[0].dotNumber;

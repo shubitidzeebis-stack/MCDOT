@@ -6,11 +6,13 @@ import { stashBosPrefill } from "@/lib/bos/prefill";
 // On-demand audit: enter any MC/DOT → full audit + rating + UCC handoff,
 // reusing the monitor engine via /api/admin/monitor/audit.
 //
-// It also takes an EMAIL or PHONE, resolved against the FMCSA Census MCS-150
-// filing contact. That contact is very often a dispatcher, insurance agent, or
-// compliance-filing service, so one value can front many carriers — the API
-// answers with a `matches` list instead of an audit whenever it's ambiguous,
-// and we render a picker. Clicking a row re-runs as a plain DOT audit.
+// It also takes an EMAIL or PHONE, searched against OUR OWN leads and prospect
+// list first and the FMCSA census second. The census only indexes the MCS-150
+// filing contact — often a dispatcher, insurance agent, or compliance-filing
+// service — so one value can front many carriers, and the address a seller
+// typed into our wizard isn't in it at all. The API answers with a `matches`
+// list instead of an audit whenever the result is ambiguous or has no DOT to
+// audit; we render a picker, and clicking a row re-runs as a plain DOT audit.
 
 type Gap = { from: string; to: string; days: number; method: string | null; live?: boolean };
 
@@ -30,6 +32,24 @@ type ContactMatch = {
   statusCode: string | null;
   addDate: string | null;
   mcNumber: string | null;
+  source: "census" | "lead" | "monitor";
+  valuationId: number | null;
+  contactName: string | null;
+  status: string | null;
+};
+
+// Where a hit came from, in the operator's language. "Your lead" is the one
+// that matters most — it means this person is already in the pipeline.
+const SOURCE_LABEL: Record<ContactMatch["source"], string> = {
+  lead: "Your lead",
+  monitor: "Prospect list",
+  census: "FMCSA census",
+};
+
+const SOURCE_CLASS: Record<ContactMatch["source"], string> = {
+  lead: "bg-emerald-500/15 text-emerald-300 ring-emerald-400/25",
+  monitor: "bg-[#ff8a1a]/15 text-[#ffb371] ring-[#ff8a1a]/25",
+  census: "bg-white/[0.06] text-white/55 ring-white/15",
 };
 
 type AuditResponse = {
@@ -165,10 +185,17 @@ export function OnDemandAuditTool({
           }}
           className="rounded-lg bg-white/[0.04] px-3 py-2 text-white ring-1 ring-white/10"
         >
-          <option value="mc">MC</option>
-          <option value="dot">DOT</option>
-          <option value="email">Email</option>
-          <option value="phone">Phone</option>
+          {/*
+            Each <option> needs an explicit dark background. The popup list is
+            drawn by the OS, not the page: it ignores the translucent
+            bg-white/[0.04] on the <select> and paints system white, while
+            INHERITING the select's text-white — so the choices render white on
+            white and are invisible until highlighted. Same fix as BillOfSalePanel.
+          */}
+          <option value="mc" className="bg-[#0a0a0b] text-white">MC</option>
+          <option value="dot" className="bg-[#0a0a0b] text-white">DOT</option>
+          <option value="email" className="bg-[#0a0a0b] text-white">Email</option>
+          <option value="phone" className="bg-[#0a0a0b] text-white">Phone</option>
         </select>
         <input
           value={number}
@@ -190,10 +217,11 @@ export function OnDemandAuditTool({
 
       {(kind === "email" || kind === "phone") && (
         <p className="mt-2 text-[11px] leading-relaxed text-white/40">
-          Searches the FMCSA census MCS-150 filing contact (phone, cell phone and
-          email). That contact is often a dispatcher, insurance agent or
-          compliance-filing service rather than the owner, so one value can front
-          many carriers — you&apos;ll get a list to pick from.
+          Searches your leads and prospect list first, then the FMCSA census. The
+          census only holds the MCS-150 <em>filing</em> contact — often a
+          dispatcher, insurance agent or filing service — so one value can front
+          many carriers, and a seller&apos;s personal mobile or inbox may not be in
+          it at all. You&apos;ll get a list to pick from.
         </p>
       )}
 
@@ -207,42 +235,66 @@ export function OnDemandAuditTool({
         <div className="mt-6 rounded-xl bg-white/[0.025] p-5 ring-1 ring-white/10">
           <h3 className="text-[14px] font-semibold text-white">
             {matches.length >= CONTACT_MATCH_LIMIT
-              ? `${CONTACT_MATCH_LIMIT}+ carriers share that ${kind === "email" ? "email address" : "phone number"}`
-              : `${matches.length} carriers share that ${kind === "email" ? "email address" : "phone number"}`}
+              ? `${CONTACT_MATCH_LIMIT}+ matches for that ${kind === "email" ? "email address" : "phone number"}`
+              : `${matches.length} match${matches.length === 1 ? "" : "es"} for that ${kind === "email" ? "email address" : "phone number"}`}
           </h3>
           <p className="mt-1 text-[12px] leading-relaxed text-white/45">
-            This is the MCS-150 <em>filing</em> contact, so it is very likely a
-            dispatcher, insurance agent or filing service that files for all of
-            them. Pick the right carrier — each audit fires live FMCSA lookups, so
-            they are not run automatically.
+            Green rows are already in your pipeline. Census rows are the MCS-150{" "}
+            <em>filing</em> contact, so one dispatcher or filing service can front
+            many carriers. Pick one — each audit fires live FMCSA lookups, so they
+            are not run automatically.
             {matches.length >= CONTACT_MATCH_LIMIT &&
               ` Only the ${CONTACT_MATCH_LIMIT} newest are shown; search by MC/DOT if the one you want isn't here.`}
           </p>
           <ul className="mt-3 space-y-1.5">
-            {matches.map((m) => (
-              <li key={m.dotNumber}>
-                <button
-                  type="button"
-                  onClick={() => auditMatch(m)}
-                  disabled={loading}
-                  className="w-full rounded-lg bg-white/[0.03] px-3 py-2 text-left ring-1 ring-white/8 hover:bg-white/[0.08] disabled:opacity-50"
-                >
-                  <div className="text-[13px] font-medium text-white">
-                    {m.legalName ?? `DOT ${m.dotNumber}`}
-                    {m.dbaName && <span className="text-white/40"> · {m.dbaName}</span>}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-white/50">
-                    DOT {m.dotNumber}
-                    {m.mcNumber ? ` · MC ${m.mcNumber}` : ""}
-                    {[m.city, m.state].filter(Boolean).length > 0
-                      ? ` · ${[m.city, m.state].filter(Boolean).join(", ")}`
-                      : ""}
-                    {` · ${m.statusCode === "A" ? "active" : (m.statusCode ?? "status ?")}`}
-                    {m.addDate ? ` · added ${m.addDate}` : ""}
-                  </div>
-                </button>
-              </li>
-            ))}
+            {matches.map((m, i) => {
+              // Our own rows can lack a DOT (an inbound lead whose FMCSA lookup
+              // never resolved). It still identifies the person, so it is listed
+              // — just not clickable, because there is nothing to audit.
+              const auditable = m.dotNumber.length > 0;
+              return (
+                <li key={`${m.source}-${m.valuationId ?? m.dotNumber}-${i}`}>
+                  <button
+                    type="button"
+                    onClick={() => auditMatch(m)}
+                    disabled={loading || !auditable}
+                    title={auditable ? undefined : "No DOT on this record — nothing to audit"}
+                    className="w-full rounded-lg bg-white/[0.03] px-3 py-2 text-left ring-1 ring-white/8 enabled:hover:bg-white/[0.08] disabled:cursor-default disabled:opacity-60"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-[13px] font-medium text-white">
+                        {m.legalName ?? m.contactName ?? `DOT ${m.dotNumber}`}
+                      </span>
+                      {m.dbaName && (
+                        <span className="text-[13px] text-white/40">· {m.dbaName}</span>
+                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] ring-1 ${SOURCE_CLASS[m.source]}`}
+                      >
+                        {SOURCE_LABEL[m.source]}
+                      </span>
+                      {m.status && (
+                        <span className="text-[10px] uppercase tracking-[0.14em] text-white/40">
+                          {m.status}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-white/50">
+                      {auditable ? `DOT ${m.dotNumber}` : "no DOT on file"}
+                      {m.mcNumber ? ` · MC ${m.mcNumber}` : ""}
+                      {[m.city, m.state].filter(Boolean).length > 0
+                        ? ` · ${[m.city, m.state].filter(Boolean).join(", ")}`
+                        : ""}
+                      {m.statusCode
+                        ? ` · ${m.statusCode === "A" ? "active" : m.statusCode}`
+                        : ""}
+                      {m.addDate ? ` · added ${m.addDate}` : ""}
+                      {m.contactName && m.legalName ? ` · ${m.contactName}` : ""}
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

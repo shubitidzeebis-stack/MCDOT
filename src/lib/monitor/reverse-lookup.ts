@@ -41,11 +41,22 @@
 // returns [] instead of building a query.
 
 import { DATASETS, socrataQuery } from "@/lib/monitor/socrata";
+import {
+  findLocalByContact,
+  type LocalContactMatch,
+} from "@/lib/db/contact-search";
 
 /** How a raw search string was interpreted. */
 export type ContactKind = "email" | "phone";
 
-/** One Census hit, flattened for a disambiguation picker. */
+/**
+ * Where a hit came from. The census only knows the MCS-150 FILING contact, so
+ * a search for the address a seller actually typed into our wizard will miss it
+ * entirely — see findContactMatches() and lib/db/contact-search.ts.
+ */
+export type MatchSource = "census" | "lead" | "monitor";
+
+/** One hit, flattened for a disambiguation picker. */
 export type ContactMatch = {
   dotNumber: string; // UNPADDED (Census form) — lpadDot() before InsHist joins
   legalName: string | null;
@@ -58,6 +69,13 @@ export type ContactMatch = {
   statusCode: string | null; // 'A' = active
   addDate: string | null; // ISO yyyy-mm-dd (parsed from YYYYMMDD)
   mcNumber: string | null; // docket1, only when docket1prefix === 'MC'
+  source: MatchSource;
+  /** Our own valuations row id, when the hit came from our records. */
+  valuationId: number | null;
+  /** The human who filled the form. Inbound leads only — census has no such field. */
+  contactName: string | null;
+  /** Inbound pipeline status ("new", "contacted", …). Inbound leads only. */
+  status: string | null;
 };
 
 /** A search string reduced to exactly the form Census stores. */
@@ -218,6 +236,10 @@ function mapContactRow(row: ContactCensusRow): ContactMatch {
     statusCode: cleanStr(row.status_code)?.toUpperCase() ?? null,
     addDate: parseAddDate(row.add_date),
     mcNumber: prefix === "MC" && docket ? docket : null,
+    source: "census",
+    valuationId: null,
+    contactName: null,
+    status: null,
   };
 }
 
@@ -256,4 +278,85 @@ export async function findCarriersByContact(value: string): Promise<ContactMatch
   // A row with a blank dot_number is unusable downstream (the audit engine keys
   // off DOT), so drop it rather than render a dead picker entry.
   return rows.map(mapContactRow).filter((m) => m.dotNumber.length > 0);
+}
+
+// --- merged lookup ---------------------------------------------------------
+
+/** Widen one of our own rows into the shared picker shape. */
+function fromLocal(m: LocalContactMatch): ContactMatch {
+  return {
+    dotNumber: m.dotNumber,
+    legalName: m.legalName,
+    dbaName: m.dbaName,
+    city: m.city,
+    state: m.state,
+    phone: m.phone,
+    cellPhone: null, // we don't store a separate cell column
+    email: m.email,
+    statusCode: null, // FMCSA authority status isn't on our row; the audit shows it
+    addDate: null,
+    mcNumber: m.mcNumber,
+    source: m.source,
+    valuationId: m.valuationId,
+    contactName: m.contactName,
+    status: m.status,
+  };
+}
+
+/**
+ * The lookup the audit tool actually calls: search OUR RECORDS and the FMCSA
+ * census together, then merge.
+ *
+ * WHY BOTH. The census only indexes the MCS-150 filing contact, so searching
+ * the address a seller typed into our own wizard, or the mobile they rang from,
+ * returns nothing — the single most confusing possible result, because the
+ * person plainly exists. Our own tables hold ~52k monitor prospects and the
+ * inbound leads, keyed to the same DOTs, and for a lead they also carry the
+ * human's NAME and pipeline status. Searching ours first answers the question
+ * the operator is actually asking.
+ *
+ * Our rows WIN on a DOT collision: a monitor row carries everything the census
+ * row would have plus our audit state, and a lead row additionally names the
+ * person. Census-only hits are appended — those are carriers we have never
+ * seen, which is exactly when the census earns its keep.
+ *
+ * A local row with no DOT is still returned. It cannot be audited, but "this is
+ * lead #55857, Wilbur McConnell, status contacted" is the useful answer, and
+ * suppressing it would recreate the very blind spot this function exists to fix.
+ *
+ * Never throws on a census outage — a Socrata failure degrades to local-only
+ * results rather than losing the whole search, and `censusFailed` tells the
+ * caller so it can say the list may be incomplete.
+ */
+export async function findContactMatches(raw: string): Promise<{
+  matches: ContactMatch[];
+  censusFailed: boolean;
+}> {
+  const parsed = parseContact(raw);
+  if (!parsed) return { matches: [], censusFailed: false };
+
+  const [local, census] = await Promise.all([
+    findLocalByContact(parsed.kind, parsed.value).catch((err) => {
+      // Our own DB failing is not a reason to lose a working census result.
+      console.error("[reverse-lookup] local contact search failed", err);
+      return [] as LocalContactMatch[];
+    }),
+    findCarriersByContact(raw).then(
+      (rows) => ({ ok: true as const, rows }),
+      (err) => {
+        console.error("[reverse-lookup] census contact search failed", err);
+        return { ok: false as const, rows: [] as ContactMatch[] };
+      },
+    ),
+  ]);
+
+  const merged = local.map(fromLocal);
+  const seen = new Set(merged.map((m) => m.dotNumber).filter((d) => d.length > 0));
+  for (const c of census.rows) {
+    if (seen.has(c.dotNumber)) continue;
+    seen.add(c.dotNumber);
+    merged.push(c);
+  }
+
+  return { matches: merged, censusFailed: !census.ok };
 }
