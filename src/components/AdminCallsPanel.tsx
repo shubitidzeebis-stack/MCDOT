@@ -159,21 +159,171 @@ function Stat({
   tone = "text-white",
   hint,
   className = "",
+  onClick,
+  active = false,
 }: {
   label: string;
   value: string | number;
   tone?: string;
   hint?: string;
   className?: string;
+  /** Tiles double as filter shortcuts — clicking applies the matching filter
+   *  to the call log below. */
+  onClick?: () => void;
+  /** True when the log is currently filtered to what this tile counts. */
+  active?: boolean;
 }) {
   return (
-    <div className={`rounded-xl bg-white/[0.025] p-4 ring-1 ring-white/10 ${className}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-xl p-4 text-left ring-1 transition-colors ${
+        active
+          ? "bg-[#ff8a1a]/[0.08] ring-[#ff8a1a]/40"
+          : "bg-white/[0.025] ring-white/10 hover:bg-white/[0.05] hover:ring-white/20"
+      } ${className}`}
+    >
       <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
         {label}
       </p>
       <p className={`mt-1.5 text-2xl font-semibold tracking-tight ${tone}`}>{value}</p>
       {hint && <p className="mt-0.5 text-[11px] text-white/35">{hint}</p>}
+    </button>
+  );
+}
+
+/**
+ * Calls per day, last 14 days, inbound stacked answered/missed.
+ *
+ * Hand-rolled SVG in the house style — no chart library. Emerald/red is a
+ * deutan-risk pair (validated ΔE 6.5, floor band), so identity never rides on
+ * color alone: answered is ALWAYS the base segment and missed ALWAYS the top,
+ * segments carry native tooltips, and the legend is labeled text. 2px gaps
+ * separate stacked segments per the house mark spec.
+ */
+function CallsChart({ rows }: { rows: CallRow[] }) {
+  const days = useMemo(() => {
+    const out: { key: string; label: string; answered: number; missed: number }[] = [];
+    const now = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      out.push({
+        key: d.toDateString(),
+        label: d.toLocaleDateString("en-US", { weekday: "narrow" }),
+        answered: 0,
+        missed: 0,
+      });
+    }
+    const idx = new Map(out.map((d, i) => [d.key, i]));
+    for (const r of rows) {
+      if (!isIncoming(r)) continue;
+      const i = idx.get(new Date(r.created_at).toDateString());
+      if (i == null) continue;
+      if (r.answered_at) out[i].answered++;
+      else if (isMissed(r) || r.voicemail_url) out[i].missed++;
+    }
+    return out;
+  }, [rows]);
+
+  const max = Math.max(1, ...days.map((d) => d.answered + d.missed));
+  const total = days.reduce((s, d) => s + d.answered + d.missed, 0);
+
+  // Geometry: viewBox is 14 slots of 24px; bars 14px wide, centered.
+  const W = 14 * 24;
+  const H = 96;
+  const LABEL_H = 14;
+  const scale = (n: number) => (n / max) * (H - 6);
+
+  return (
+    <div className="rounded-xl bg-white/[0.025] p-4 ring-1 ring-white/10">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+          Inbound — last 14 days
+        </p>
+        <div className="flex items-center gap-3 text-[11px] text-white/55">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" /> Answered
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-red-400" /> Missed
+          </span>
+        </div>
+      </div>
+      {total === 0 ? (
+        <p className="py-6 text-center text-[13px] text-white/40">
+          No inbound calls in the last 14 days.
+        </p>
+      ) : (
+        <svg
+          viewBox={`0 0 ${W} ${H + LABEL_H}`}
+          className="h-auto w-full"
+          role="img"
+          aria-label="Inbound calls per day, answered versus missed"
+        >
+          {days.map((d, i) => {
+            const x = i * 24 + 5;
+            const aH = scale(d.answered);
+            const mH = scale(d.missed);
+            const gap = d.answered > 0 && d.missed > 0 ? 2 : 0;
+            const aY = H - aH;
+            const mY = aY - gap - mH;
+            const tip = `${d.answered} answered · ${d.missed} missed`;
+            return (
+              <g key={d.key}>
+                {d.answered > 0 && (
+                  <rect x={x} y={aY} width={14} height={aH} rx={2} className="fill-emerald-400/80">
+                    <title>{tip}</title>
+                  </rect>
+                )}
+                {d.missed > 0 && (
+                  <rect x={x} y={mY} width={14} height={mH} rx={2} className="fill-red-400/80">
+                    <title>{tip}</title>
+                  </rect>
+                )}
+                {d.answered + d.missed === 0 && (
+                  <rect x={x} y={H - 2} width={14} height={2} rx={1} className="fill-white/10" />
+                )}
+                <text
+                  x={x + 7}
+                  y={H + 11}
+                  textAnchor="middle"
+                  className="fill-white/35 text-[9px]"
+                >
+                  {d.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      )}
     </div>
+  );
+}
+
+/**
+ * Audio with a graceful failure state. Quo media URLs can expire (their own
+ * synthetic test event ships a URL that 403s), and the native "broken player"
+ * pill looks like OUR bug — replace it with an honest message.
+ */
+function CallAudio({ src, kind }: { src: string; kind: "recording" | "voicemail" }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <p className="rounded-lg bg-amber-500/10 px-3 py-2 text-[12px] text-amber-200/90 ring-1 ring-amber-400/20">
+        ⚠ This {kind} can&apos;t be played — the audio file is no longer
+        available from Quo. New calls record normally.
+      </p>
+    );
+  }
+  return (
+    <audio
+      controls
+      preload="none"
+      className="w-full [color-scheme:dark]"
+      src={src}
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -292,7 +442,8 @@ export function AdminCallsPanel({ initial, initialMissed }: Props) {
     <>
       {/* ---------------------------------------------------- status strip */}
       {/* Missed-and-unrecovered leads the row (it's the money metric) and
-          spans both columns on mobile — 2-2-2, no orphan tile. */}
+          spans both columns on mobile — 2-2-2, no orphan tile. Every tile is
+          a filter shortcut into the log below. */}
       <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
         <Stat
           label="Missed & unrecovered"
@@ -300,11 +451,66 @@ export function AdminCallsPanel({ initial, initialMissed }: Props) {
           tone={stats.unrecovered > 0 ? "text-red-300" : "text-white"}
           hint={stats.unrecovered > 0 ? "needs a callback" : "all clear"}
           className="col-span-2 md:col-span-1"
+          active={outcome === "missed" && linked === "all"}
+          onClick={() => {
+            setDir("all");
+            setOutcome("missed");
+            setLinked("all");
+            setQ("");
+          }}
         />
-        <Stat label="Calls today" value={stats.today} />
-        <Stat label="Answered today" value={stats.answered} />
-        <Stat label="Answer rate" value={stats.answerRate} hint="inbound, all time" />
-        <Stat label="Matched to a lead" value={stats.linkedPct} hint="auto-linked by phone" />
+        <Stat
+          label="Calls today"
+          value={stats.today}
+          hint="tap to clear filters"
+          active={dir === "all" && outcome === "all" && linked === "all" && q === ""}
+          onClick={() => {
+            setDir("all");
+            setOutcome("all");
+            setLinked("all");
+            setQ("");
+          }}
+        />
+        <Stat
+          label="Answered today"
+          value={stats.answered}
+          active={outcome === "answered"}
+          onClick={() => {
+            setDir("all");
+            setOutcome("answered");
+            setLinked("all");
+            setQ("");
+          }}
+        />
+        <Stat
+          label="Answer rate"
+          value={stats.answerRate}
+          hint="inbound, all time"
+          active={dir === "incoming" && outcome === "all"}
+          onClick={() => {
+            setDir("incoming");
+            setOutcome("all");
+            setLinked("all");
+            setQ("");
+          }}
+        />
+        <Stat
+          label="Matched to a lead"
+          value={stats.linkedPct}
+          hint="auto-linked by phone"
+          active={linked === "linked"}
+          onClick={() => {
+            setDir("all");
+            setOutcome("all");
+            setLinked("linked");
+            setQ("");
+          }}
+        />
+      </section>
+
+      {/* ------------------------------------------------------- activity */}
+      <section className="mt-4">
+        <CallsChart rows={rows} />
       </section>
 
       {/* --------------------------------------- missed & unrecovered board */}
@@ -530,13 +736,8 @@ export function AdminCallsPanel({ initial, initialMissed }: Props) {
                                   </p>
                                   {/* Streams through our own authenticated proxy —
                                       never a raw Quo URL in the DOM. */}
-                                  {/* [color-scheme:dark]: audio controls are an
-                                      OS-painted widget, same as <option> popups —
-                                      without this they render as a white pill. */}
-                                  <audio
-                                    controls
-                                    preload="none"
-                                    className="w-full [color-scheme:dark]"
+                                  <CallAudio
+                                    kind={c.recording_url ? "recording" : "voicemail"}
                                     src={`/api/admin/calls/recording?id=${encodeURIComponent(c.id)}&kind=${c.recording_url ? "recording" : "voicemail"}`}
                                   />
                                 </div>
