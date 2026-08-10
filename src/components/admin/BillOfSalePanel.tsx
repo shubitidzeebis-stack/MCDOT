@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildBillOfSale,
+  BOS_TEMPLATES,
   DEFAULT_DELIVERABLES,
   type BillOfSaleData,
+  type BosTemplateId,
 } from "@/lib/bos/bill-of-sale-pdf";
 import { takeBosPrefill } from "@/lib/bos/prefill";
 
@@ -14,6 +16,7 @@ const labelClass =
   "text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45";
 
 type FormState = {
+  template: BosTemplateId; // which of the three document designs to draw
   effectiveDate: string; // yyyy-mm-dd from <input type="date">
   sellerName: string;
   buyerName: string;
@@ -69,6 +72,7 @@ const EMPTY_BUYER_DRAFT: BuyerDraft = {
 };
 
 const EMPTY: FormState = {
+  template: "masthead",
   effectiveDate: "",
   sellerName: "",
   buyerName: "",
@@ -352,53 +356,74 @@ export function BillOfSalePanel() {
     return pending;
   }, [form]);
 
+  // `override` lets a control redraw with a value React hasn't committed yet —
+  // the design picker switches template and rebuilds in the same click.
+  const buildPdf = useCallback(
+    async (override?: Partial<FormState>) => {
+      const f = override ? { ...form, ...override } : form;
+      setError(null);
+      if (!f.companyName.trim()) {
+        setError("Company legal name is required — it goes in the title and header.");
+        return;
+      }
+      setBusy(true);
+      try {
+        const deliverables = f.deliverables
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const data: BillOfSaleData = {
+          template: f.template,
+          effectiveDate: contractDate(f.effectiveDate),
+          sellerName: f.sellerName.trim() || null,
+          buyerName: f.buyerName.trim() || null,
+          buyerAddress: f.buyerAddress.trim() || null,
+          companyName: f.companyName.trim(),
+          companyDba: f.companyDba.trim() || null,
+          purchasePrice: normalizePrice(f.purchasePrice) || null,
+          companyAddress: f.companyAddress.trim() || null,
+          companyPhone: f.companyPhone.trim() || null,
+          mcNumber: f.mcNumber.trim() || null,
+          usdotNumber: f.usdotNumber.trim() || null,
+          interestTransferred: f.interestTransferred.trim() || null,
+          deliverables: deliverables.length ? deliverables : null,
+          wireBankName: f.wireBankName.trim() || null,
+          wireAccountName: f.wireAccountName.trim() || null,
+          wireRoutingNumber: f.wireRoutingNumber.trim() || null,
+          wireAccountNumber: f.wireAccountNumber.trim() || null,
+          fillableBuyerFields: f.fillableBuyerFields,
+        };
+        const bytes = await buildBillOfSale(data);
+        const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
+        prevUrl.current = url;
+        const draft = pendingFields.length > 0 ? " (DRAFT)" : "";
+        setFileName(`${f.companyName.trim()} - Bill of Sale${draft}.pdf`);
+        setPreviewUrl(url);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "PDF generation failed.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [form, pendingFields],
+  );
+
   async function generate(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    if (!form.companyName.trim()) {
-      setError("Company legal name is required — it goes in the title and header.");
-      return;
-    }
-    setBusy(true);
-    try {
-      const deliverables = form.deliverables
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const data: BillOfSaleData = {
-        effectiveDate: contractDate(form.effectiveDate),
-        sellerName: form.sellerName.trim() || null,
-        buyerName: form.buyerName.trim() || null,
-        buyerAddress: form.buyerAddress.trim() || null,
-        companyName: form.companyName.trim(),
-        companyDba: form.companyDba.trim() || null,
-        purchasePrice: normalizePrice(form.purchasePrice) || null,
-        companyAddress: form.companyAddress.trim() || null,
-        companyPhone: form.companyPhone.trim() || null,
-        mcNumber: form.mcNumber.trim() || null,
-        usdotNumber: form.usdotNumber.trim() || null,
-        interestTransferred: form.interestTransferred.trim() || null,
-        deliverables: deliverables.length ? deliverables : null,
-        wireBankName: form.wireBankName.trim() || null,
-        wireAccountName: form.wireAccountName.trim() || null,
-        wireRoutingNumber: form.wireRoutingNumber.trim() || null,
-        wireAccountNumber: form.wireAccountNumber.trim() || null,
-        fillableBuyerFields: form.fillableBuyerFields,
-      };
-      const bytes = await buildBillOfSale(data);
-      const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
-      prevUrl.current = url;
-      const draft = pendingFields.length > 0 ? " (DRAFT)" : "";
-      setFileName(`${form.companyName.trim()} - Bill of Sale${draft}.pdf`);
-      setPreviewUrl(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "PDF generation failed.");
-    } finally {
-      setBusy(false);
-    }
+    await buildPdf();
   }
+
+  // Picking a design redraws an open preview immediately, so the picker and
+  // the viewer never disagree about what is about to be sent.
+  function chooseTemplate(template: BosTemplateId) {
+    if (template === form.template) return;
+    setForm((f) => ({ ...f, template }));
+    if (previewUrl) void buildPdf({ template });
+  }
+
+  const chosen = BOS_TEMPLATES.find((t) => t.id === form.template) ?? BOS_TEMPLATES[0];
 
   return (
     <div className="mt-10 grid gap-10 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -451,6 +476,26 @@ export function BillOfSalePanel() {
             buyer, wire info).
           </p>
         )}
+        <fieldset>
+          <legend className="mb-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+            Document design
+          </legend>
+          <p className="mb-3 text-[11px] text-white/35">
+            Same wording in all three — only the presentation changes. Switch
+            any time; the preview redraws.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {BOS_TEMPLATES.map((t) => (
+              <TemplateCard
+                key={t.id}
+                template={t}
+                selected={form.template === t.id}
+                onSelect={() => chooseTemplate(t.id)}
+              />
+            ))}
+          </div>
+        </fieldset>
+
         <Fieldset title="Deal">
           <Field label="Effective / closing date">
             <input
@@ -780,7 +825,7 @@ export function BillOfSalePanel() {
             disabled={busy}
             className="rounded-lg bg-[#ff8a1a]/15 px-5 py-2.5 text-[13px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25 disabled:opacity-50"
           >
-            {busy ? "Generating…" : "Generate PDF"}
+            {busy ? "Generating…" : `Generate ${chosen.name} PDF`}
           </button>
           {previewUrl && (
             <a
@@ -795,7 +840,12 @@ export function BillOfSalePanel() {
       </form>
 
       <div className="min-h-[400px]">
-        <p className={`${labelClass} mb-3`}>Preview</p>
+        <div className="mb-3 flex items-baseline justify-between gap-3">
+          <p className={labelClass}>Preview</p>
+          <p className="text-[11px] text-white/40">
+            Design: <span className="font-medium text-white/70">{chosen.name}</span>
+          </p>
+        </div>
         {previewUrl ? (
           <iframe
             title="Bill of Sale preview"
@@ -808,6 +858,73 @@ export function BillOfSalePanel() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// One of the three document designs, with the notes that decide it: what the
+// page reads as, when to send it, and what it costs you.
+function TemplateCard({
+  template,
+  selected,
+  onSelect,
+}: {
+  template: (typeof BOS_TEMPLATES)[number];
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <label className="group block cursor-pointer">
+      <input
+        type="radio"
+        name="bosTemplate"
+        value={template.id}
+        checked={selected}
+        onChange={onSelect}
+        className="peer sr-only"
+      />
+      <div
+        className={`h-full rounded-xl p-3.5 ring-1 transition peer-focus-visible:ring-2 peer-focus-visible:ring-[#ff8a1a] ${
+          selected
+            ? "bg-[#ff8a1a]/10 ring-[#ff8a1a]/40"
+            : "bg-white/[0.025] ring-white/10 group-hover:bg-white/[0.045]"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span
+            className={`text-[13px] font-semibold ${selected ? "text-white" : "text-white/75"}`}
+          >
+            {template.name}
+          </span>
+          <span
+            aria-hidden
+            className={`h-3.5 w-3.5 shrink-0 rounded-full ring-1 ${
+              selected
+                ? "bg-[#ff8a1a] ring-[#ff8a1a]"
+                : "bg-transparent ring-white/25 group-hover:ring-white/40"
+            }`}
+          />
+        </div>
+        <p className="mt-1.5 text-[11px] leading-[1.45] text-white/45">{template.tagline}</p>
+        <dl className="mt-3 space-y-1 border-t border-white/10 pt-2.5">
+          <TemplateNote k="Reads as" v={template.readsAs} />
+          <TemplateNote k="Best when" v={template.bestWhen} />
+          <TemplateNote k="Watch for" v={template.watchFor} muted />
+        </dl>
+      </div>
+    </label>
+  );
+}
+
+function TemplateNote({ k, v, muted }: { k: string; v: string; muted?: boolean }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="w-[52px] shrink-0 pt-px text-[9px] font-semibold uppercase tracking-[0.12em] text-white/30">
+        {k}
+      </dt>
+      <dd className={`text-[11px] leading-[1.4] ${muted ? "text-white/40" : "text-white/60"}`}>
+        {v}
+      </dd>
     </div>
   );
 }
