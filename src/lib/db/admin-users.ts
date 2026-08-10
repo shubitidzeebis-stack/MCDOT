@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { hashPassword, verifyPassword } from "@/lib/auth/passwords";
+import { withDbRetry } from "@/lib/db/retry";
 import { normalizeSendAs, SEND_AS_DOMAINS_LABEL } from "@/lib/email/send-as";
 
 // Admin user accounts. Auto-seeds 4 default users on first DB init
@@ -120,11 +121,18 @@ export async function getUserAccess(
 > {
   const sql = getSql();
   if (!sql) return undefined;
-  await ensureTable(sql);
-  const rows = (await sql`
-    SELECT role, name, send_as FROM admin_users WHERE id = ${userId} LIMIT 1
-  `) as Array<{ role: string; name: string | null; send_as: string | null }>;
-  return rows[0] ?? null;
+  // Every admin page and /api/admin/* route funnels through here, so a
+  // transient Neon wake-up failure would otherwise crash the whole panel
+  // (see lib/db/retry.ts). Retries only the errors Neon marks retryable;
+  // a genuine outage still throws, so access is never granted on a failed
+  // lookup.
+  return withDbRetry(async () => {
+    await ensureTable(sql);
+    const rows = (await sql`
+      SELECT role, name, send_as FROM admin_users WHERE id = ${userId} LIMIT 1
+    `) as Array<{ role: string; name: string | null; send_as: string | null }>;
+    return rows[0] ?? null;
+  });
 }
 
 export async function attemptLogin(
