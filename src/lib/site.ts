@@ -8,8 +8,8 @@ export const SITE = {
   tagline: "Sell your US trucking company. Closed in 3–5 business days.",
 
   // Contact
-  phoneDisplay: "+1 (326) 467-0388",
-  phoneTel: "+13264670388",
+  phoneDisplay: "+1 (326) 222-5444",
+  phoneTel: "+13262225444",
   whatsappTel: "13264670388",
   email: "info@groupveritor.com",
   emailFrom: "Veritor Group <info@groupveritor.com>",
