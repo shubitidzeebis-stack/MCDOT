@@ -107,6 +107,65 @@ function mapRow(r: Row): LocalContactMatch {
 }
 
 /**
+ * The seller's name for a Bill of Sale, resolved from our OWN inbound leads.
+ *
+ * WHY THIS EXISTS: FMCSA publishes no officer, owner or contact NAME — a
+ * carrier record carries legalName and dbaName and nothing human. So the
+ * MC/DOT lookup in the Bill of Sale generator can fill every company field
+ * and still leave Seller blank. The name we want was typed into our own
+ * valuation wizard by the person selling the authority.
+ *
+ * Restricted to non-monitor rows on purpose. Monitor rows are cold FMCSA
+ * census prospects whose contact is the MCS-150 FILER — very often a
+ * dispatcher, insurance agent or filing service (see the note at the top of
+ * this file). Printing one of those as "Seller" on a document that transfers
+ * a company would be wrong in a way that is expensive to discover later.
+ * They currently hold no contact_name at all, so this is belt-and-braces.
+ *
+ * Matches on digits only: dot_number/mc_number are stored bare ("1050600")
+ * while the form and FMCSA hand around "MC-1050600".
+ *
+ * Returns null (never throws) when no DB is configured, so the FMCSA half of
+ * the lookup still works in local dev without DATABASE_URL.
+ */
+export async function findSellerNameByCarrier(
+  dotNumber: string | null,
+  mcNumbers: string[] = [],
+): Promise<{ name: string; valuationId: number } | null> {
+  const sql = getSql();
+  if (!sql) return null;
+
+  const dot = String(dotNumber ?? "").replace(/[^0-9]/g, "");
+  // Joined into one text param rather than bound as an array: the http driver
+  // is unambiguous about text, and string_to_array keeps the comparison in SQL.
+  const mcs = mcNumbers
+    .map((m) => String(m).replace(/[^0-9]/g, ""))
+    .filter(Boolean)
+    .join(",");
+  if (!dot && !mcs) return null;
+
+  const rows = (await sql`
+    SELECT id, contact_name
+      FROM valuations
+     WHERE source <> 'monitor'
+       AND is_test IS NOT TRUE
+       AND nullif(btrim(contact_name), '') IS NOT NULL
+       AND (
+             (${dot} <> '' AND regexp_replace(coalesce(dot_number, ''), '\\D', '', 'g') = ${dot})
+          OR (${mcs} <> '' AND regexp_replace(coalesce(mc_number, ''), '\\D', '', 'g')
+                               = ANY(string_to_array(${mcs}, ',')))
+           )
+     ORDER BY created_at DESC
+     LIMIT 1
+  `) as Array<{ id: number; contact_name: string }>;
+
+  const hit = rows[0];
+  if (!hit) return null;
+  const name = cleanStr(hit.contact_name);
+  return name ? { name, valuationId: hit.id } : null;
+}
+
+/**
  * Find our own records whose contact details match.
  *
  * `value` must ALREADY be normalized by parseContact() — an UPPERCASED address

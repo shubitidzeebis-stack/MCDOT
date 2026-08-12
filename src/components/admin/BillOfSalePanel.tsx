@@ -135,11 +135,20 @@ export function BillOfSalePanel() {
   const [lookupNumber, setLookupNumber] = useState("");
   const [lookupBusy, setLookupBusy] = useState(false);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  // Seller name recovered from a matching inbound lead, or null when this
+  // carrier never came through the wizard. Drives the hint under the bar so
+  // an empty Seller field reads as "we have no record" rather than a bug.
+  const [sellerFromLead, setSellerFromLead] = useState<string | null>(null);
+  const [sellerLookupRan, setSellerLookupRan] = useState(false);
 
   async function lookup() {
     if (!lookupNumber.trim() || lookupBusy) return;
     setLookupBusy(true);
     setLookupError(null);
+    // Clear the previous carrier's result so a failed or slow lookup can
+    // never leave the last carrier's seller hint on screen.
+    setSellerLookupRan(false);
+    setSellerFromLead(null);
     try {
       const res = await fetch("/api/admin/bos/lookup", {
         method: "POST",
@@ -159,6 +168,10 @@ export function BillOfSalePanel() {
         address: string | null;
         telephone: string | null;
       };
+      // FMCSA carries no person's name. This is filled only when the carrier
+      // already came through our own valuation wizard, so it is often null —
+      // that is expected, not a failure.
+      const seller = (data.seller ?? null) as { name: string } | null;
       const mc = c.mcNumbers[0];
       setForm((f) => ({
         ...f,
@@ -172,7 +185,14 @@ export function BillOfSalePanel() {
           : f.mcNumber,
         companyAddress: c.address ?? f.companyAddress,
         companyPhone: c.telephone ?? f.companyPhone,
+        // Deliberately overwrite (not merge), for the same reason applyBuyer
+        // does: a lookup switches the document to a different carrier, and
+        // carrying the previous carrier's seller onto it would put the wrong
+        // person's name on a document that transfers a company.
+        sellerName: seller?.name ?? "",
       }));
+      setSellerFromLead(seller ? seller.name : null);
+      setSellerLookupRan(true);
       if (c.legalName) setPrefilledFrom(c.legalName);
     } catch {
       setLookupError("Lookup failed.");
@@ -430,7 +450,8 @@ export function BillOfSalePanel() {
       <form onSubmit={generate} className="space-y-8">
         <div>
           <p className={`${labelClass} mb-1.5`}>
-            Look up by MC / DOT (fills the company fields)
+            Look up by MC / DOT (fills the company fields, and the seller if
+            they came through the wizard)
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <select
@@ -465,6 +486,26 @@ export function BillOfSalePanel() {
           {lookupError && (
             <p className="mt-2 rounded-lg bg-red-500/10 px-3 py-2 text-[12px] text-red-300 ring-1 ring-red-500/20">
               {lookupError}
+            </p>
+          )}
+          {/* FMCSA publishes no owner or officer name, so a blank Seller after
+              a successful lookup is the normal outcome for a carrier that
+              never filled in our wizard. Say so, rather than leaving the
+              operator wondering whether the fill silently failed. */}
+          {sellerLookupRan && !lookupError && (
+            <p className="mt-2 text-[11px] text-white/35">
+              {sellerFromLead ? (
+                <>
+                  Seller <b className="text-white/60">{sellerFromLead}</b> filled
+                  from a matching lead in your records.
+                </>
+              ) : (
+                <>
+                  No matching lead, so Seller stays blank — FMCSA doesn&apos;t
+                  publish owner names. Type it in, or open the generator from
+                  the lead&apos;s BoS button.
+                </>
+              )}
             </p>
           )}
         </div>

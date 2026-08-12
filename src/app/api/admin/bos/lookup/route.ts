@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { findSellerNameByCarrier } from "@/lib/db/contact-search";
 import { lookupCarrier } from "@/lib/fmcsa";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
@@ -51,8 +52,21 @@ export async function POST(req: Request) {
     }
 
     const c = lookup.carrier;
+
+    // FMCSA has no officer/owner name, so the seller comes from our own
+    // inbound leads when this carrier already asked us for a valuation.
+    // Best-effort: a DB hiccup must not fail a lookup whose FMCSA half
+    // succeeded — the operator can always type the name.
+    let seller: { name: string; valuationId: number } | null = null;
+    try {
+      seller = await findSellerNameByCarrier(String(c.dotNumber), lookup.mcNumbers);
+    } catch (err) {
+      console.error("[admin/bos/lookup] seller lookup failed", err);
+    }
+
     return NextResponse.json({
       ok: true,
+      seller,
       company: {
         legalName: c.legalName,
         dbaName: c.dbaName,
