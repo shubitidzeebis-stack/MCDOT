@@ -29,10 +29,27 @@ import {
 
 export type BosTemplateId = "masthead" | "instrument" | "termsheet";
 
+/** How the purchase price gets paid. Drives the Payment Terms clause. */
+export type PaymentTermsId = "on_transfer" | "in_person" | "staged";
+
+/** Which insurance arrangement, if any, gets its own numbered section. */
+export type InsuranceClauseId =
+  | "none"
+  | "deposit_deducted"
+  | "refundable_relay"
+  | "buyer_own_policy"
+  | "buyer_premium_deadline";
+
+/** A one-off section: either picked from CLAUSE_LIBRARY or typed by hand. */
+export type ExtraClause = { title: string; body: string };
+
 export type BillOfSaleData = {
   template?: BosTemplateId; // default "masthead"
   effectiveDate?: string | null; // e.g. "19th day of June 2026"
   sellerName?: string | null;
+  sellerAddress?: string | null;
+  /** Second seller (a partner on the LLC). Adds a third signature column. */
+  coSellerName?: string | null;
   buyerName?: string | null;
   buyerAddress?: string | null;
   companyName: string;
@@ -40,10 +57,32 @@ export type BillOfSaleData = {
   purchasePrice?: string | null; // e.g. "$14,000.00"
   companyAddress?: string | null;
   companyPhone?: string | null;
+  /**
+   * The Company mailbox that transfers with the sale. Printed in Company
+   * Information and named in the deliverables so the seller can see exactly
+   * which address they are handing over.
+   */
+  companyEmail?: string | null;
   mcNumber?: string | null;
   usdotNumber?: string | null;
   interestTransferred?: string | null; // default "100% Membership Interest"
   deliverables?: string[] | null; // null = standard checklist
+
+  // --- payment ---
+  paymentTerms?: PaymentTermsId | null; // default "on_transfer"
+  /** Staged terms only: initial payment and remaining balance. */
+  stagedFirstAmount?: string | null;
+  stagedSecondAmount?: string | null;
+
+  // --- insurance ---
+  insuranceClause?: InsuranceClauseId | null; // default "none"
+  insuranceAmount?: string | null;
+  insuranceMethod?: string | null; // "Zelle", "wire transfer", …
+  insuranceDeadline?: string | null;
+
+  /** Extra numbered sections, in order, inserted before Governing Law. */
+  extraClauses?: ExtraClause[] | null;
+
   wireBankName?: string | null;
   wireAccountName?: string | null;
   wireRoutingNumber?: string | null;
@@ -87,6 +126,129 @@ export const BOS_TEMPLATES: {
   },
 ];
 
+// Picker copy for the payment-terms selector. `needsAmounts` tells the UI to
+// reveal the two staged-amount fields.
+export const PAYMENT_TERMS_OPTIONS: {
+  id: PaymentTermsId;
+  name: string;
+  hint: string;
+  needsAmounts?: boolean;
+}[] = [
+  {
+    id: "on_transfer",
+    name: "After documents + access transferred",
+    hint: "The standard term: paid in full once everything has changed hands.",
+  },
+  {
+    id: "in_person",
+    name: "Paid in full at an in-person meeting",
+    hint: "Buyer and Seller meet and settle the whole amount there.",
+  },
+  {
+    id: "staged",
+    name: "Staged — initial payment, then balance",
+    hint: "Split into two payments, e.g. $3,750 up front and $3,750 on completion.",
+    needsAmounts: true,
+  },
+];
+
+// Insurance arrangements seen across real deals. `needs` drives which of the
+// amount / method / deadline inputs the UI shows for each.
+export const INSURANCE_OPTIONS: {
+  id: InsuranceClauseId;
+  name: string;
+  hint: string;
+  needs: ("amount" | "method" | "deadline")[];
+}[] = [
+  { id: "none", name: "No insurance clause", hint: "Nothing about insurance in the document.", needs: [] },
+  {
+    id: "deposit_deducted",
+    name: "Deposit for insurance, deducted from price",
+    hint: "Buyer sends a deposit to the Company for insurance; it comes off the total.",
+    needs: ["amount", "method"],
+  },
+  {
+    id: "refundable_relay",
+    name: "Down payment, refunded if Amazon Relay denied",
+    hint: "Buyer sends an insurance down payment, refunded in full if Relay isn't approved.",
+    needs: ["amount", "method"],
+  },
+  {
+    id: "buyer_own_policy",
+    name: "Buyer obtains own policy before transfer",
+    hint: "Buyer insures the Company themselves and adds their own bank account first.",
+    needs: [],
+  },
+  {
+    id: "buyer_premium_deadline",
+    name: "Buyer pays upfront premium by a deadline",
+    hint: "Buyer must pay the upfront premium by a stated date.",
+    needs: ["amount", "deadline"],
+  },
+];
+
+/**
+ * Reusable one-off sections, drafted from the clauses that recurred across
+ * deals. Each is inserted as its own numbered section and everything after it
+ * renumbers automatically. Wording is a starting point — read it in the
+ * preview before it goes to a buyer.
+ */
+export const CLAUSE_LIBRARY: { id: string; title: string; body: string }[] = [
+  {
+    id: "cooperation",
+    title: "Cooperation Period",
+    body:
+      "For a period of thirty (30) days following Closing, Seller shall reasonably cooperate with " +
+      "Buyer in the continued operation of the Company under the existing MC authority, including " +
+      "responding to reasonable questions and providing any documentation required to complete the " +
+      "transfer. Neither party shall incur new liabilities on the other's behalf during this period.",
+  },
+  {
+    id: "post_sale",
+    title: "Post-Sale Obligations",
+    body:
+      "Following Closing, Seller shall complete the transfer of the Company with the Secretary of " +
+      "State, transfer or surrender the Company's EIN registration as required, and cooperate with " +
+      "the cancellation or transfer of the Company's insurance policy and BOC-3 filing. Buyer shall " +
+      "be responsible for all filings required to place the Company in Buyer's name thereafter.",
+  },
+  {
+    id: "travel_costs",
+    title: "Buyer Travel and Insurance Costs",
+    body:
+      "Buyer shall be responsible for all travel and accommodation costs incurred in connection " +
+      "with this sale, including hotel expenses, and for the cost of obtaining insurance for the " +
+      "Company. Seller shall not be liable for any such costs.",
+  },
+  {
+    id: "excluded_assets",
+    title: "Excluded Assets",
+    body:
+      "The following are expressly excluded from this sale and remain the property of Seller: all " +
+      "trucks, trailers and other motor vehicles; all bank accounts held in the name of the Company " +
+      "and their balances; and any personal property of Seller. This sale conveys the membership " +
+      "interest in the Company and its operating authority only.",
+  },
+  {
+    id: "indemnification",
+    title: "Indemnification and Dispute Resolution",
+    body:
+      "Each party shall indemnify and hold the other harmless from any claim, loss or liability " +
+      "arising from that party's own acts or omissions in connection with the Company. Any dispute " +
+      "arising out of or relating to this Bill of Sale shall be resolved by binding arbitration in " +
+      "the State in which the Company operates, and the prevailing party shall be entitled to " +
+      "recover its reasonable costs and attorneys' fees.",
+  },
+  {
+    id: "transfer_proof",
+    title: "Proof of Transfer",
+    body:
+      "Buyer shall provide Seller with written proof that the Company and its operating authority " +
+      "have been transferred out of Seller's name within seven (7) days of Closing, including " +
+      "confirmation of the updated FMCSA record.",
+  },
+];
+
 export const DEFAULT_DELIVERABLES = [
   "MC Certificate",
   "FMCSA Portal login credentials and DOT PIN",
@@ -98,6 +260,82 @@ export const DEFAULT_DELIVERABLES = [
   "All driver files and electronic logging device (ELD) records",
   "Such other documents as Buyer may reasonably request",
 ];
+
+export type DeliverableId =
+  | "mc_cert"
+  | "fmcsa_portal"
+  | "insurance_cert"
+  | "email"
+  | "phone"
+  | "amazon_relay"
+  | "loss_runs"
+  | "driver_files"
+  | "other_docs";
+
+/**
+ * The nine standard deliverables, as a catalog the admin UI renders as
+ * toggles. `specific` marks the two lines that must name a concrete value.
+ *
+ * WHY: a seller's PERSONAL number once went onto a Bill of Sale because the
+ * line just said "Company primary phone number". Naming the actual address
+ * and number means the seller can see exactly what they are giving up, and
+ * disagreements surface before signature rather than after.
+ */
+export const DELIVERABLE_CATALOG: {
+  id: DeliverableId;
+  label: string;
+  specific?: "email" | "phone";
+  defaultOn: boolean;
+}[] = [
+  { id: "mc_cert", label: "MC Certificate", defaultOn: true },
+  { id: "fmcsa_portal", label: "FMCSA Portal login credentials and DOT PIN", defaultOn: true },
+  {
+    id: "insurance_cert",
+    label: "Insurance Certificate and Certificate of Insurance (COI)",
+    defaultOn: true,
+  },
+  {
+    id: "email",
+    label: "Company primary email address access (transferred to Buyer)",
+    specific: "email",
+    defaultOn: true,
+  },
+  {
+    id: "phone",
+    label: "Company primary phone number (transferred to Buyer)",
+    specific: "phone",
+    defaultOn: true,
+  },
+  { id: "amazon_relay", label: "Amazon Relay account access (if applicable)", defaultOn: true },
+  { id: "loss_runs", label: "Loss Runs", defaultOn: true },
+  {
+    id: "driver_files",
+    label: "All driver files and electronic logging device (ELD) records",
+    defaultOn: true,
+  },
+  {
+    id: "other_docs",
+    label: "Such other documents as Buyer may reasonably request",
+    defaultOn: true,
+  },
+];
+
+/**
+ * The line as it will print. With a concrete value the email/phone entries
+ * name it outright; without one they fall back to the generic wording.
+ */
+export function deliverableLine(
+  item: { label: string; specific?: "email" | "phone" },
+  value?: string | null,
+): string {
+  const v = value?.trim();
+  if (!item.specific || !v) return item.label;
+  // Plain hyphen, not an em dash: the rest of the document uses "-" and the
+  // standard Helvetica encoding is happier for it.
+  return item.specific === "email"
+    ? `Company primary email address (${v}) - access transferred to Buyer`
+    : `Company primary phone number (${v}) - transferred to Buyer`;
+}
 
 // --- palette -------------------------------------------------------------
 // INK is the site's #0a0a0b lifted a touch so it doesn't crush on cheap
@@ -387,7 +625,33 @@ type Doc = {
   priceIsPending: boolean;
   deliverables: string[];
   anyPending: boolean;
+  /** Payment Terms body, already resolved for the chosen variant. */
+  paymentSegs: Seg[];
+  /** Insurance section, or null when the clause is switched off. */
+  insuranceSegs: Seg[] | null;
+  /** Extra numbered sections, in order, placed before Governing Law. */
+  extras: ExtraClause[];
+  /** Signature columns — three when a co-seller is named. */
+  signers: { role: string; name: string | null | undefined; isBuyer: boolean }[];
 };
+
+// Section numbers are allocated in render order rather than hardcoded, so
+// inserting the Insurance section or any clause-library section renumbers
+// everything after it automatically. Each template formats the same ordinal
+// its own way: 1 / I / 01.
+function sectionCounter(): () => number {
+  let n = 0;
+  return () => ++n;
+}
+
+const ROMAN = [
+  "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+  "XI", "XII", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX",
+];
+
+function roman(n: number): string {
+  return ROMAN[n] ?? String(n);
+}
 
 const PENDING_LABEL = "PENDING - TO BE CONFIRMED";
 
@@ -408,6 +672,46 @@ function prepare(d: BillOfSaleData): Doc {
     d.wireRoutingNumber,
     d.wireAccountNumber,
   ];
+  const price = !isPending(d.purchasePrice) ? d.purchasePrice! : "[PRICE PENDING]";
+  const priceIsPending = isPending(d.purchasePrice);
+
+  // Payment Terms: one of three variants. Staged falls back to the standard
+  // wording unless both amounts are present — a half-filled instalment clause
+  // is worse than the default one.
+  const terms = d.paymentTerms ?? "on_transfer";
+  const bothStaged = !isPending(d.stagedFirstAmount) && !isPending(d.stagedSecondAmount);
+  const paymentSegs =
+    terms === "in_person"
+      ? CLAUSE.paymentInPerson(price, priceIsPending)
+      : terms === "staged" && bothStaged
+        ? CLAUSE.paymentStaged(d.stagedFirstAmount!, d.stagedSecondAmount!, price)
+        : CLAUSE.payment(price, priceIsPending);
+
+  // Insurance: only rendered when chosen. Missing figures render as an
+  // explicit placeholder rather than silently dropping the obligation.
+  const ins = d.insuranceClause ?? "none";
+  const insuranceSegs =
+    ins === "none"
+      ? null
+      : CLAUSE.insurance(
+          ins,
+          !isPending(d.insuranceAmount) ? d.insuranceAmount! : "[AMOUNT PENDING]",
+          !isPending(d.insuranceMethod) ? d.insuranceMethod! : "Zelle",
+          !isPending(d.insuranceDeadline) ? d.insuranceDeadline! : "[DATE PENDING]",
+        );
+
+  const extras = (d.extraClauses ?? []).filter(
+    (c) => !isPending(c?.title) || !isPending(c?.body),
+  );
+
+  const signers = [
+    { role: "SELLER", name: d.sellerName, isBuyer: false },
+    ...(!isPending(d.coSellerName)
+      ? [{ role: "SELLER 2", name: d.coSellerName, isBuyer: false }]
+      : []),
+    { role: "BUYER", name: d.buyerName, isBuyer: true },
+  ];
+
   return {
     d,
     companyFull: `${d.companyName}${dba}`,
@@ -415,10 +719,17 @@ function prepare(d: BillOfSaleData): Doc {
       ? d.interestTransferred!
       : "100% Membership Interest",
     effective: !isPending(d.effectiveDate) ? d.effectiveDate! : "[DATE PENDING]",
-    price: !isPending(d.purchasePrice) ? d.purchasePrice! : "[PRICE PENDING]",
-    priceIsPending: isPending(d.purchasePrice),
-    deliverables: d.deliverables?.length ? d.deliverables : DEFAULT_DELIVERABLES,
+    price,
+    priceIsPending,
+    // null/undefined = caller expressed no preference, use the standard list.
+    // An EMPTY array is a deliberate "this seller delivers none of these" and
+    // must not silently resurrect all nine.
+    deliverables: d.deliverables ?? DEFAULT_DELIVERABLES,
     anyPending: fields.some(isPending),
+    paymentSegs,
+    insuranceSegs,
+    extras,
+    signers,
   };
 }
 
@@ -429,10 +740,31 @@ function companyRows(doc: Doc): InfoRow[] {
     { label: "Legal Name", value: doc.companyFull },
     { label: "Address", value: doc.d.companyAddress },
     { label: "Phone", value: doc.d.companyPhone },
+    // Always shown, never dropped when empty: the mailbox that transfers with
+    // the Company is exactly the sort of thing both sides assume they agreed
+    // on, so a [PENDING] chip is more useful than a missing row.
+    { label: "Email", value: doc.d.companyEmail },
     { label: "MC Authority #", value: doc.d.mcNumber },
     { label: "USDOT #", value: doc.d.usdotNumber },
     { label: "Interest Transferred", value: doc.interest },
   ];
+}
+
+// Seller identity, printed only when there is something beyond the name —
+// an address, or a second seller who also has to sign.
+function sellerRows(doc: Doc): InfoRow[] {
+  const rows: InfoRow[] = [{ label: "Legal Name", value: doc.d.sellerName }];
+  if (!isPending(doc.d.sellerAddress)) {
+    rows.push({ label: "Address", value: doc.d.sellerAddress });
+  }
+  if (!isPending(doc.d.coSellerName)) {
+    rows.push({ label: "Second Seller", value: doc.d.coSellerName });
+  }
+  return rows;
+}
+
+function hasSellerSection(doc: Doc): boolean {
+  return !isPending(doc.d.sellerAddress) || !isPending(doc.d.coSellerName);
 }
 
 function buyerRows(doc: Doc): InfoRow[] {
@@ -468,6 +800,85 @@ const CLAUSE = {
         "received by Buyer.",
     },
   ],
+  paymentInPerson: (price: string, pending: boolean): Seg[] => [
+    { text: "The full purchase price of" },
+    { text: price, bold: true, oblique: pending, color: pending ? FLAG_INK : undefined },
+    {
+      text:
+        "shall be paid by Buyer to Seller in full at an in-person meeting between the parties, " +
+        "at which all Company documents and access shall be handed over to Buyer.",
+    },
+  ],
+  paymentStaged: (first: string, second: string, price: string): Seg[] => [
+    { text: "The purchase price of" },
+    { text: price, bold: true },
+    { text: "shall be paid in two instalments:" },
+    { text: first, bold: true },
+    {
+      text:
+        "as an initial payment, and the remaining balance of",
+    },
+    { text: second, bold: true },
+    {
+      text:
+        "upon delivery of all Company documents and transfer of all Company access to Buyer.",
+    },
+  ],
+  insurance: (
+    kind: InsuranceClauseId,
+    amount: string,
+    method: string,
+    deadline: string,
+  ): Seg[] => {
+    const amt: Seg = { text: amount, bold: true };
+    switch (kind) {
+      case "deposit_deducted":
+        return [
+          { text: "Buyer shall send a deposit of" },
+          amt,
+          { text: `to the Company by ${method} for the purpose of obtaining insurance for the Company.` },
+          {
+            text:
+              "This deposit shall be credited against and deducted from the total purchase price.",
+            bold: true,
+          },
+        ];
+      case "refundable_relay":
+        return [
+          { text: "Buyer shall send an insurance down payment of" },
+          amt,
+          { text: `by ${method}.` },
+          {
+            text:
+              "If the Company is not approved for Amazon Relay, this down payment shall be " +
+              "refunded to Buyer in full.",
+            bold: true,
+          },
+        ];
+      case "buyer_own_policy":
+        return [
+          {
+            text:
+              "Buyer shall obtain insurance for the Company in Buyer's own name and shall add " +
+              "Buyer's own bank account to the Company's insurance policy before the transfer of " +
+              "the Company is completed. Seller shall not be responsible for any insurance " +
+              "premium or balance arising after Closing.",
+          },
+        ];
+      case "buyer_premium_deadline":
+        return [
+          { text: "Buyer shall pay the upfront insurance premium of" },
+          amt,
+          { text: `no later than ${deadline}.` },
+          {
+            text:
+              "Failure to pay by that date entitles Seller to treat this Bill of Sale as void.",
+          },
+        ];
+      default:
+        return [];
+    }
+  },
   liabilityA: (): Seg[] => [
     {
       text:
@@ -734,17 +1145,27 @@ function renderMasthead(L: Layout, doc: Doc) {
   const bodyW = CONTENT_W - A_GUTTER;
   const bodyX = MARGIN + A_GUTTER;
 
-  // 1 — Sale of Membership Interest
-  const s1 = CLAUSE.sale(doc.interest);
-  L.gap(A_SEC_GAP);
-  L.ensure(21 + L.measureParagraph(s1, BODY, BODY_LEAD, bodyW));
-  aSectionHeader(L, "1", "Sale of Membership Interest");
-  L.y += L.drawParagraphAt(bodyX, L.y, s1, BODY, BODY_LEAD, bodyW);
+  // Numbers are allocated as sections are emitted, so an Insurance section or
+  // a clause-library entry renumbers everything below it for free.
+  const n = sectionCounter();
+  const prose = (title: string, segs: Seg[]) => {
+    L.gap(A_SEC_GAP);
+    L.ensure(21 + L.measureParagraph(segs, BODY, BODY_LEAD, bodyW));
+    aSectionHeader(L, String(n()), title);
+    L.y += L.drawParagraphAt(bodyX, L.y, segs, BODY, BODY_LEAD, bodyW);
+  };
+  const table = (title: string, rows: InfoRow[]) => {
+    L.gap(A_SEC_GAP);
+    L.ensure(21 + 40);
+    aSectionHeader(L, String(n()), title);
+    aInfoTable(L, rows);
+  };
 
-  // 2 — Purchase Price
+  prose("Sale of Membership Interest", CLAUSE.sale(doc.interest));
+
   L.gap(A_SEC_GAP);
   L.ensure(21 + 40);
-  aSectionHeader(L, "2", "Purchase Price");
+  aSectionHeader(L, String(n()), "Purchase Price");
   {
     const top = L.y;
     const w = bodyW;
@@ -767,28 +1188,19 @@ function renderMasthead(L: Layout, doc: Doc) {
     L.y = top + 36;
   }
 
-  // 3 — Payment Terms
-  const s3 = CLAUSE.payment(doc.price, doc.priceIsPending);
-  L.gap(A_SEC_GAP);
-  L.ensure(21 + L.measureParagraph(s3, BODY, BODY_LEAD, bodyW));
-  aSectionHeader(L, "3", "Payment Terms");
-  L.y += L.drawParagraphAt(bodyX, L.y, s3, BODY, BODY_LEAD, bodyW);
+  prose("Payment Terms", doc.paymentSegs);
+  if (doc.insuranceSegs) prose("Insurance", doc.insuranceSegs);
 
-  // 4 / 5 — information tables
-  L.gap(A_SEC_GAP);
-  L.ensure(21 + 40);
-  aSectionHeader(L, "4", "Company Information");
-  aInfoTable(L, companyRows(doc));
+  table("Company Information", companyRows(doc));
+  if (hasSellerSection(doc)) table("Seller Information", sellerRows(doc));
+  table("Buyer Information", buyerRows(doc));
 
-  L.gap(A_SEC_GAP);
-  L.ensure(21 + 40);
-  aSectionHeader(L, "5", "Buyer Information");
-  aInfoTable(L, buyerRows(doc));
-
-  // 6 — Deliverables, two columns
+  // Deliverables, two columns. Skipped entirely when every line is unticked —
+  // a header with nothing under it reads as a broken document.
+  if (doc.deliverables.length) {
   L.gap(A_SEC_GAP);
   L.ensure(21 + 30);
-  aSectionHeader(L, "6", "Seller's Deliverables");
+  aSectionHeader(L, String(n()), "Seller's Deliverables");
   L.y += L.drawParagraphAt(bodyX, L.y, CLAUSE.deliverablesIntro(), BODY, BODY_LEAD, bodyW) + 4;
   {
     const colGap = 16;
@@ -811,21 +1223,23 @@ function renderMasthead(L: Layout, doc: Doc) {
       L.y = top + rowH;
     }
   }
+  }
 
-  // 7 / 8
   const s7a = CLAUSE.liabilityA();
   const s7b = CLAUSE.liabilityB();
   L.gap(A_SEC_GAP);
   L.ensure(21 + L.measureParagraph(s7a, BODY, BODY_LEAD, bodyW) + 8 + L.measureParagraph(s7b, BODY, BODY_LEAD, bodyW));
-  aSectionHeader(L, "7", "Financial Responsibility Before Closing");
+  aSectionHeader(L, String(n()), "Financial Responsibility Before Closing");
   L.y += L.drawParagraphAt(bodyX, L.y, s7a, BODY, BODY_LEAD, bodyW) + 8;
   L.y += L.drawParagraphAt(bodyX, L.y, s7b, BODY, BODY_LEAD, bodyW);
 
-  const s8 = CLAUSE.law();
-  L.gap(A_SEC_GAP);
-  L.ensure(21 + L.measureParagraph(s8, BODY, BODY_LEAD, bodyW));
-  aSectionHeader(L, "8", "Governing Law");
-  L.y += L.drawParagraphAt(bodyX, L.y, s8, BODY, BODY_LEAD, bodyW);
+  // Clause-library and custom sections sit here — after the standard terms,
+  // before Governing Law closes the document.
+  for (const extra of doc.extras) {
+    prose(extra.title || "Additional Terms", [{ text: extra.body }]);
+  }
+
+  prose("Governing Law", CLAUSE.law());
 
   // Signatures — on a shaded slab
   const slabH = 104;
@@ -837,23 +1251,23 @@ function renderMasthead(L: Layout, doc: Doc) {
     const inner = MARGIN + 13;
     const innerW = CONTENT_W - 26;
     L.drawParagraphAt(inner, top + 11, CLAUSE.signIntro(), 9.5, 13, innerW);
-    const colW = innerW / 2;
+    // Two columns normally, three when a co-seller signs. Keyed off isBuyer
+    // rather than a column index so the fillable fields follow the buyer
+    // wherever they land.
+    const colW = innerW / doc.signers.length;
     const sigTop = top + 34;
     const lineTop = sigTop + 32;
-    const sigW = colW - 22;
-    [
-      ["SELLER", d.sellerName] as const,
-      ["BUYER", d.buyerName] as const,
-    ].forEach(([role, name], i) => {
+    const sigW = colW - (doc.signers.length > 2 ? 14 : 22);
+    doc.signers.forEach((signer, i) => {
       const x = inner + i * colW;
-      L.label(x, sigTop, role, 6.4, FLARE_INK, 1.3);
+      L.label(x, sigTop, signer.role, 6.4, FLARE_INK, 1.3);
       L.lineH(x, x + sigW, lineTop, 0.9, INK);
-      const nameSegs: Seg[] = isPending(name)
+      const nameSegs: Seg[] = isPending(signer.name)
         ? [{ text: "[NAME PENDING]", bold: true, oblique: true, color: FLAG_INK }]
-        : [{ text: "Print name:", color: MUTE }, { text: name!, bold: true }];
+        : [{ text: "Print name:", color: MUTE }, { text: signer.name!, bold: true }];
       L.drawParagraphAt(x, lineTop + 6, nameSegs, 9, 12, sigW);
       const dateTop = lineTop + 21;
-      if (i === 1 && d.fillableBuyerFields) {
+      if (signer.isBuyer && d.fillableBuyerFields) {
         L.drawParagraphAt(x, dateTop, [{ text: "Date:", color: MUTE }], 9, 12, sigW);
         addBuyerDateField(L, x + 26, dateTop);
         addBuyerSignatureField(L, x, lineTop, sigW);
@@ -1005,12 +1419,24 @@ function renderInstrument(L: Layout, doc: Doc) {
   }
 
   const gap = 14;
+  const n = sectionCounter();
+  const prose = (title: string, segs: Seg[]) => {
+    L.gap(gap);
+    L.ensure(15 + L.measureParagraph(segs, BODY, BODY_LEAD, w));
+    bSectionHeader(L, roman(n()), title);
+    L.y += L.drawParagraphAt(x, L.y, segs, BODY, BODY_LEAD, w);
+  };
+  const table = (title: string, rows: InfoRow[]) => {
+    L.gap(gap);
+    L.ensure(15 + 40);
+    bSectionHeader(L, roman(n()), title);
+    bDefList(L, rows);
+  };
 
-  // I — Sale
   const s1 = CLAUSE.sale(doc.interest);
   L.gap(gap);
   L.ensure(15 + L.measureParagraph(s1, BODY, BODY_LEAD, w));
-  bSectionHeader(L, "I", "Sale of Membership Interest");
+  bSectionHeader(L, roman(n()), "Sale of Membership Interest");
   L.y += L.drawParagraphAt(
     x,
     L.y,
@@ -1027,7 +1453,7 @@ function renderInstrument(L: Layout, doc: Doc) {
   // II — Purchase price, framed by two ink rules
   L.gap(gap);
   L.ensure(15 + 34);
-  bSectionHeader(L, "II", "Purchase Price");
+  bSectionHeader(L, roman(n()), "Purchase Price");
   {
     const top = L.y;
     L.lineH(x, x + w, top, 1, INK);
@@ -1051,74 +1477,51 @@ function renderInstrument(L: Layout, doc: Doc) {
     L.y = top + 31;
   }
 
-  // III — Payment terms
-  L.gap(gap);
-  const s3 = CLAUSE.payment(doc.price, doc.priceIsPending);
-  L.ensure(15 + L.measureParagraph(s3, BODY, BODY_LEAD, w));
-  bSectionHeader(L, "III", "Payment Terms");
-  L.y += L.drawParagraphAt(
-    x,
-    L.y,
-    [
-      { text: "The full purchase price of" },
-      {
-        text: doc.price,
-        bold: true,
-        underline: FLARE,
-        oblique: doc.priceIsPending,
-        color: doc.priceIsPending ? FLAG_INK : undefined,
-      },
-      { text: CLAUSE.payment(doc.price, doc.priceIsPending)[2].text },
-    ],
-    BODY,
-    BODY_LEAD,
-    w,
-  );
+  // The Instrument's accent is an underscore under the figures, so whichever
+  // payment variant is in play gets its bold runs underlined.
+  const accent = (segs: Seg[]): Seg[] =>
+    segs.map((s) => (s.bold ? { ...s, underline: FLARE } : s));
 
-  // IV / V
-  L.gap(gap);
-  L.ensure(15 + 40);
-  bSectionHeader(L, "IV", "Company Information");
-  bDefList(L, companyRows(doc));
+  prose("Payment Terms", accent(doc.paymentSegs));
+  if (doc.insuranceSegs) prose("Insurance", accent(doc.insuranceSegs));
 
-  L.gap(gap);
-  L.ensure(15 + 40);
-  bSectionHeader(L, "V", "Buyer Information");
-  bDefList(L, buyerRows(doc));
+  table("Company Information", companyRows(doc));
+  if (hasSellerSection(doc)) table("Seller Information", sellerRows(doc));
+  table("Buyer Information", buyerRows(doc));
 
-  // VI — Deliverables
-  L.gap(gap);
-  L.ensure(15 + 30);
-  bSectionHeader(L, "VI", "Seller's Deliverables");
-  L.y += L.drawParagraphAt(x, L.y, CLAUSE.deliverablesIntro(), BODY, BODY_LEAD, w) + 3;
-  for (const item of doc.deliverables) {
-    const h = L.measureParagraph([{ text: item }], 9.8, 13, w - 16) + 3;
-    L.ensure(h);
-    const top = L.y;
-    L.drawParagraphAt(x + 4, top, [{ text: "•", color: FLARE_INK, bold: true }], 9.8, 13, 10);
-    L.drawParagraphAt(x + 16, top, [{ text: item }], 9.8, 13, w - 16);
-    L.y = top + h;
+  // Deliverables — skipped when every line is unticked.
+  if (doc.deliverables.length) {
+    L.gap(gap);
+    L.ensure(15 + 30);
+    bSectionHeader(L, roman(n()), "Seller's Deliverables");
+    L.y += L.drawParagraphAt(x, L.y, CLAUSE.deliverablesIntro(), BODY, BODY_LEAD, w) + 3;
+    for (const item of doc.deliverables) {
+      const h = L.measureParagraph([{ text: item }], 9.8, 13, w - 16) + 3;
+      L.ensure(h);
+      const top = L.y;
+      L.drawParagraphAt(x + 4, top, [{ text: "•", color: FLARE_INK, bold: true }], 9.8, 13, 10);
+      L.drawParagraphAt(x + 16, top, [{ text: item }], 9.8, 13, w - 16);
+      L.y = top + h;
+    }
   }
 
-  // VII / VIII
   const s7a = CLAUSE.liabilityA();
   const s7b = CLAUSE.liabilityB();
   L.gap(gap);
   L.ensure(15 + L.measureParagraph(s7a, BODY, BODY_LEAD, w) + 8 + L.measureParagraph(s7b, BODY, BODY_LEAD, w));
-  bSectionHeader(L, "VII", "Financial Responsibility Before Closing");
+  bSectionHeader(L, roman(n()), "Financial Responsibility Before Closing");
   L.y += L.drawParagraphAt(x, L.y, s7a, BODY, BODY_LEAD, w) + 8;
   L.y += L.drawParagraphAt(x, L.y, s7b, BODY, BODY_LEAD, w);
 
-  const s8 = CLAUSE.law();
-  L.gap(gap);
-  L.ensure(15 + L.measureParagraph(s8, BODY, BODY_LEAD, w));
-  bSectionHeader(L, "VIII", "Governing Law");
-  L.y += L.drawParagraphAt(x, L.y, s8, BODY, BODY_LEAD, w);
+  for (const extra of doc.extras) {
+    prose(extra.title || "Additional Terms", [{ text: extra.body }]);
+  }
 
-  // IX — Wire
+  prose("Governing Law", CLAUSE.law());
+
   L.gap(gap);
   L.ensure(15 + 40);
-  bSectionHeader(L, "IX", "Wire Transfer Instructions");
+  bSectionHeader(L, roman(n()), "Wire Transfer Instructions");
   bDefList(L, wireRows(doc));
 
   // Signatures
@@ -1127,23 +1530,20 @@ function renderInstrument(L: Layout, doc: Doc) {
   L.y += L.drawParagraphAt(x, L.y, CLAUSE.signIntro(), BODY, BODY_LEAD, w);
   L.gap(16);
   {
-    const colW = w / 2;
+    const colW = w / doc.signers.length;
     const sigTop = L.y;
     const lineTop = sigTop + 34;
-    const sigW = colW - 26;
-    [
-      ["SELLER", d.sellerName] as const,
-      ["BUYER", d.buyerName] as const,
-    ].forEach(([role, name], i) => {
+    const sigW = colW - (doc.signers.length > 2 ? 16 : 26);
+    doc.signers.forEach((signer, i) => {
       const cx = x + i * colW;
-      L.label(cx, sigTop, role, 6.6, INK, 1.5);
+      L.label(cx, sigTop, signer.role, 6.6, INK, 1.5);
       L.lineH(cx, cx + sigW, lineTop, 0.9, INK);
-      const nameSegs: Seg[] = isPending(name)
+      const nameSegs: Seg[] = isPending(signer.name)
         ? [{ text: "[NAME PENDING]", bold: true, oblique: true, color: FLAG_INK }]
-        : [{ text: "Print name:", color: MUTE }, { text: name!, bold: true }];
+        : [{ text: "Print name:", color: MUTE }, { text: signer.name!, bold: true }];
       L.drawParagraphAt(cx, lineTop + 6, nameSegs, 9, 12, sigW);
       const dateTop = lineTop + 21;
-      if (i === 1 && d.fillableBuyerFields) {
+      if (signer.isBuyer && d.fillableBuyerFields) {
         L.drawParagraphAt(cx, dateTop, [{ text: "Date:", color: MUTE }], 9, 12, sigW);
         addBuyerDateField(L, cx + 26, dateTop);
         addBuyerSignatureField(L, cx, lineTop, sigW);
@@ -1426,35 +1826,25 @@ function renderTermSheet(L: Layout, doc: Doc) {
   L.gap(12);
   L.lineH(x, x + w, L.y, 1.1, INK);
 
-  // Clause rows
+  // Clause rows — numbers allocated in emission order, so an Insurance row or
+  // a clause-library row renumbers everything below it.
+  const n = sectionCounter();
+  const num = () => String(n()).padStart(2, "0");
   const s1 = CLAUSE.sale(doc.interest);
   cRow(
     L,
-    "01",
+    num(),
     "Sale of Membership Interest",
     (bx, bt, bw) => L.drawParagraphAt(bx, bt, s1, 9.6, 13.5, bw),
     L.measureParagraph(s1, 9.6, 13.5, CONTENT_W - C_RAIL - 16),
   );
 
   const accessItems = ["FMCSA portal", "MC authority", "Company email", "Phone number", "All other accounts"];
-  const s2: Seg[] = [
-    { text: "The full purchase price of" },
-    {
-      text: doc.price,
-      bold: true,
-      oblique: doc.priceIsPending,
-      color: doc.priceIsPending ? FLAG_INK : undefined,
-    },
-    {
-      text:
-        "shall be paid by Buyer to Seller after all Company documents have been delivered and all " +
-        "Company access has been transferred to and confirmed received by Buyer.",
-    },
-  ];
+  const s2: Seg[] = doc.paymentSegs;
   const bodyWidth = CONTENT_W - C_RAIL - 16;
   cRow(
     L,
-    "02",
+    num(),
     "Payment Terms",
     (bx, bt, bw) => {
       const used = L.drawParagraphAt(bx, bt, s2, 9.6, 13.5, bw);
@@ -1463,42 +1853,66 @@ function renderTermSheet(L: Layout, doc: Doc) {
     L.measureParagraph(s2, 9.6, 13.5, bodyWidth) + 5 + cChipsHeight(L, bodyWidth, accessItems),
   );
 
+  if (doc.insuranceSegs) {
+    const ins = doc.insuranceSegs;
+    cRow(
+      L,
+      num(),
+      "Insurance",
+      (bx, bt, bw) => L.drawParagraphAt(bx, bt, ins, 9.6, 13.5, bw),
+      L.measureParagraph(ins, 9.6, 13.5, bodyWidth),
+    );
+  }
+
   const cRows = companyRows(doc);
   cRow(
     L,
-    "03",
+    num(),
     "Company Information",
     (bx, bt, bw) => cKeyValues(L, bx, bt, bw, cRows),
     cKeyValuesHeight(L, bodyWidth, cRows),
   );
 
+  if (hasSellerSection(doc)) {
+    const sRows = sellerRows(doc);
+    cRow(
+      L,
+      num(),
+      "Seller Information",
+      (bx, bt, bw) => cKeyValues(L, bx, bt, bw, sRows),
+      cKeyValuesHeight(L, bodyWidth, sRows),
+    );
+  }
+
   const bRows = buyerRows(doc);
   cRow(
     L,
-    "04",
+    num(),
     "Buyer Information",
     (bx, bt, bw) => cKeyValues(L, bx, bt, bw, bRows),
     cKeyValuesHeight(L, bodyWidth, bRows),
   );
 
   const intro = CLAUSE.deliverablesIntro();
-  cRow(
-    L,
-    "05",
-    "Seller's Deliverables",
-    (bx, bt, bw) => {
-      const used = L.drawParagraphAt(bx, bt, intro, 9.6, 13.5, bw);
-      return used + 5 + cChips(L, bx, bt + used + 5, bw, doc.deliverables);
-    },
-    L.measureParagraph(intro, 9.6, 13.5, bodyWidth) + 5 + cChipsHeight(L, bodyWidth, doc.deliverables),
-  );
+  if (doc.deliverables.length) {
+    cRow(
+      L,
+      num(),
+      "Seller's Deliverables",
+      (bx, bt, bw) => {
+        const used = L.drawParagraphAt(bx, bt, intro, 9.6, 13.5, bw);
+        return used + 5 + cChips(L, bx, bt + used + 5, bw, doc.deliverables);
+      },
+      L.measureParagraph(intro, 9.6, 13.5, bodyWidth) + 5 + cChipsHeight(L, bodyWidth, doc.deliverables),
+    );
+  }
 
   const s6a = CLAUSE.liabilityA();
   const s6b = CLAUSE.liabilityB();
   const noteH = L.measureParagraph(s6b, 9.2, 12.5, bodyWidth - 22) + 14;
   cRow(
     L,
-    "06",
+    num(),
     "Financial Responsibility Before Closing",
     (bx, bt, bw) => {
       const used = L.drawParagraphAt(bx, bt, s6a, 9.6, 13.5, bw);
@@ -1512,10 +1926,21 @@ function renderTermSheet(L: Layout, doc: Doc) {
     L.measureParagraph(s6a, 9.6, 13.5, bodyWidth) + 7 + noteH,
   );
 
+  for (const extra of doc.extras) {
+    const body: Seg[] = [{ text: extra.body }];
+    cRow(
+      L,
+      num(),
+      extra.title || "Additional Terms",
+      (bx, bt, bw) => L.drawParagraphAt(bx, bt, body, 9.6, 13.5, bw),
+      L.measureParagraph(body, 9.6, 13.5, bodyWidth),
+    );
+  }
+
   const s7 = CLAUSE.law();
   cRow(
     L,
-    "07",
+    num(),
     "Governing Law",
     (bx, bt, bw) => L.drawParagraphAt(bx, bt, s7, 9.6, 13.5, bw),
     L.measureParagraph(s7, 9.6, 13.5, bodyWidth),
@@ -1524,7 +1949,7 @@ function renderTermSheet(L: Layout, doc: Doc) {
   const wRows = wireRows(doc);
   cRow(
     L,
-    "08",
+    num(),
     "Wire Transfer Instructions",
     (bx, bt, bw) => {
       const used = L.drawParagraphAt(
@@ -1560,24 +1985,21 @@ function renderTermSheet(L: Layout, doc: Doc) {
       10,
       w - 90,
     );
-    const colW = w / 2;
+    const colW = w / doc.signers.length;
     const sigTop = top + 32;
     const lineTop = sigTop + 34;
-    const sigW = colW - 32;
-    [
-      ["SELLER", d.sellerName] as const,
-      ["BUYER", d.buyerName] as const,
-    ].forEach(([role, name], i) => {
+    const sigW = colW - (doc.signers.length > 2 ? 22 : 32);
+    doc.signers.forEach((signer, i) => {
       const cx = x + 15 + i * colW;
-      if (i) L.lineV(x + colW, top + 20, panelH - 20, 0.6, RULE);
-      L.label(cx, sigTop, role, 6.4, FLARE_INK, 1.3);
+      if (i) L.lineV(x + i * colW, top + 20, panelH - 20, 0.6, RULE);
+      L.label(cx, sigTop, signer.role, 6.4, FLARE_INK, 1.3);
       L.lineH(cx, cx + sigW, lineTop, 0.9, INK);
-      const nameSegs: Seg[] = isPending(name)
+      const nameSegs: Seg[] = isPending(signer.name)
         ? [{ text: "[NAME PENDING]", bold: true, oblique: true, color: FLAG_INK }]
-        : [{ text: "Print name:", color: MUTE }, { text: name!, bold: true }];
+        : [{ text: "Print name:", color: MUTE }, { text: signer.name!, bold: true }];
       L.drawParagraphAt(cx, lineTop + 6, nameSegs, 9, 12, sigW);
       const dateTop = lineTop + 21;
-      if (i === 1 && d.fillableBuyerFields) {
+      if (signer.isBuyer && d.fillableBuyerFields) {
         L.drawParagraphAt(cx, dateTop, [{ text: "Date:", color: MUTE }], 9, 12, sigW);
         addBuyerDateField(L, cx + 26, dateTop);
         addBuyerSignatureField(L, cx, lineTop, sigW);

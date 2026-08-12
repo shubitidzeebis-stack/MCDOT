@@ -4,9 +4,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildBillOfSale,
   BOS_TEMPLATES,
-  DEFAULT_DELIVERABLES,
+  CLAUSE_LIBRARY,
+  DELIVERABLE_CATALOG,
+  deliverableLine,
+  INSURANCE_OPTIONS,
+  PAYMENT_TERMS_OPTIONS,
   type BillOfSaleData,
   type BosTemplateId,
+  type DeliverableId,
+  type ExtraClause,
+  type InsuranceClauseId,
+  type PaymentTermsId,
 } from "@/lib/bos/bill-of-sale-pdf";
 import { takeBosPrefill } from "@/lib/bos/prefill";
 
@@ -14,11 +22,16 @@ const inputClass =
   "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50";
 const labelClass =
   "text-[10px] font-semibold uppercase tracking-[0.2em] text-white/45";
+const selectClass =
+  "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-white outline-none focus:border-[#ff8a1a]/50";
+const optionClass = "bg-[#0a0a0b]";
 
 type FormState = {
   template: BosTemplateId; // which of the three document designs to draw
   effectiveDate: string; // yyyy-mm-dd from <input type="date">
   sellerName: string;
+  sellerAddress: string;
+  coSellerName: string;
   buyerName: string;
   buyerAddress: string;
   companyName: string;
@@ -26,16 +39,42 @@ type FormState = {
   purchasePrice: string;
   companyAddress: string;
   companyPhone: string;
+  companyEmail: string;
   mcNumber: string;
   usdotNumber: string;
   interestTransferred: string;
-  deliverables: string;
+
+  // Payment
+  paymentTerms: PaymentTermsId;
+  stagedFirstAmount: string;
+  stagedSecondAmount: string;
+
+  // Insurance
+  insuranceClause: InsuranceClauseId;
+  insuranceAmount: string;
+  insuranceMethod: string;
+  insuranceDeadline: string;
+
+  // Deliverables: which of the nine standard lines are on, plus the concrete
+  // email/phone those two lines name, plus any extra lines typed by hand.
+  deliverablesOn: Record<DeliverableId, boolean>;
+  deliverableEmail: string;
+  deliverablePhone: string;
+  extraDeliverables: string; // one per line
+
+  // Extra numbered sections (clause library picks + custom).
+  extraClauses: ExtraClause[];
+
   wireBankName: string;
   wireAccountName: string;
   wireRoutingNumber: string;
   wireAccountNumber: string;
   fillableBuyerFields: boolean;
 };
+
+const ALL_DELIVERABLES_ON = Object.fromEntries(
+  DELIVERABLE_CATALOG.map((item) => [item.id, item.defaultOn]),
+) as Record<DeliverableId, boolean>;
 
 // Saved-buyer directory (GET /api/admin/buyers). Full-admin only server-side:
 // a non-admin session gets 403 and the whole buyer UI stays unmounted.
@@ -75,6 +114,8 @@ const EMPTY: FormState = {
   template: "masthead",
   effectiveDate: "",
   sellerName: "",
+  sellerAddress: "",
+  coSellerName: "",
   buyerName: "",
   buyerAddress: "",
   companyName: "",
@@ -82,16 +123,36 @@ const EMPTY: FormState = {
   purchasePrice: "",
   companyAddress: "",
   companyPhone: "",
+  companyEmail: "",
   mcNumber: "",
   usdotNumber: "",
   interestTransferred: "100% Membership Interest",
-  deliverables: DEFAULT_DELIVERABLES.join("\n"),
+  paymentTerms: "on_transfer",
+  stagedFirstAmount: "",
+  stagedSecondAmount: "",
+  insuranceClause: "none",
+  insuranceAmount: "",
+  insuranceMethod: "Zelle",
+  insuranceDeadline: "",
+  deliverablesOn: ALL_DELIVERABLES_ON,
+  deliverableEmail: "",
+  deliverablePhone: "",
+  extraDeliverables: "",
+  extraClauses: [],
   wireBankName: "",
   wireAccountName: "",
   wireRoutingNumber: "",
   wireAccountNumber: "",
   fillableBuyerFields: true,
 };
+
+// yyyy-mm-dd for the date input's "Today" shortcut, in local time — toISOString
+// would roll to the previous day for anyone west of UTC.
+function todayIso(): string {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
 
 // "2026-06-19" → "19th day of June 2026" (contract-style wording)
 function contractDate(iso: string): string | null {
@@ -140,6 +201,8 @@ export function BillOfSalePanel() {
   // an empty Seller field reads as "we have no record" rather than a bug.
   const [sellerFromLead, setSellerFromLead] = useState<string | null>(null);
   const [sellerLookupRan, setSellerLookupRan] = useState(false);
+  // Co-seller input is revealed on demand; most deals have a single seller.
+  const [showCoSeller, setShowCoSeller] = useState(false);
 
   async function lookup() {
     if (!lookupNumber.trim() || lookupBusy) return;
@@ -364,6 +427,7 @@ export function BillOfSalePanel() {
     if (!form.purchasePrice.trim()) pending.push("price");
     if (!form.companyAddress.trim()) pending.push("company address");
     if (!form.companyPhone.trim()) pending.push("company phone");
+    if (!form.companyEmail.trim()) pending.push("company email");
     if (!form.mcNumber.trim()) pending.push("MC #");
     if (!form.usdotNumber.trim()) pending.push("USDOT #");
     if (
@@ -375,6 +439,31 @@ export function BillOfSalePanel() {
       pending.push("wire info");
     return pending;
   }, [form]);
+
+  const insuranceOption = useMemo(
+    () => INSURANCE_OPTIONS.find((o) => o.id === form.insuranceClause) ?? INSURANCE_OPTIONS[0],
+    [form.insuranceClause],
+  );
+
+  // Instalments that don't add up to the purchase price is the kind of error
+  // that only surfaces when the buyer queries the second payment. Flag it here
+  // rather than letting the document go out with contradictory figures.
+  const stagedMismatch = useMemo(() => {
+    if (form.paymentTerms !== "staged") return null;
+    const money = (s: string) => {
+      if (!s.trim()) return null;
+      const n = Number(s.replace(/[$,\s]/g, ""));
+      return Number.isFinite(n) ? n : null;
+    };
+    const first = money(form.stagedFirstAmount);
+    const second = money(form.stagedSecondAmount);
+    const total = money(form.purchasePrice);
+    if (first == null || second == null || total == null) return null;
+    if (Math.abs(first + second - total) < 0.005) return null;
+    const fmt = (n: number) =>
+      n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+    return { sum: fmt(first + second), price: fmt(total) };
+  }, [form.paymentTerms, form.stagedFirstAmount, form.stagedSecondAmount, form.purchasePrice]);
 
   // `override` lets a control redraw with a value React hasn't committed yet —
   // the design picker switches template and rebuilds in the same click.
@@ -388,14 +477,31 @@ export function BillOfSalePanel() {
       }
       setBusy(true);
       try {
-        const deliverables = f.deliverables
-          .split("\n")
-          .map((s) => s.trim())
-          .filter(Boolean);
+        // The nine standard lines in catalog order, minus any switched off,
+        // with the email/phone entries naming the concrete address and number.
+        // Hand-typed extras follow.
+        const deliverables = [
+          ...DELIVERABLE_CATALOG.filter((item) => f.deliverablesOn[item.id]).map((item) =>
+            deliverableLine(
+              item,
+              item.specific === "email"
+                ? f.deliverableEmail || f.companyEmail
+                : item.specific === "phone"
+                  ? f.deliverablePhone || f.companyPhone
+                  : null,
+            ),
+          ),
+          ...f.extraDeliverables
+            .split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean),
+        ];
         const data: BillOfSaleData = {
           template: f.template,
           effectiveDate: contractDate(f.effectiveDate),
           sellerName: f.sellerName.trim() || null,
+          sellerAddress: f.sellerAddress.trim() || null,
+          coSellerName: f.coSellerName.trim() || null,
           buyerName: f.buyerName.trim() || null,
           buyerAddress: f.buyerAddress.trim() || null,
           companyName: f.companyName.trim(),
@@ -403,10 +509,21 @@ export function BillOfSalePanel() {
           purchasePrice: normalizePrice(f.purchasePrice) || null,
           companyAddress: f.companyAddress.trim() || null,
           companyPhone: f.companyPhone.trim() || null,
+          companyEmail: f.companyEmail.trim() || null,
           mcNumber: f.mcNumber.trim() || null,
           usdotNumber: f.usdotNumber.trim() || null,
           interestTransferred: f.interestTransferred.trim() || null,
-          deliverables: deliverables.length ? deliverables : null,
+          paymentTerms: f.paymentTerms,
+          stagedFirstAmount: normalizePrice(f.stagedFirstAmount) || null,
+          stagedSecondAmount: normalizePrice(f.stagedSecondAmount) || null,
+          insuranceClause: f.insuranceClause,
+          insuranceAmount: normalizePrice(f.insuranceAmount) || null,
+          insuranceMethod: f.insuranceMethod.trim() || null,
+          insuranceDeadline: contractDate(f.insuranceDeadline) ?? f.insuranceDeadline.trim() ?? null,
+          extraClauses: f.extraClauses.length ? f.extraClauses : null,
+          // Always the real array, never null: an empty list means the operator
+          // unticked everything on purpose and must not resurrect the defaults.
+          deliverables,
           wireBankName: f.wireBankName.trim() || null,
           wireAccountName: f.wireAccountName.trim() || null,
           wireRoutingNumber: f.wireRoutingNumber.trim() || null,
@@ -539,12 +656,21 @@ export function BillOfSalePanel() {
 
         <Fieldset title="Deal">
           <Field label="Effective / closing date">
-            <input
-              type="date"
-              className={inputClass}
-              value={form.effectiveDate}
-              onChange={set("effectiveDate")}
-            />
+            <div className="flex gap-2">
+              <input
+                type="date"
+                className={inputClass}
+                value={form.effectiveDate}
+                onChange={set("effectiveDate")}
+              />
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, effectiveDate: todayIso() }))}
+                className="shrink-0 rounded-lg bg-white/[0.05] px-3 py-2 text-[12px] font-semibold text-white/75 ring-1 ring-white/10 hover:bg-white/[0.08]"
+              >
+                Today
+              </button>
+            </div>
           </Field>
           <Field label="Purchase price">
             <input
@@ -564,6 +690,122 @@ export function BillOfSalePanel() {
               onChange={set("interestTransferred")}
             />
           </Field>
+
+          <Field label="Payment terms" full>
+            <select
+              className={selectClass}
+              value={form.paymentTerms}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, paymentTerms: e.target.value as PaymentTermsId }))
+              }
+            >
+              {PAYMENT_TERMS_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id} className={optionClass}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-white/35">
+              {PAYMENT_TERMS_OPTIONS.find((o) => o.id === form.paymentTerms)?.hint}
+            </p>
+          </Field>
+
+          {form.paymentTerms === "staged" && (
+            <>
+              <Field label="Initial payment">
+                <input
+                  className={inputClass}
+                  placeholder="$3,750.00"
+                  value={form.stagedFirstAmount}
+                  onChange={set("stagedFirstAmount")}
+                  onBlur={() =>
+                    setForm((f) => ({
+                      ...f,
+                      stagedFirstAmount: normalizePrice(f.stagedFirstAmount),
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="Remaining balance">
+                <input
+                  className={inputClass}
+                  placeholder="$3,750.00"
+                  value={form.stagedSecondAmount}
+                  onChange={set("stagedSecondAmount")}
+                  onBlur={() =>
+                    setForm((f) => ({
+                      ...f,
+                      stagedSecondAmount: normalizePrice(f.stagedSecondAmount),
+                    }))
+                  }
+                />
+              </Field>
+              {stagedMismatch && (
+                <p className="sm:col-span-2 rounded-lg bg-[#ff8a1a]/10 px-3 py-2 text-[12px] text-[#ffb371] ring-1 ring-[#ff8a1a]/20">
+                  The two instalments add up to {stagedMismatch.sum}, but the purchase price is{" "}
+                  {stagedMismatch.price}. Fix one of them before sending.
+                </p>
+              )}
+            </>
+          )}
+        </Fieldset>
+
+        <Fieldset title="Insurance">
+          <Field label="Insurance clause" full>
+            <select
+              className={selectClass}
+              value={form.insuranceClause}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, insuranceClause: e.target.value as InsuranceClauseId }))
+              }
+            >
+              {INSURANCE_OPTIONS.map((o) => (
+                <option key={o.id} value={o.id} className={optionClass}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[11px] text-white/35">{insuranceOption.hint}</p>
+          </Field>
+
+          {insuranceOption.needs.includes("amount") && (
+            <Field label="Amount">
+              <input
+                className={inputClass}
+                placeholder="$3,000.00"
+                value={form.insuranceAmount}
+                onChange={set("insuranceAmount")}
+                onBlur={() =>
+                  setForm((f) => ({ ...f, insuranceAmount: normalizePrice(f.insuranceAmount) }))
+                }
+              />
+            </Field>
+          )}
+          {insuranceOption.needs.includes("method") && (
+            <Field label="Sent by">
+              <select
+                className={selectClass}
+                value={form.insuranceMethod}
+                onChange={(e) => setForm((f) => ({ ...f, insuranceMethod: e.target.value }))}
+              >
+                {["Zelle", "wire transfer", "Cash App", "Venmo", "cash"].map((m) => (
+                  <option key={m} value={m} className={optionClass}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+          {insuranceOption.needs.includes("deadline") && (
+            <Field label="Pay by">
+              <input
+                type="date"
+                className={inputClass}
+                value={form.insuranceDeadline}
+                onChange={set("insuranceDeadline")}
+              />
+            </Field>
+          )}
         </Fieldset>
 
         <Fieldset title="Company">
@@ -588,6 +830,14 @@ export function BillOfSalePanel() {
           </Field>
           <Field label="Phone">
             <input className={inputClass} value={form.companyPhone} onChange={set("companyPhone")} />
+          </Field>
+          <Field label="Email (transfers with the company)">
+            <input
+              className={inputClass}
+              placeholder="dispatch@company.com"
+              value={form.companyEmail}
+              onChange={set("companyEmail")}
+            />
           </Field>
           <Field label="MC Authority #">
             <input
@@ -646,6 +896,52 @@ export function BillOfSalePanel() {
           <Field label="Seller name">
             <input className={inputClass} value={form.sellerName} onChange={set("sellerName")} />
           </Field>
+          <Field label="Seller address">
+            <input
+              className={inputClass}
+              value={form.sellerAddress}
+              onChange={set("sellerAddress")}
+            />
+          </Field>
+
+          {/* A partner on the LLC has to sign too. Adding one turns the
+              signature block into three columns in every design. */}
+          <div className="sm:col-span-2">
+            {form.coSellerName || showCoSeller ? (
+              <div>
+                <label className={`${labelClass} mb-1.5 block`}>
+                  Second seller (adds their own signature line)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    className={inputClass}
+                    placeholder="Partner's full name"
+                    value={form.coSellerName}
+                    onChange={set("coSellerName")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForm((f) => ({ ...f, coSellerName: "" }));
+                      setShowCoSeller(false);
+                    }}
+                    className="shrink-0 rounded-lg px-3 py-2 text-[12px] text-white/55 hover:text-white"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowCoSeller(true)}
+                className="rounded-lg bg-white/[0.05] px-3 py-2 text-[12px] font-semibold text-white/75 ring-1 ring-white/10 hover:bg-white/[0.08]"
+              >
+                + Add second seller
+              </button>
+            )}
+          </div>
+
           <Field label="Buyer name">
             <input className={inputClass} value={form.buyerName} onChange={setParty("buyerName")} />
           </Field>
@@ -798,13 +1094,199 @@ export function BillOfSalePanel() {
           )}
         </Fieldset>
 
-        <Fieldset title="Seller's deliverables (one per line)">
+        <Fieldset title="Seller's deliverables">
           <div className="sm:col-span-2">
+            <p className="mb-3 text-[11px] text-white/35">
+              Untick anything this seller keeps. The email and phone lines print
+              the exact address and number, so the seller can see precisely what
+              they are handing over.
+            </p>
+            <ul className="divide-y divide-white/8 rounded-xl bg-white/[0.02] ring-1 ring-white/10">
+              {DELIVERABLE_CATALOG.map((item) => {
+                const on = form.deliverablesOn[item.id];
+                const specificValue =
+                  item.specific === "email"
+                    ? form.deliverableEmail || form.companyEmail
+                    : item.specific === "phone"
+                      ? form.deliverablePhone || form.companyPhone
+                      : "";
+                return (
+                  <li key={item.id} className="px-3 py-2.5">
+                    <label className="flex cursor-pointer items-start gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            deliverablesOn: { ...f.deliverablesOn, [item.id]: e.target.checked },
+                          }))
+                        }
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[#ff8a1a]"
+                      />
+                      <span className={`text-[12.5px] ${on ? "text-white/80" : "text-white/35 line-through"}`}>
+                        {deliverableLine(item, specificValue)}
+                      </span>
+                    </label>
+                    {on && item.specific && (
+                      <div className="mt-2 pl-7">
+                        <input
+                          className={`${inputClass} text-[12px]`}
+                          placeholder={
+                            item.specific === "email"
+                              ? "Exact email address being transferred"
+                              : "Exact phone number being transferred"
+                          }
+                          value={
+                            item.specific === "email"
+                              ? form.deliverableEmail
+                              : form.deliverablePhone
+                          }
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              [item.specific === "email"
+                                ? "deliverableEmail"
+                                : "deliverablePhone"]: e.target.value,
+                            }))
+                          }
+                        />
+                        {!specificValue && (
+                          <p className="mt-1 text-[11px] text-[#ffb371]">
+                            Empty — this line will print the vague wording, which is
+                            how a personal number ends up on a Bill of Sale.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            <label className={`${labelClass} mb-1.5 mt-4 block`}>
+              Extra deliverables (one per line)
+            </label>
             <textarea
-              className={`${inputClass} min-h-[170px] font-mono text-[12px] leading-5`}
-              value={form.deliverables}
-              onChange={set("deliverables")}
+              className={`${inputClass} min-h-[70px] font-mono text-[12px] leading-5`}
+              placeholder="Anything else this deal requires"
+              value={form.extraDeliverables}
+              onChange={set("extraDeliverables")}
             />
+          </div>
+        </Fieldset>
+
+        <Fieldset title="Additional clauses">
+          <div className="sm:col-span-2">
+            <p className="mb-3 text-[11px] text-white/35">
+              Each one becomes its own numbered section, inserted before Governing
+              Law. Everything after it renumbers automatically. Read the wording in
+              the preview before sending — it is a starting point, not legal advice.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {CLAUSE_LIBRARY.map((c) => {
+                const on = form.extraClauses.some((x) => x.title === c.title);
+                return (
+                  <label
+                    key={c.id}
+                    className={`flex cursor-pointer items-start gap-2.5 rounded-lg p-2.5 ring-1 transition ${
+                      on
+                        ? "bg-[#ff8a1a]/10 ring-[#ff8a1a]/30"
+                        : "bg-white/[0.025] ring-white/10 hover:bg-white/[0.045]"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          extraClauses: e.target.checked
+                            ? [...f.extraClauses, { title: c.title, body: c.body }]
+                            : f.extraClauses.filter((x) => x.title !== c.title),
+                        }))
+                      }
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[#ff8a1a]"
+                    />
+                    <span>
+                      <span className="block text-[12.5px] font-medium text-white/85">
+                        {c.title}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] leading-[1.4] text-white/40">
+                        {c.body.slice(0, 96)}…
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Custom clauses, listed so they can be edited or removed after
+                adding — a one-off section usually needs a second pass. */}
+            {form.extraClauses.filter((c) => !CLAUSE_LIBRARY.some((l) => l.title === c.title))
+              .length > 0 && (
+              <ul className="mt-3 space-y-2">
+                {form.extraClauses.map((c, i) =>
+                  CLAUSE_LIBRARY.some((l) => l.title === c.title) ? null : (
+                    <li key={i} className="rounded-lg bg-white/[0.025] p-2.5 ring-1 ring-white/10">
+                      <div className="flex items-center gap-2">
+                        <input
+                          className={`${inputClass} text-[12px] font-semibold`}
+                          value={c.title}
+                          placeholder="Clause title"
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              extraClauses: f.extraClauses.map((x, j) =>
+                                j === i ? { ...x, title: e.target.value } : x,
+                              ),
+                            }))
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setForm((f) => ({
+                              ...f,
+                              extraClauses: f.extraClauses.filter((_, j) => j !== i),
+                            }))
+                          }
+                          className="shrink-0 rounded-md px-2 py-1 text-[11px] text-red-400/70 hover:bg-red-500/[0.08] hover:text-red-300"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <textarea
+                        className={`${inputClass} mt-2 min-h-[70px] text-[12px] leading-5`}
+                        value={c.body}
+                        placeholder="Clause text as it will appear in the document"
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            extraClauses: f.extraClauses.map((x, j) =>
+                              j === i ? { ...x, body: e.target.value } : x,
+                            ),
+                          }))
+                        }
+                      />
+                    </li>
+                  ),
+                )}
+              </ul>
+            )}
+
+            <button
+              type="button"
+              onClick={() =>
+                setForm((f) => ({
+                  ...f,
+                  extraClauses: [...f.extraClauses, { title: "", body: "" }],
+                }))
+              }
+              className="mt-3 rounded-lg bg-white/[0.05] px-3 py-2 text-[12px] font-semibold text-white/75 ring-1 ring-white/10 hover:bg-white/[0.08]"
+            >
+              + Add custom clause
+            </button>
           </div>
         </Fieldset>
 
