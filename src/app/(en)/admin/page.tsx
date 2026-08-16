@@ -161,6 +161,20 @@ export default async function AdminPage() {
             Agent dashboard →
           </a>
         )}
+        {/* Points at the Social Manager running locally on the office PC, so it
+            only resolves from that machine (and only while its SMM Web server
+            is up) — hence full-admin only and a new tab. */}
+        {isFullAdmin && (
+          <a
+            href="http://127.0.0.1:5051"
+            target="_blank"
+            rel="noreferrer"
+            title="Social Manager on the office PC — needs the local SMM Web server running"
+            className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+          >
+            Engagement agent →
+          </a>
+        )}
         {/* Calls carries recordings + transcripts, so it is full-admin only —
             /api/admin/calls* enforces the same boundary server-side. */}
         {isFullAdmin && (
