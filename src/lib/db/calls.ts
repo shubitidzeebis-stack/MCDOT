@@ -74,6 +74,10 @@ export async function ensureCallsSchema(): Promise<void> {
       handled_by TEXT
     )
   `;
+  // AI call insights (lib/quo/insights.ts). insights_at doubles as the atomic
+  // claim that makes generation idempotent across webhook retries.
+  await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights JSONB`;
+  await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights_at TIMESTAMPTZ`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_created_idx ON quo_calls (created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_external_idx ON quo_calls (external_number)`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_valuation_idx ON quo_calls (valuation_id)`;
@@ -320,6 +324,119 @@ export async function listMissedUnrecovered(limit = 50): Promise<CallRow[]> {
     console.error("[listMissedUnrecovered] read failed", err);
     return [];
   }
+}
+
+// ---------------------------------------------------------------------------
+// AI call insights (see lib/quo/insights.ts for the pipeline)
+// ---------------------------------------------------------------------------
+
+/** The fields insight generation needs, joined to the matched lead's name. */
+export type InsightsCall = {
+  id: string;
+  direction: string | null;
+  duration_sec: number | null;
+  external_number: string | null;
+  transcript: unknown;
+  summary: unknown;
+  valuation_id: number | null;
+  legal_name: string | null;
+};
+
+/**
+ * Atomically claim a call for insight generation. Returns the call data on
+ * success, null when the call is ineligible (no transcript yet, not matched
+ * to a lead, too short to contain a conversation) or already claimed.
+ * The claim-in-the-WHERE-clause makes concurrent webhook deliveries safe:
+ * exactly one caller gets a row back.
+ */
+export async function claimCallForInsights(id: string): Promise<InsightsCall | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureCallsSchema();
+  const rows = (await sql`
+    UPDATE quo_calls c
+       SET insights_at = now(), updated_at = now()
+     WHERE c.id = ${id}
+       AND c.insights_at IS NULL
+       AND c.transcript IS NOT NULL
+       AND c.valuation_id IS NOT NULL
+       AND COALESCE(c.duration_sec, 0) >= 40
+       AND jsonb_typeof(c.transcript) = 'array'
+       AND jsonb_array_length(c.transcript) >= 6
+    RETURNING c.id, c.direction, c.duration_sec, c.external_number,
+              c.transcript, c.summary, c.valuation_id,
+              (SELECT v.legal_name FROM valuations v WHERE v.id = c.valuation_id) AS legal_name
+  `) as InsightsCall[];
+  return rows[0] ?? null;
+}
+
+/**
+ * Claim a matched, missed, ended inbound call for the short "missed call"
+ * comment. Shares insights_at with the AI path on purpose: a call gets either
+ * the missed-call note or the AI notes, never both.
+ */
+export async function claimMissedCallComment(id: string): Promise<{
+  valuation_id: number | null;
+  external_number: string | null;
+  voicemail_url: string | null;
+} | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureCallsSchema();
+  const rows = (await sql`
+    UPDATE quo_calls
+       SET insights_at = now(), updated_at = now()
+     WHERE id = ${id}
+       AND insights_at IS NULL
+       AND valuation_id IS NOT NULL
+       AND direction = 'incoming'
+       AND answered_at IS NULL
+       AND completed_at IS NOT NULL
+    RETURNING valuation_id, external_number, voicemail_url
+  `) as Array<{
+    valuation_id: number | null;
+    external_number: string | null;
+    voicemail_url: string | null;
+  }>;
+  return rows[0] ?? null;
+}
+
+export async function saveCallInsights(id: string, insights: unknown): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await ensureCallsSchema();
+  await sql`
+    UPDATE quo_calls
+       SET insights = ${JSON.stringify(insights)}::jsonb, updated_at = now()
+     WHERE id = ${id}
+  `;
+}
+
+/** Release a failed claim so a webhook redelivery can retry the extraction. */
+export async function releaseInsightsClaim(id: string): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await ensureCallsSchema();
+  await sql`
+    UPDATE quo_calls
+       SET insights_at = NULL, updated_at = now()
+     WHERE id = ${id} AND insights IS NULL
+  `;
+}
+
+/** Unclaimed read of the insight inputs — for the admin dry-run endpoint. */
+export async function getCallForInsights(id: string): Promise<InsightsCall | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureCallsSchema();
+  const rows = (await sql`
+    SELECT c.id, c.direction, c.duration_sec, c.external_number,
+           c.transcript, c.summary, c.valuation_id, v.legal_name
+      FROM quo_calls c
+      LEFT JOIN valuations v ON v.id = c.valuation_id
+     WHERE c.id = ${id}
+  `) as InsightsCall[];
+  return rows[0] ?? null;
 }
 
 /** Mark a missed call as dealt with, so it drops off the recovery board. */

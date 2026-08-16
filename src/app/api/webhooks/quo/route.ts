@@ -29,6 +29,10 @@
 
 import { NextResponse } from "next/server";
 import { verifyQuoSignature } from "@/lib/quo/verify";
+import {
+  processCallInsights,
+  processMissedCallComment,
+} from "@/lib/quo/insights";
 import { recordWebhookEvent } from "@/lib/db/monitor";
 import { findLocalByContact } from "@/lib/db/contact-search";
 import {
@@ -40,6 +44,9 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// The insights step runs a Claude extraction inline (typically seconds, but
+// give it room) — without this the platform default could cut it off mid-call.
+export const maxDuration = 60;
 
 type QuoEvent = {
   id?: string;
@@ -191,9 +198,21 @@ export async function POST(req: Request) {
   try {
     switch (type) {
       case "call.ringing":
-      case "call.completed":
         await handleCall(obj);
         break;
+
+      case "call.completed": {
+        await handleCall(obj);
+        const id = str(obj.id);
+        if (id) {
+          // Matched + missed inbound → short comment on the lead. Matched +
+          // answered with the transcript already attached (events race) →
+          // generate the AI notes now. Both are idempotent no-ops otherwise.
+          await processMissedCallComment(id);
+          await processCallInsights(id);
+        }
+        break;
+      }
 
       case "call.recording.completed": {
         // Recording arrives as media[] on the call object (call id at .id);
@@ -212,6 +231,10 @@ export async function POST(req: Request) {
         const id = str(obj.callId) ?? str(obj.id);
         if (id && obj.dialogue != null) {
           await attachCallMedia(id, { transcript: obj.dialogue });
+          // The usual trigger for the AI notes: transcript is the last piece
+          // needed. Throws on extraction failure → this route 500s → Quo
+          // redelivers → retry. The claim inside makes duplicates safe.
+          await processCallInsights(id);
         }
         break;
       }
@@ -220,6 +243,9 @@ export async function POST(req: Request) {
         const id = str(obj.callId) ?? str(obj.id);
         if (id && obj.summary != null) {
           await attachCallMedia(id, { summary: obj.summary });
+          // Last-chance trigger for calls whose lead match landed after the
+          // transcript did. No-op when already generated.
+          await processCallInsights(id);
         }
         break;
       }
