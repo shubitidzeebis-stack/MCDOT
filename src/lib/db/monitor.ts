@@ -664,7 +664,13 @@ export async function getOutcomeCounts(): Promise<Record<string, number>> {
 // safety-checked. (Not insurance-gated — enrich the whole in-window set so the
 // dashboard shows complete safety data and a later insurance-gate change needs
 // no re-enrich.) Hottest first.
-export type MonitorSafetyTarget = { id: number; dot_number: string | null };
+export type MonitorSafetyTarget = {
+  id: number;
+  dot_number: string | null;
+  // Lets the enrich fall back to QCMobile's docket endpoint now that the
+  // by-DOT endpoint returns empty (post-Motus-cutover breakage).
+  mc_number: string | null;
+};
 
 export async function listMonitorForSafetyEnrich(
   limit: number,
@@ -676,7 +682,7 @@ export async function listMonitorForSafetyEnrich(
   // carrier that just aged into the window is enriched without waiting for a
   // re-verify. Hottest (closest to/just past 180) first.
   const rows = (await sql`
-    SELECT id, dot_number
+    SELECT id, dot_number, mc_number
       FROM valuations
      WHERE source = 'monitor'
        AND monitor_stage = 'verified'

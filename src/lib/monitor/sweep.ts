@@ -256,7 +256,7 @@ export async function monitorSweep(
       if (over(ENRICH_FRAC)) break;
       if (!t.dot_number) continue;
       try {
-        const c = await lookupCarrierBasics(t.dot_number);
+        const c = await lookupCarrierBasics(t.dot_number, t.mc_number);
         if (!c) {
           // Not in QCMobile yet — new carrier, no violations on record.
           await updateMonitorSafety(t.id, {

@@ -23,6 +23,7 @@
 // phase) so this stays entirely on bulk data and well under any quota.
 
 import { DATASETS, lpadDot, socrataQuery } from "@/lib/monitor/socrata";
+import { motusLookupByDot, motusToLegacyRows } from "@/lib/motus";
 import { rateInsuranceHistory } from "@/lib/audit/insurance-rating";
 import { computeEligibility } from "@/lib/monitor/eligibility";
 import { acquisitionScore, combineAuditScore } from "@/lib/audit/score";
@@ -210,16 +211,47 @@ function groupByDot<T extends { dot_number?: string | null }>(
   return m;
 }
 
+// The legacy Carrier/InsHist datasets FROZE at the 2026-05-14 Motus cutover:
+// every authority granted after it (including the whole new-discovery cohort)
+// has zero legacy rows and would rot forever as carrierFound=false. When
+// legacy has never heard of a DOT, ask Motus (the system of record) and shape
+// its answer into legacy rows so the pure evaluator runs unchanged. A Motus
+// failure degrades to the old not-found verdict (retried later) — never to a
+// fabricated pass.
+async function motusRowsFor(
+  dotUnpadded: string,
+): Promise<{ carrierRows: CarrierRow[]; insRows: InsHistRow[] } | null> {
+  try {
+    const m = await motusLookupByDot(dotUnpadded);
+    return m ? motusToLegacyRows(m) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Per-batch cap on Motus per-carrier calls: the API is undocumented and has no
+// published limits, so the fallback stays polite; rows past the cap keep the
+// not-found verdict and get retried on the weekly not_found re-check.
+const MOTUS_VERIFY_CAP = 40;
+const MOTUS_CONCURRENCY = 4;
+
 // Single-carrier verify (on-demand audit tool, unit tests).
 export async function verifyCandidate(input: VerifyInput): Promise<VerifyResult> {
   const dot8 = lpadDot(input.dotNumber);
   if (dot8 === SENTINEL_DOT) {
     return evaluateCarrier({ ...input, carrierRows: [], insRows: [] });
   }
-  const [carrierRows, insRows] = await Promise.all([
+  let [carrierRows, insRows] = await Promise.all([
     fetchCarrierRows(dot8),
     fetchInsHistRows(dot8),
   ]);
+  if (carrierRows.length === 0) {
+    const fromMotus = await motusRowsFor(input.dotNumber);
+    if (fromMotus) {
+      carrierRows = fromMotus.carrierRows;
+      insRows = [...insRows, ...fromMotus.insRows];
+    }
+  }
   return evaluateCarrier({ ...input, carrierRows, insRows });
 }
 
@@ -231,12 +263,14 @@ export async function verifyCandidatesBatch(
   today?: Date,
 ): Promise<VerifyResult[]> {
   const dot8s: string[] = [];
+  const unpaddedByDot8 = new Map<string, string>();
   const seen = new Set<string>();
   for (const inp of inputs) {
     const dot8 = lpadDot(inp.dotNumber);
     if (!dot8 || dot8 === SENTINEL_DOT || seen.has(dot8)) continue;
     seen.add(dot8);
     dot8s.push(dot8);
+    unpaddedByDot8.set(dot8, inp.dotNumber);
   }
 
   let carrierByDot = new Map<string, CarrierRow[]>();
@@ -248,6 +282,22 @@ export async function verifyCandidatesBatch(
     ]);
     carrierByDot = groupByDot(carrierRows);
     insByDot = groupByDot(insRows);
+  }
+
+  // Motus fallback for DOTs the frozen legacy Carrier dataset has never heard
+  // of (post-cutover authorities) — capped and lightly parallel, see above.
+  const missing = dot8s
+    .filter((d8) => (carrierByDot.get(d8) ?? []).length === 0)
+    .slice(0, MOTUS_VERIFY_CAP);
+  for (let i = 0; i < missing.length; i += MOTUS_CONCURRENCY) {
+    await Promise.all(
+      missing.slice(i, i + MOTUS_CONCURRENCY).map(async (d8) => {
+        const fromMotus = await motusRowsFor(unpaddedByDot8.get(d8) ?? d8);
+        if (!fromMotus) return;
+        carrierByDot.set(d8, fromMotus.carrierRows);
+        insByDot.set(d8, [...(insByDot.get(d8) ?? []), ...fromMotus.insRows]);
+      }),
+    );
   }
 
   return inputs.map((inp) => {
