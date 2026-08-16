@@ -151,7 +151,9 @@ export async function POST(req: Request) {
     let lookup = await lookupCarrier(lookupNumber, lookupKind);
     // QCMobile's MC and DOT endpoints disagree about which carriers exist, so a
     // not_found on one is not proof of absence when we hold the other number.
-    if (!lookup.ok && lookup.reason === "not_found" && fallback) {
+    // api_error retries too: the MC path leans on the Motus docket resolve, so
+    // a transient there shouldn't 502 an audit a direct DOT lookup can serve.
+    if (!lookup.ok && lookup.reason !== "no_key" && fallback) {
       lookup = await lookupCarrier(fallback.number, fallback.kind);
     }
     if (!lookup.ok) {

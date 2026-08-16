@@ -232,8 +232,12 @@ async function motusRowsFor(
 // Per-batch cap on Motus per-carrier calls: the API is undocumented and has no
 // published limits, so the fallback stays polite; rows past the cap keep the
 // not-found verdict and get retried on the weekly not_found re-check.
+// The wall-clock budget guards the cron ceiling: in Motus timeout-mode, 10
+// waves × ~31s worst-case would alone exceed the route's maxDuration — the
+// sweep's own budget only checks BETWEEN verify chunks, not inside one.
 const MOTUS_VERIFY_CAP = 40;
 const MOTUS_CONCURRENCY = 4;
+const MOTUS_FALLBACK_BUDGET_MS = 45_000;
 
 // Single-carrier verify (on-demand audit tool, unit tests).
 export async function verifyCandidate(input: VerifyInput): Promise<VerifyResult> {
@@ -289,7 +293,9 @@ export async function verifyCandidatesBatch(
   const missing = dot8s
     .filter((d8) => (carrierByDot.get(d8) ?? []).length === 0)
     .slice(0, MOTUS_VERIFY_CAP);
+  const fallbackStart = Date.now();
   for (let i = 0; i < missing.length; i += MOTUS_CONCURRENCY) {
+    if (Date.now() - fallbackStart > MOTUS_FALLBACK_BUDGET_MS) break;
     await Promise.all(
       missing.slice(i, i + MOTUS_CONCURRENCY).map(async (d8) => {
         const fromMotus = await motusRowsFor(unpaddedByDot8.get(d8) ?? d8);

@@ -26,6 +26,9 @@ const LIMIT = 10;
 const WINDOW_MS = 10 * 60 * 1000;
 
 export const dynamic = "force-dynamic";
+// Re-runs the full carrier lookup (QCMobile + Motus + SAFER) — same upstream
+// worst case as /lookup, same explicit ceiling.
+export const maxDuration = 60;
 
 type FinalizeBody = {
   sessionId: string;

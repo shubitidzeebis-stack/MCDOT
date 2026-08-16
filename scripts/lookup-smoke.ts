@@ -41,15 +41,25 @@ async function main() {
     fail(`MC54058086 should resolve to 8806636, got ${byMc.carrier.dotNumber}`);
   console.log("MC54058086 → DOT", byMc.carrier.dotNumber, "OK");
 
-  // Established carrier — via Motus when QCMobile can't answer.
+  // Established carrier (legacy docket). From a geo-blocked network QCMobile
+  // ERRORS (403), so the no-fabrication guard must return api_error rather
+  // than synthesize a zeroed safety record; from a US network (prod) QCMobile
+  // answers and this resolves ok via docket re-entry.
   const t924 = await lookupCarrier("1374494", "dot");
-  if (!t924.ok) fail(`1374494 lookup failed: ${t924.message}`);
-  console.log("1374494:", {
-    legalName: t924.carrier.legalName,
-    authority: t924.carrier.commonAuthorityStatus,
-    bipd: t924.carrier.bipdInsuranceOnFile,
-    source: t924.carrier._motus?.carrierSource,
-  });
+  if (t924.ok) {
+    console.log("1374494:", {
+      legalName: t924.carrier.legalName,
+      authority: t924.carrier.commonAuthorityStatus,
+      bipd: t924.carrier.bipdInsuranceOnFile,
+      source: t924.carrier._motus?.carrierSource,
+    });
+    if (t924.carrier._motus?.carrierSource === "motus" && t924.carrier._motus?.qcErrored)
+      fail("1374494 must never be synthesized while QCMobile is erroring");
+  } else {
+    console.log("1374494:", t924.reason, "(expected api_error when QCMobile is unreachable)");
+    if (t924.reason !== "api_error")
+      fail(`1374494 should be ok or api_error, got ${t924.reason}`);
+  }
 
   // Nonexistent — must be a clean miss or honest api_error, never a crash.
   const nope = await lookupCarrier("99999999", "dot");

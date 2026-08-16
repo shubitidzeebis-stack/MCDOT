@@ -103,7 +103,11 @@ export type FmcsaCarrier = {
     hasActiveAuthority?: boolean;
     insuranceActive?: boolean;
     outOfService?: boolean;
+    /** The Motus consult itself failed — legacy values were served unchecked. */
     errored?: boolean;
+    /** QCMobile errored (didn't just miss) somewhere in this lookup — the
+     * safety/census fields may come from synthesis rather than a real miss. */
+    qcErrored?: boolean;
   };
 };
 
@@ -272,6 +276,12 @@ function applyMotusOverrides(c: FmcsaCarrier, m: MotusSnapshot): string[] {
   } else if (!m.insuranceActive && legacyInsured) {
     c.bipdInsuranceOnFile = "0";
     overrides.push("bipdInsuranceOnFile");
+    // Without this, a stale required='N' would make deriveInsuranceStatus
+    // read the override as "not_required" instead of "lapsed".
+    if (c.bipdInsuranceRequired !== "Y") {
+      c.bipdInsuranceRequired = "Y";
+      overrides.push("bipdInsuranceRequired");
+    }
   }
   return overrides;
 }
@@ -287,7 +297,7 @@ function synthesizeFromMotus(m: MotusSnapshot): FmcsaCarrier {
     dbaName: m.dbaName,
     commonAuthorityStatus: active ? "A" : "I",
     contractAuthorityStatus: "N",
-    brokerAuthorityStatus: "N",
+    brokerAuthorityStatus: m.hasActiveBrokerAuthority ? "A" : "N",
     allowedToOperate: active && !m.outOfService ? "Y" : "N",
     statusCode: active ? "A" : "I",
     bipdInsuranceOnFile:
@@ -356,20 +366,23 @@ export async function lookupCarrier(
     let carrierSource: "qcmobile" | "qcmobile_docket" | "motus" = "qcmobile";
     let motus: MotusSnapshot | null = null;
     let motusErrored = false;
+    // On the happy path the Motus consult runs concurrently with the
+    // docket/SAFER batch below instead of adding a serial round-trip.
+    let motusPromise: Promise<MotusSnapshot | null> | null = null;
 
     if (carrier) {
-      // QCMobile answered — overlay current truth from the system of record.
-      try {
-        motus = await motusLookupByDot(String(carrier.dotNumber));
-      } catch {
-        motusErrored = true;
-      }
+      motusPromise = motusLookupByDot(String(carrier.dotNumber));
     } else {
       // QCMobile miss → ask Motus before declaring the carrier nonexistent.
       try {
-        const dot =
-          kind === "dot" ? num : await motusResolveDocketToDot(num);
+        const dot = kind === "dot" ? num : await motusResolveDocketToDot(num);
         motus = dot ? await motusLookupByDot(dot) : null;
+        // For MC input, the AuthHist resolution must be corroborated by the
+        // carrier's own record — a transferred/reissued docket must never
+        // resolve to a snapshot that doesn't actually hold it.
+        if (motus && kind === "mc" && !motus.dockets.includes(num)) {
+          motus = null;
+        }
       } catch {
         motusErrored = true;
       }
@@ -377,18 +390,40 @@ export async function lookupCarrier(
         // Docket re-entry: QCMobile's docket endpoint still works, so an
         // established carrier invisible to the broken by-DOT endpoint can
         // still yield its full record (safety, census scale, address).
+        let reentryErrored = false;
         for (const docket of motus.dockets) {
           try {
-            carrier = await lookupByMc(docket);
-            if (carrier) {
+            const viaDocket = await lookupByMc(docket);
+            // Frozen QCMobile may still map a transferred docket to its OLD
+            // owner — identity must match Motus before trusting the record.
+            if (
+              viaDocket &&
+              Number(viaDocket.dotNumber) === Number(motus.dotNumber)
+            ) {
+              carrier = viaDocket;
               carrierSource = "qcmobile_docket";
               break;
             }
           } catch {
-            // best-effort — fall through to synthesis
+            reentryErrored = true;
           }
         }
         if (!carrier) {
+          // Synthesis zeroes the safety fields — truthful only for carriers
+          // QCMobile genuinely has nothing on. A legacy-format docket (≤7
+          // digits) means real pre-cutover history exists, so if QCMobile was
+          // ERRORING (not just empty) we must bail honestly rather than serve
+          // a fabricated-clean record for pricing.
+          const hasLegacyDocket = motus.dockets.some((d) => d.length <= 7);
+          if (hasLegacyDocket && (qcErrored || reentryErrored)) {
+            return {
+              ok: false,
+              reason: "api_error",
+              message:
+                "Carrier data sources are temporarily unavailable. Please try again.",
+            };
+          }
+          if (reentryErrored) qcErrored = true;
           carrier = synthesizeFromMotus(motus);
           carrierSource = "motus";
         }
@@ -413,6 +448,20 @@ export async function lookupCarrier(
       };
     }
 
+    // Run docket-numbers + SAFER scrape (+ the happy-path Motus consult) in
+    // parallel — all best-effort enrichment, no reason to serialize latency.
+    const [docketNumbers, safer, motusFromPromise] = await Promise.all([
+      lookupDocketNumbers(carrier.dotNumber),
+      scrapeSaferSnapshot(carrier.dotNumber),
+      motusPromise
+        ? motusPromise.catch(() => {
+            motusErrored = true;
+            return null;
+          })
+        : Promise.resolve(motus),
+    ]);
+    if (motusPromise) motus = motusFromPromise;
+
     const overrides = motus ? applyMotusOverrides(carrier, motus) : [];
     carrier._motus = {
       checkedAt: new Date().toISOString(),
@@ -427,16 +476,11 @@ export async function lookupCarrier(
           }
         : {}),
       ...(motusErrored ? { errored: true } : {}),
+      ...(qcErrored ? { qcErrored: true } : {}),
     };
 
-    // Run docket-numbers + SAFER scrape in parallel — both are best-
-    // effort enrichment and we don't want to serialize their latency.
-    const [docketNumbers, safer] = await Promise.all([
-      lookupDocketNumbers(carrier.dotNumber),
-      scrapeSaferSnapshot(carrier.dotNumber),
-    ]);
     // The docket-numbers endpoint is DOT-keyed (same outage risk as by-DOT);
-    // Motus dockets fill the gap, active authorities first.
+    // Motus MC dockets fill the gap, active carrier authorities first.
     const mcNumbers =
       docketNumbers.length === 0 && motus ? motus.dockets : docketNumbers;
     const telephone = safer.telephone ?? motus?.phone ?? null;
@@ -486,16 +530,34 @@ export async function lookupCarrierBasics(
   if (!num) return null;
   const byDot = await qcMobileBasicsByDot(num);
   if (byDot) return byDot;
-  // By-DOT came back empty. Try the docket endpoint before concluding anything.
-  const mcDigits = normalizeNumber(mc ?? "");
-  if (mcDigits) {
-    try {
-      const byDocket = await lookupByMc(mcDigits);
-      if (byDocket) return byDocket;
-    } catch {
-      // best-effort — the by-DOT verdict below still applies
+
+  // By-DOT came back empty. Before concluding "no safety record", try the
+  // still-working docket endpoint — via the caller's MC if it has one, else
+  // via the dockets Motus lists for this DOT (monitor rows carry no
+  // mc_number, so without the Motus resolve this fallback would never fire).
+  // Everything here THROWS on transient failure — a swallowed error would
+  // let the enrich rubber-stamp a dirty carrier as 'pass clean'.
+  const tried = new Set<string>();
+  const tryDocket = async (docket: string): Promise<FmcsaCarrier | null> => {
+    if (!docket || tried.has(docket)) return null;
+    tried.add(docket);
+    const viaDocket = await lookupByMc(docket); // throws on error — intended
+    // A docket the frozen data maps to a DIFFERENT DOT is the old owner's
+    // record; the requested carrier has no QCMobile history of its own.
+    if (viaDocket && Number(viaDocket.dotNumber) === Number(num)) {
+      return viaDocket;
     }
+    return null;
+  };
+
+  const byMc = await tryDocket(normalizeNumber(mc ?? ""));
+  if (byMc) return byMc;
+  const motus = await motusLookupByDot(num); // throws on transient — intended
+  for (const docket of motus?.dockets ?? []) {
+    const viaDocket = await tryDocket(docket);
+    if (viaDocket) return viaDocket;
   }
+  // Neither endpoint knows this carrier → genuinely no safety record yet.
   return null;
 }
 

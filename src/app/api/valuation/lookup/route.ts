@@ -15,6 +15,10 @@ const LIMIT = 10;
 const WINDOW_MS = 10 * 60 * 1000;
 
 export const dynamic = "force-dynamic";
+// Worst-case upstream chain (QCMobile + Motus + SAFER, each with retries) can
+// far outrun the platform default — cap it so a slow upstream day fails fast
+// instead of hanging the wizard.
+export const maxDuration = 60;
 
 type LookupBody = {
   sessionId: string;
