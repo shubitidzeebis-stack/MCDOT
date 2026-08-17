@@ -19,6 +19,7 @@
 import { getConfigValue, getFlag } from "@/lib/flags";
 import { isUnsubscribed } from "@/lib/db/email-followups";
 import {
+  applyMotusDraftVerdict,
   enqueueDraft,
   ensureMonitorTables,
   getCursor,
@@ -37,6 +38,7 @@ import {
   upsertMonitorCandidate,
 } from "@/lib/db/monitor";
 import { discoverCandidates } from "@/lib/monitor/discovery";
+import { motusLookupByDot } from "@/lib/motus";
 import { verifyCandidatesBatch } from "@/lib/monitor/verify";
 import { rateSafety } from "@/lib/audit/safety";
 import { lookupCarrierBasics } from "@/lib/fmcsa";
@@ -337,6 +339,31 @@ export async function monitorSweep(
         if (await isUnsubscribed(email)) {
           await setMonitorStage(t.id, "suppressed");
           continue;
+        }
+        // Motus spot-check, right before the send decision. The drafting
+        // gate's insurance_current/authority come from datasets frozen at the
+        // 2026-05-14 Motus cutover, so a carrier that cancelled insurance
+        // since then still reads "insured" here. ~25 carriers/run makes this
+        // the one place a per-carrier current-truth call is affordable and
+        // gates exactly what matters (an email claiming they're a qualified
+        // insured prospect). Positive evidence of a lapse blocks the draft;
+        // a Motus outage or miss falls back to status-quo drafting.
+        try {
+          const motus = t.dot_number ? await motusLookupByDot(t.dot_number) : null;
+          if (motus && (!motus.hasActiveAuthority || !motus.insuranceActive)) {
+            await applyMotusDraftVerdict(t.id, {
+              authorityActive: motus.hasActiveAuthority,
+              insuranceActive: motus.insuranceActive,
+            });
+            await logAgentAction("draft_blocked_motus", "agent", t.id, {
+              dot: t.dot_number,
+              hasActiveAuthority: motus.hasActiveAuthority,
+              insuranceActive: motus.insuranceActive,
+            });
+            continue;
+          }
+        } catch (e) {
+          console.error("[monitorSweep] motus draft check failed", t.dot_number, e);
         }
         try {
           const persona = selectPersona({ powerUnits: t.power_units });

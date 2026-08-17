@@ -772,6 +772,30 @@ export async function setMonitorStage(
   }
 }
 
+/**
+ * Applied when the pre-draft Motus spot-check contradicts the frozen legacy
+ * data (see sweep.ts pass 3). A detected insurance lapse flips
+ * insurance_current=false, which removes the carrier from the normal draft
+ * gate AND makes it a winding-down target (active authority + lapsed
+ * insurance) — the correct track for that state. A dead authority also stamps
+ * authority_status='inactive', taking it out of both tracks.
+ */
+export async function applyMotusDraftVerdict(
+  valuationId: number,
+  v: { authorityActive: boolean; insuranceActive: boolean },
+): Promise<void> {
+  const sql = getSql();
+  if (!sql) return;
+  await ensureValuationsSchema();
+  await sql`
+    UPDATE valuations
+       SET insurance_current = ${v.insuranceActive},
+           authority_status = CASE WHEN ${v.authorityActive} THEN authority_status ELSE 'inactive' END,
+           updated_at = now()
+     WHERE id = ${valuationId} AND source = 'monitor'
+  `;
+}
+
 export async function markMonitorOfferSent(valuationId: number): Promise<void> {
   const sql = getSql();
   if (!sql) return;
