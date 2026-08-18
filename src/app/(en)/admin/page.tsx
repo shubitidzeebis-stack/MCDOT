@@ -17,8 +17,20 @@ import { ensureValuationsSchema } from "@/lib/db/valuations";
 import { AdminMonitorPanel } from "@/components/AdminMonitorPanel";
 import { OutreachDraftsPanel } from "@/components/OutreachDraftsPanel";
 import { ActionItemsPanel } from "@/components/admin/ActionItemsPanel";
+import { MeetingsPanel, type MeetingView } from "@/components/admin/MeetingsPanel";
 import { listMonitorCandidates, listOutreachDrafts } from "@/lib/db/monitor";
 import { listOpenActionItems } from "@/lib/db/action-items";
+import { listUpcomingMeetings } from "@/lib/db/meetings";
+import { syncIfStale } from "@/lib/cal/sync";
+
+// Meeting times render in the VIEWER's timezone so nobody does mental math:
+// Donnie works from Tbilisi, Lukas from Mallorca. Keyed by admin account
+// email; anyone else (future accounts) gets Lukas's zone until added here.
+const VIEWER_TZ: Record<string, { tz: string; label: string }> = {
+  "donnie@groupveritor.com": { tz: "Asia/Tbilisi", label: "Tbilisi" },
+  "luka@groupveritor.com": { tz: "Europe/Madrid", label: "Mallorca" },
+};
+const DEFAULT_TZ = { tz: "Europe/Madrid", label: "Mallorca" };
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -135,6 +147,22 @@ export default async function AdminPage() {
   // API routes enforce the same boundary server-side.
   const isFullAdmin = session.role === "admin";
 
+  // Refresh the cal.eu meetings mirror if it's older than a couple of
+  // minutes, so the widget is current the moment someone looks at it (the
+  // 5-minute reminder cron keeps it warm in between). Swallows failures —
+  // a stale list must never block the dashboard.
+  await syncIfStale();
+  const meetingRows = await listUpcomingMeetings();
+  const meetings: MeetingView[] = meetingRows.map((m) => ({
+    uid: m.uid,
+    startsAt: m.starts_at,
+    company: m.legal_name,
+    attendee: m.attendee_name,
+    joinUrl: m.join_url,
+    matched: m.valuation_id != null,
+  }));
+  const viewer = VIEWER_TZ[session.email?.toLowerCase() ?? ""] ?? DEFAULT_TZ;
+
   const { partials, valuations } = await loadLeads();
   const monitor = isFullAdmin ? await listMonitorCandidates() : [];
   const outreachDrafts = isFullAdmin ? await listOutreachDrafts() : [];
@@ -154,6 +182,12 @@ export default async function AdminPage() {
           relay: relayValuations.length,
           partials: partials.length,
         }}
+      />
+
+      <MeetingsPanel
+        meetings={meetings}
+        viewerTz={viewer.tz}
+        tzLabel={viewer.label}
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
