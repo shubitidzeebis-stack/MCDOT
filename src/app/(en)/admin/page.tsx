@@ -158,8 +158,30 @@ export default async function AdminPage() {
     startsAt: m.starts_at,
     company: m.legal_name,
     attendee: m.attendee_name,
+    attendeeEmail: m.attendee_email,
     joinUrl: m.join_url,
     matched: m.valuation_id != null,
+    details:
+      m.valuation_id != null
+        ? {
+            valuationId: m.valuation_id,
+            dba: m.dba_name,
+            mc: m.mc_number,
+            dot: m.dot_number,
+            status: m.lead_status,
+            contactName: m.contact_name,
+            contactEmail: m.contact_email,
+            contactPhone: m.contact_phone,
+            telephone: m.telephone,
+            offerLow: m.valuation_low,
+            offerHigh: m.valuation_high,
+            city: m.lead_city,
+            state: m.lead_state,
+            // The pipeline table below only lists inbound leads, so the jump
+            // button is pointless for monitor-matched meetings.
+            inPipeline: m.lead_source === "inbound",
+          }
+        : null,
   }));
   const viewer = VIEWER_TZ[session.email?.toLowerCase() ?? ""] ?? DEFAULT_TZ;
 

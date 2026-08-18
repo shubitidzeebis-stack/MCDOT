@@ -7,6 +7,12 @@
 // behind Today/Tomorrow pills — Lukas explicitly asked for "small and easily
 // visible", not a full calendar grid.
 //
+// Clicking a company opens an inline info block (MC/DOT, status, contact,
+// offer range) fed by the same server query — no fetch on click. "Open in
+// pipeline" dispatches a CustomEvent that AdminValuationsPanel (same page)
+// listens for: it clears its filters, expands the lead card and scrolls to
+// it. An event, not shared state, so neither component imports the other.
+//
 // All times render in the VIEWER's timezone (Tbilisi for Donnie, Mallorca for
 // Lukas — resolved server-side in admin/page.tsx), including the today /
 // tomorrow bucketing, which is why it happens here with Intl rather than in
@@ -15,15 +21,36 @@
 // The live countdown renders only after mount: the server can't know the
 // client's clock, and a mismatched "in 12m" string would be a hydration error.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+
+export type CompanyDetails = {
+  valuationId: number;
+  dba: string | null;
+  mc: string | null;
+  dot: string | null;
+  status: string | null;
+  contactName: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  telephone: string | null;
+  offerLow: number | null;
+  offerHigh: number | null;
+  city: string | null;
+  state: string | null;
+  /** Whether the AdminValuationsPanel on this page actually lists the row
+   *  (inbound leads only) — controls the "Open in pipeline" button. */
+  inPipeline: boolean;
+};
 
 export type MeetingView = {
   uid: string;
   startsAt: string;
   company: string | null;
   attendee: string | null;
+  attendeeEmail: string | null;
   joinUrl: string | null;
   matched: boolean;
+  details: CompanyDetails | null;
 };
 
 function dateKey(iso: string | number | Date, tz: string): string {
@@ -56,6 +83,94 @@ function who(m: MeetingView): string {
   return m.company ?? m.attendee ?? "Unknown";
 }
 
+function money(n: number | null): string | null {
+  return n === null ? null : `$${n.toLocaleString("en-US")}`;
+}
+
+function openInPipeline(id: number) {
+  window.dispatchEvent(
+    new CustomEvent("veritor:open-valuation", { detail: { id } }),
+  );
+}
+
+/** Inline company info block shown under a clicked meeting row. */
+function CompanyInfo({ m }: { m: MeetingView }) {
+  const d = m.details;
+  const line = (label: string, value: ReactNode) => (
+    <span className="whitespace-nowrap">
+      <span className="text-white/35">{label} </span>
+      {value}
+    </span>
+  );
+  return (
+    <div className="mb-1.5 rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-white/75 ring-1 ring-white/10">
+      {d ? (
+        <>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {d.dba && line("DBA", d.dba)}
+            {d.mc && line("MC", d.mc)}
+            {d.dot && line("DOT", d.dot)}
+            {d.status && (
+              <span className="rounded-full bg-[#ff8a1a]/15 px-2 py-0.5 text-[10px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25">
+                {d.status.replace(/_/g, " ")}
+              </span>
+            )}
+            {(d.city || d.state) &&
+              line("", [d.city, d.state].filter(Boolean).join(", "))}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {d.contactName && line("Contact", d.contactName)}
+            {(d.contactPhone ?? d.telephone) && (
+              <a
+                href={`tel:${d.contactPhone ?? d.telephone}`}
+                className="text-[#ffb371] hover:underline"
+              >
+                {d.contactPhone ?? d.telephone}
+              </a>
+            )}
+            {d.contactEmail && (
+              <a
+                href={`mailto:${d.contactEmail}`}
+                className="text-[#ffb371] hover:underline"
+              >
+                {d.contactEmail}
+              </a>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+            {d.offerLow !== null && d.offerHigh !== null
+              ? line("Offer", `${money(d.offerLow)} – ${money(d.offerHigh)}`)
+              : line("Offer", "—")}
+            {d.inPipeline && (
+              <button
+                type="button"
+                onClick={() => openInPipeline(d.valuationId)}
+                className="rounded-md bg-white/[0.06] px-2 py-0.5 text-[11px] font-semibold text-white/80 ring-1 ring-white/15 hover:bg-white/[0.1]"
+              >
+                Open in pipeline ↓
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="text-white/45">
+            Not matched to a lead — booked as {m.attendee ?? "unknown"}
+          </span>
+          {m.attendeeEmail && (
+            <a
+              href={`mailto:${m.attendeeEmail}`}
+              className="text-[#ffb371] hover:underline"
+            >
+              {m.attendeeEmail}
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function MeetingsPanel({
   meetings,
   viewerTz,
@@ -66,6 +181,7 @@ export function MeetingsPanel({
   tzLabel: string;
 }) {
   const [day, setDay] = useState<"today" | "tomorrow">("today");
+  const [openUid, setOpenUid] = useState<string | null>(null);
   // null until mount → countdown is client-only (see header comment).
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -92,6 +208,10 @@ export function MeetingsPanel({
   }, [meetings, viewerTz, todayKey, tomorrowKey, clock]);
 
   const list = day === "today" ? todays : tomorrows;
+
+  function toggleInfo(uid: string) {
+    setOpenUid((cur) => (cur === uid ? null : uid));
+  }
 
   function nextDayPrefix(m: MeetingView): string {
     const key = dateKey(m.startsAt, viewerTz);
@@ -133,33 +253,42 @@ export function MeetingsPanel({
         </div>
 
         {next ? (
-          <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-white/8 pb-2.5">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-white/40">
-              Next
-            </span>
-            <span className="text-[15px] font-semibold text-white">
-              {nextDayPrefix(next)}
-              {fmtTime(next.startsAt, viewerTz)}
-            </span>
-            <span className="min-w-0 truncate text-[13px] text-white/80">
-              {who(next)}
-            </span>
-            {now !== null && (
-              <span className="text-[12px] font-semibold text-[#ffb371]">
-                {countdown(new Date(next.startsAt).getTime() - clock)}
+          <>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 pb-2.5">
+              <span className="text-[11px] uppercase tracking-[0.18em] text-white/40">
+                Next
               </span>
-            )}
-            {next.joinUrl && (
-              <a
-                href={next.joinUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="ml-auto rounded-lg bg-[#ff8a1a]/15 px-2.5 py-1 text-[12px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+              <span className="text-[15px] font-semibold text-white">
+                {nextDayPrefix(next)}
+                {fmtTime(next.startsAt, viewerTz)}
+              </span>
+              <button
+                type="button"
+                onClick={() => toggleInfo(next.uid)}
+                title="Company info"
+                className="min-w-0 truncate text-left text-[13px] text-white/80 underline decoration-white/25 decoration-dotted underline-offset-4 hover:text-[#ffb371]"
               >
-                Join
-              </a>
-            )}
-          </div>
+                {who(next)}
+              </button>
+              {now !== null && (
+                <span className="text-[12px] font-semibold text-[#ffb371]">
+                  {countdown(new Date(next.startsAt).getTime() - clock)}
+                </span>
+              )}
+              {next.joinUrl && (
+                <a
+                  href={next.joinUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="ml-auto rounded-lg bg-[#ff8a1a]/15 px-2.5 py-1 text-[12px] font-semibold text-[#ffb371] ring-1 ring-[#ff8a1a]/25 hover:bg-[#ff8a1a]/25"
+                >
+                  Join
+                </a>
+              )}
+            </div>
+            {openUid === next.uid && <CompanyInfo m={next} />}
+            <div className="border-b border-white/8" />
+          </>
         ) : (
           <p className="mt-2.5 border-b border-white/8 pb-2.5 text-[13px] text-white/40">
             No upcoming meetings.
@@ -171,39 +300,51 @@ export function MeetingsPanel({
             No meetings {day}.
           </p>
         ) : (
-          <ul className="max-h-44 divide-y divide-white/5 overflow-y-auto pt-1">
+          <ul className="max-h-56 divide-y divide-white/5 overflow-y-auto pt-1">
             {list.map((m) => {
               const past = new Date(m.startsAt).getTime() < clock - 20 * 60_000;
               return (
-                <li key={m.uid} className="flex items-center gap-2 py-1.5">
-                  <span
-                    className={`w-16 shrink-0 text-[13px] font-semibold ${
-                      past ? "text-white/30" : "text-white/85"
-                    }`}
-                  >
-                    {fmtTime(m.startsAt, viewerTz)}
-                  </span>
-                  <span
-                    className={`min-w-0 flex-1 truncate text-[13px] ${
-                      past ? "text-white/30 line-through" : "text-white/70"
-                    }`}
-                  >
-                    {who(m)}
-                    {!m.matched && m.attendee && (
-                      <span className="ml-1.5 text-[10px] text-white/30">
-                        no lead match
-                      </span>
-                    )}
-                  </span>
-                  {m.joinUrl && !past && (
-                    <a
-                      href={m.joinUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 rounded-md bg-white/[0.05] px-2 py-0.5 text-[11px] font-semibold text-white/70 ring-1 ring-white/10 hover:bg-white/[0.08]"
+                <li key={m.uid} className="py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-16 shrink-0 text-[13px] font-semibold ${
+                        past ? "text-white/30" : "text-white/85"
+                      }`}
                     >
-                      Join
-                    </a>
+                      {fmtTime(m.startsAt, viewerTz)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => toggleInfo(m.uid)}
+                      title="Company info"
+                      className={`min-w-0 flex-1 truncate text-left text-[13px] underline decoration-white/20 decoration-dotted underline-offset-4 ${
+                        past
+                          ? "text-white/30 line-through"
+                          : "text-white/70 hover:text-[#ffb371]"
+                      }`}
+                    >
+                      {who(m)}
+                      {!m.matched && m.attendee && (
+                        <span className="ml-1.5 text-[10px] no-underline text-white/30">
+                          no lead match
+                        </span>
+                      )}
+                    </button>
+                    {m.joinUrl && !past && (
+                      <a
+                        href={m.joinUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="shrink-0 rounded-md bg-white/[0.05] px-2 py-0.5 text-[11px] font-semibold text-white/70 ring-1 ring-white/10 hover:bg-white/[0.08]"
+                      >
+                        Join
+                      </a>
+                    )}
+                  </div>
+                  {openUid === m.uid && (
+                    <div className="mt-1.5">
+                      <CompanyInfo m={m} />
+                    </div>
                   )}
                 </li>
               );

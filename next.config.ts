@@ -71,6 +71,14 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+  // Pin the workspace root to this app dir. Without it, building from a git
+  // worktree under .claude/worktrees/ makes Turbopack infer the PARENT
+  // checkout as root (it sees both lockfiles) and emit an inconsistent build
+  // whose HTML references chunks that were never written (500s on every
+  // /_next/static asset). No-op on Vercel, where cwd is already the root.
+  turbopack: {
+    root: process.cwd(),
+  },
   experimental: {
     mdxRs: true,
   },

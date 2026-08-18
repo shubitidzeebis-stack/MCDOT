@@ -154,6 +154,21 @@ export type MeetingRow = {
   join_url: string | null;
   valuation_id: number | null;
   legal_name: string | null;
+  // Lead snapshot for the widget's company popover — joined here so one
+  // query feeds the whole card and clicking a company needs no round-trip.
+  dba_name: string | null;
+  mc_number: string | null;
+  dot_number: string | null;
+  lead_status: string | null;
+  lead_source: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  telephone: string | null;
+  valuation_low: number | null;
+  valuation_high: number | null;
+  lead_city: string | null;
+  lead_state: string | null;
 };
 
 /**
@@ -171,7 +186,12 @@ export async function listUpcomingMeetings(): Promise<MeetingRow[]> {
            m.starts_at::text AS starts_at,
            m.ends_at::text AS ends_at,
            m.attendee_name, m.attendee_email, m.join_url, m.valuation_id,
-           v.legal_name
+           v.legal_name, v.dba_name, v.mc_number, v.dot_number,
+           v.status AS lead_status, v.source AS lead_source,
+           v.contact_name, v.contact_email, v.contact_phone, v.telephone,
+           v.valuation_low, v.valuation_high,
+           v.phy_address->>'city' AS lead_city,
+           v.phy_address->>'state' AS lead_state
       FROM cal_meetings m
       LEFT JOIN valuations v ON v.id = m.valuation_id
      WHERE m.status = 'accepted'

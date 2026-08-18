@@ -118,6 +118,34 @@ export function AdminValuationsPanel({
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
+  // Jump-in from the meetings card ("Open in pipeline"): reset every filter
+  // so the row can't be hidden, expand it, and scroll it into view. Wired as
+  // a window event so MeetingsPanel needs no reference to this component.
+  // Re-subscribed when rows change so the existence check stays current.
+  useEffect(() => {
+    function onOpen(e: Event) {
+      const id = (e as CustomEvent<{ id?: number }>).detail?.id;
+      if (typeof id !== "number") return;
+      if (!rows.some((r) => r.id === id)) return;
+      setFilterStatus("all");
+      setFilterRelay("all");
+      setFilterEmail("all");
+      setSearch("");
+      setExpandedId(id);
+      // Let React commit the un-filtered, expanded row before scrolling.
+      // Instant on purpose: smooth scrollIntoView is silently ignored on
+      // some Chrome/Windows setups (verified on Lukas's machine), and an
+      // instant jump reads better across a 300-row table anyway.
+      setTimeout(() => {
+        document
+          .getElementById(`valuation-${id}`)
+          ?.scrollIntoView({ block: "start" });
+      }, 80);
+    }
+    window.addEventListener("veritor:open-valuation", onOpen);
+    return () => window.removeEventListener("veritor:open-valuation", onOpen);
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
