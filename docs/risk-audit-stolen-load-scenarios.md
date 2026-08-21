@@ -117,3 +117,25 @@ Situation: Lukas suspects one of his regular repeat buyers may be running the st
 - CarrierAssure: "Beware of carriers selling their MC number" — carrierassure.com/blog/alert-beware-of-carriers-selling-their-mc-number
 - FreightWaves: "Strategic cargo theft leaves drivers, brokers liable for massive losses" — freightwaves.com/news/strategic-cargo-theft-leaves-drivers-brokers-liable-for-massive-losses
 - WTW: fraudulent load booking & insurance response — wtwco.com/en-us/insights/2023/09/under-the-current-economic-climate-fraudulent-load-booking-by-bad-actors-is-a-common-occurrence
+
+---
+
+## Research update 2026-08-10 (verified against primary sources; full detail in `~/.claude/skills/veritor-legal/references/`)
+
+**Corrections to this document:**
+
+1. **"Oct 1, 2025: FMCSA stopped issuing new MC numbers" is wrong as stated.** FMCSA's own Registration Modernization FAQ says discontinuing MC numbers is a *proposal* pending a Notice of Proposed Rulemaking — not in effect. What did happen: legacy URS went permanently offline **May 14, 2026**; the new registration system is **Motus**. The scarcity/fraud-attractiveness argument survives in weaker form (proposal pending), but don't cite the halt as fact.
+2. **The FMCSA quote in the "Who actually pays" table ("can be held legally liable for fraudulent activities carried out using your MC number") could not be found in the bulletin text.** The bulletin threatens registration consequences — inactivation/revocation "**despite the intent of the parties**" — not personal fraud liability. The seller-harassment/investigation burden is real regardless; just don't attribute the liability claim to FMCSA.
+3. Bulletin dating nuance: newsroom bulletin is dated **March 19, 2026**; the identical FAQ version is stamped March 13. Cite either page.
+
+**New law since this doc was written:**
+
+- ***Montgomery v. Caribe Transport II*** (SCOTUS, unanimous, May 14, 2026): freight brokers CAN be sued under state negligence law for selecting an unsafe carrier — FAAAA preemption doesn't shield vetting decisions. Not directly about business-sale facilitators, but it hardens this doc's core thesis industry-wide: *documented vetting is the defense; every selection decision is a potential exhibit.* Kavanaugh's concurrence: reasonable, documented care should still win — a guarantee is not the standard.
+- Confirmed enforcement precedent for the chameleon scheme: **U.S. v. Billingslea** (DOT OIG) — wire fraud + false statements on Form MCSA-1 for reincarnating carriers; 30 months, ~$592k restitution (sentenced Aug 2024).
+- Willful-blindness standard confirmed (*Global-Tech*, two-part test: subjective belief in high probability + deliberate avoidance of learning). Mere carelessness is NOT willful blindness — but the §"Protocol: suspected repeat buyer" sequence (pause → verify → document → report) is exactly what defeats it. Also confirmed: liability caps and disclaimers do not survive gross-negligence/willful-misconduct/fraud findings — "behavior, not paperwork" is the law, not just prudence.
+- Marketplace-liability case pair worth knowing: *Roland v. Letgo* (10th Cir. 2024 — hands-off introducer WON; intervening criminal act broke causation) vs *Bolger v. Amazon* (Cal. 2020 — operationally-embedded platform LIABLE). Practical rule for deal structure: don't custody funds/documents, don't overclaim verification, stay the introducer.
+- NCCDB reportedly added a dedicated double-brokering/property-broker complaint category in a 2025 revamp (secondary-sourced — check the live form when filing).
+
+**Upgrade to "Suggested next steps" #5 (the attorney consult):** walk in with the standing 8-question list in `~/.claude/skills/veritor-legal/SKILL.md` — question #1 is the FMCSA record-update ↔ Amazon Relay continuity tension, which this document's Layer 2 (compliant-closing checklist) cannot be implemented without resolving.
+
+**Tooling now installed for scenario work** (2026-08-10): Anthropic's official legal plugins (demand letters in/out, subpoena triage, litigation holds, chronologies, claim charts, closing checklists), position-aware contract review, mandatory citation verification, and live data access (CourtListener case law; FMCSA carrier-record checks via data.transportation.gov — the "was the record ever updated" verification in the suspected-buyer protocol is now a one-line query). See `veritor-legal` skill for routing.
