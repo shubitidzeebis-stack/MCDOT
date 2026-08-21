@@ -24,6 +24,8 @@ import {
   setOutreachPaused,
 } from "@/lib/db/monitor";
 import { processOutreachQueue } from "@/lib/outreach/send";
+import { sweepCallInsights } from "@/lib/quo/insights";
+import { checkQuoWebhookLiveness } from "@/lib/quo/liveness";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -124,11 +126,35 @@ export async function GET(req: Request) {
     outreach = { error: true };
   }
 
+  // AI call-notes retry/backfill — serial and attempt-capped by design so a
+  // backlog can never burst the Anthropic rate limit (see sweepCallInsights).
+  // Wrapped so it can never break the cron.
+  let callInsights: unknown;
+  try {
+    callInsights = await sweepCallInsights();
+  } catch (err) {
+    console.error("[cron] sweepCallInsights failed", err);
+    callInsights = { error: true };
+  }
+
+  // Watchdog: alert if the Quo webhook feed has gone quiet (Quo auto-disables
+  // failing webhooks SILENTLY — this is what turned the 2026-08-18 incident
+  // into 3 lost days). Wrapped so it can never break the cron.
+  let quoLiveness: unknown;
+  try {
+    quoLiveness = await checkQuoWebhookLiveness();
+  } catch (err) {
+    console.error("[cron] checkQuoWebhookLiveness failed", err);
+    quoLiveness = { error: true };
+  }
+
   return NextResponse.json({
     ok: true,
     recovery,
     queue,
     monitor,
     outreach,
+    callInsights,
+    quoLiveness,
   });
 }

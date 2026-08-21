@@ -78,6 +78,12 @@ export async function ensureCallsSchema(): Promise<void> {
   // claim that makes generation idempotent across webhook retries.
   await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights JSONB`;
   await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights_at TIMESTAMPTZ`;
+  // Attempt ledger for the extraction. Caps token spend on a call whose
+  // extraction fails deterministically (it can never burn more than
+  // MAX_INSIGHTS_ATTEMPTS Claude calls) and preserves the last error for
+  // debugging — the 2026-08-18 incident left no trace once Vercel logs aged out.
+  await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights_attempts INT NOT NULL DEFAULT 0`;
+  await sql`ALTER TABLE quo_calls ADD COLUMN IF NOT EXISTS insights_error TEXT`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_created_idx ON quo_calls (created_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_external_idx ON quo_calls (external_number)`;
   await sql`CREATE INDEX IF NOT EXISTS quo_calls_valuation_idx ON quo_calls (valuation_id)`;
@@ -343,11 +349,20 @@ export type InsightsCall = {
 };
 
 /**
+ * Hard ceiling on extraction attempts per call. After this many failures the
+ * call stops being claimable and keeps its last error in insights_error —
+ * regenerate from the admin endpoint if it ever matters. Without a cap, a
+ * call that fails deterministically re-runs a full Claude extraction on every
+ * retry forever, which is exactly the token burn Lukas flagged.
+ */
+export const MAX_INSIGHTS_ATTEMPTS = 3;
+
+/**
  * Atomically claim a call for insight generation. Returns the call data on
  * success, null when the call is ineligible (no transcript yet, not matched
- * to a lead, too short to contain a conversation) or already claimed.
- * The claim-in-the-WHERE-clause makes concurrent webhook deliveries safe:
- * exactly one caller gets a row back.
+ * to a lead, too short to contain a conversation, out of attempts) or already
+ * claimed. The claim-in-the-WHERE-clause makes concurrent webhook deliveries
+ * safe: exactly one caller gets a row back.
  */
 export async function claimCallForInsights(id: string): Promise<InsightsCall | null> {
   const sql = getSql();
@@ -363,6 +378,7 @@ export async function claimCallForInsights(id: string): Promise<InsightsCall | n
        AND COALESCE(c.duration_sec, 0) >= 40
        AND jsonb_typeof(c.transcript) = 'array'
        AND jsonb_array_length(c.transcript) >= 6
+       AND COALESCE(c.insights_attempts, 0) < ${MAX_INSIGHTS_ATTEMPTS}
     RETURNING c.id, c.direction, c.duration_sec, c.external_number,
               c.transcript, c.summary, c.valuation_id,
               (SELECT v.legal_name FROM valuations v WHERE v.id = c.valuation_id) AS legal_name
@@ -407,21 +423,81 @@ export async function saveCallInsights(id: string, insights: unknown): Promise<v
   await ensureCallsSchema();
   await sql`
     UPDATE quo_calls
-       SET insights = ${JSON.stringify(insights)}::jsonb, updated_at = now()
+       SET insights = ${JSON.stringify(insights)}::jsonb,
+           insights_error = NULL, updated_at = now()
      WHERE id = ${id}
   `;
 }
 
-/** Release a failed claim so a webhook redelivery can retry the extraction. */
-export async function releaseInsightsClaim(id: string): Promise<void> {
+/**
+ * Release a failed claim so the cron sweep (or a webhook redelivery) can
+ * retry the extraction — while counting the attempt and keeping the error, so
+ * a persistently failing call runs out of attempts instead of retrying
+ * forever.
+ */
+export async function releaseInsightsClaim(id: string, error?: string): Promise<void> {
   const sql = getSql();
   if (!sql) return;
   await ensureCallsSchema();
   await sql`
     UPDATE quo_calls
-       SET insights_at = NULL, updated_at = now()
+       SET insights_at = NULL,
+           insights_attempts = COALESCE(insights_attempts, 0) + 1,
+           insights_error = ${error ? error.slice(0, 500) : null},
+           updated_at = now()
      WHERE id = ${id} AND insights IS NULL
   `;
+}
+
+/**
+ * Calls the cron sweep should (re)try insights for: eligible under the same
+ * conditions as claimCallForInsights but unclaimed. Bounded to the last 14
+ * days so the sweep can never wander into ancient history, oldest first so a
+ * backlog drains in call order.
+ */
+export async function listInsightsCandidates(limit = 5): Promise<string[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  await ensureCallsSchema();
+  const rows = (await sql`
+    SELECT c.id
+      FROM quo_calls c
+     WHERE c.insights_at IS NULL
+       AND c.transcript IS NOT NULL
+       AND c.valuation_id IS NOT NULL
+       AND COALESCE(c.duration_sec, 0) >= 40
+       AND jsonb_typeof(c.transcript) = 'array'
+       AND jsonb_array_length(c.transcript) >= 6
+       AND COALESCE(c.insights_attempts, 0) < ${MAX_INSIGHTS_ATTEMPTS}
+       AND c.created_at > now() - interval '14 days'
+     ORDER BY c.created_at ASC
+     LIMIT ${limit}
+  `) as Array<{ id: string }>;
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Matched, missed, ended inbound calls that never got their short lead
+ * comment (same eligibility as claimMissedCallComment). Backstop for
+ * deliveries lost while the Quo webhook was down.
+ */
+export async function listMissedCommentCandidates(limit = 5): Promise<string[]> {
+  const sql = getSql();
+  if (!sql) return [];
+  await ensureCallsSchema();
+  const rows = (await sql`
+    SELECT id
+      FROM quo_calls
+     WHERE insights_at IS NULL
+       AND valuation_id IS NOT NULL
+       AND direction = 'incoming'
+       AND answered_at IS NULL
+       AND completed_at IS NOT NULL
+       AND created_at > now() - interval '14 days'
+     ORDER BY created_at ASC
+     LIMIT ${limit}
+  `) as Array<{ id: string }>;
+  return rows.map((r) => r.id);
 }
 
 /** Unclaimed read of the insight inputs — for the admin dry-run endpoint. */

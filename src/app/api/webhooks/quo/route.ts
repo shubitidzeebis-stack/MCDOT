@@ -20,12 +20,21 @@
 // If deliveries ever 401 across the board, check whether the webhook was
 // recreated through the beta flow before suspecting the secret.
 //
-// Error handling: processing failures return 5xx so Quo redelivers (its retry
-// ladder runs ~3 days and each retry is re-signed with a fresh timestamp, so
-// the replay window doesn't block them). That's safe because every write here
-// is an idempotent upsert — a duplicate delivery converges to the same row.
-// For the same reason the webhook_events insert is a dedupe HINT, not a gate:
-// if it errors we process anyway rather than risk dropping a missed call.
+// Error handling: INGEST failures (DB upserts) return 5xx so Quo redelivers
+// (its retry ladder runs ~3 days and each retry is re-signed with a fresh
+// timestamp, so the replay window doesn't block them). That's safe because
+// every write here is an idempotent upsert — a duplicate delivery converges
+// to the same row. For the same reason the webhook_events insert is a dedupe
+// HINT, not a gate: if it errors we process anyway rather than risk dropping
+// a missed call.
+//
+// The AI insights / missed-call-comment steps are the EXCEPTION: their
+// failures are logged and swallowed, never 5xx'd. Lesson of 2026-08-18: a
+// dead ANTHROPIC_API_KEY_CALLS made every eligible delivery 500, Quo's
+// auto-disable tripped (twice), and ALL call/message ingestion silently
+// stopped for 3 days. Insights retries now belong to the cron sweep
+// (sweepCallInsights), which is attempt-capped and serial — this route must
+// stay 2xx whenever the raw event has been safely persisted.
 
 import { NextResponse } from "next/server";
 import { verifyQuoSignature } from "@/lib/quo/verify";
@@ -60,6 +69,19 @@ function str(v: unknown): string | null {
 
 function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * Run an AI enrichment step without letting its failure 5xx the webhook.
+ * The raw event is already persisted by the time these run; the cron sweep
+ * retries anything that failed here. See the error-handling note up top.
+ */
+async function tryEnrichment(label: string, step: () => Promise<unknown>): Promise<void> {
+  try {
+    await step();
+  } catch (err) {
+    console.error(`[webhooks/quo] ${label} failed (sweep will retry)`, err);
+  }
 }
 
 /**
@@ -208,8 +230,8 @@ export async function POST(req: Request) {
           // Matched + missed inbound → short comment on the lead. Matched +
           // answered with the transcript already attached (events race) →
           // generate the AI notes now. Both are idempotent no-ops otherwise.
-          await processMissedCallComment(id);
-          await processCallInsights(id);
+          await tryEnrichment("missed-call comment", () => processMissedCallComment(id));
+          await tryEnrichment("insights", () => processCallInsights(id));
         }
         break;
       }
@@ -232,9 +254,9 @@ export async function POST(req: Request) {
         if (id && obj.dialogue != null) {
           await attachCallMedia(id, { transcript: obj.dialogue });
           // The usual trigger for the AI notes: transcript is the last piece
-          // needed. Throws on extraction failure → this route 500s → Quo
-          // redelivers → retry. The claim inside makes duplicates safe.
-          await processCallInsights(id);
+          // needed. Failures are swallowed (claim released, attempt counted)
+          // and the cron sweep retries. The claim inside makes duplicates safe.
+          await tryEnrichment("insights", () => processCallInsights(id));
         }
         break;
       }
@@ -245,7 +267,7 @@ export async function POST(req: Request) {
           await attachCallMedia(id, { summary: obj.summary });
           // Last-chance trigger for calls whose lead match landed after the
           // transcript did. No-op when already generated.
-          await processCallInsights(id);
+          await tryEnrichment("insights", () => processCallInsights(id));
         }
         break;
       }
@@ -261,11 +283,13 @@ export async function POST(req: Request) {
         console.log("[webhooks/quo] unhandled event type:", type);
     }
   } catch (err) {
-    // 5xx on purpose: the payload is verified and parseable, so a failure
-    // here is OUR side (usually a transient DB error). Quo's bounded retry
-    // ladder (~3 days, re-signed each attempt) is the recovery mechanism, and
-    // idempotent upserts make redelivery safe. Swallowing this would trade a
-    // few retried requests for silently losing a missed call.
+    // 5xx on purpose — but note only INGEST steps (DB upserts) can throw
+    // here; the AI steps are wrapped in tryEnrichment above. The payload is
+    // verified and parseable, so a failure here is OUR side (usually a
+    // transient DB error). Quo's bounded retry ladder (~3 days, re-signed
+    // each attempt) is the recovery mechanism, and idempotent upserts make
+    // redelivery safe. Swallowing this would trade a few retried requests
+    // for silently losing a missed call.
     console.error("[webhooks/quo] processing failed", type, err);
     return NextResponse.json({ error: "Processing failed." }, { status: 500 });
   }

@@ -13,8 +13,10 @@
 // Idempotency: quo_calls.insights_at is an atomic claim (see calls.ts) —
 // webhook retries and event races can call processCallInsights() any number
 // of times, but only the first eligible call does work. On an extraction
-// failure the claim is released and the error rethrown so the webhook 500s
-// and Quo's retry ladder becomes our retry mechanism.
+// failure the claim is released (attempt counted, error stored) and the
+// error rethrown. Retries are the cron sweep's job (sweepCallInsights below),
+// NOT the webhook's: letting the webhook 500 on extraction failures tripped
+// Quo's auto-disable on 2026-08-18 and silently killed all call ingestion.
 //
 // Key: ANTHROPIC_API_KEY_CALLS, falling back to ANTHROPIC_API_KEY_OUTREACH
 // (same per-feature-key convention as chat/outreach; add the dedicated key in
@@ -25,6 +27,8 @@ import { addValuationComment } from "@/lib/db/valuations";
 import {
   claimCallForInsights,
   claimMissedCallComment,
+  listInsightsCandidates,
+  listMissedCommentCandidates,
   releaseInsightsClaim,
   saveCallInsights,
   type InsightsCall,
@@ -267,8 +271,9 @@ export function formatInsightsComment(
 /**
  * Generate + persist insights for one call, if it's eligible and unclaimed.
  * Safe to call on every webhook event for the call — returns false when there
- * is nothing to do. Throws on extraction failure (after releasing the claim)
- * so the webhook can 500 and Quo's redelivery retries us.
+ * is nothing to do. Throws on extraction failure, after releasing the claim
+ * WITH the attempt counted — callers decide what a failure means (the admin
+ * endpoint surfaces it; the webhook and the cron sweep log and move on).
  */
 export async function processCallInsights(callId: string): Promise<boolean> {
   const call = await claimCallForInsights(callId);
@@ -292,7 +297,10 @@ export async function processCallInsights(callId: string): Promise<boolean> {
     }
     return true;
   } catch (err) {
-    await releaseInsightsClaim(callId);
+    await releaseInsightsClaim(
+      callId,
+      err instanceof Error ? err.message : String(err),
+    );
     throw err;
   }
 }
@@ -306,12 +314,62 @@ export async function processMissedCallComment(callId: string): Promise<boolean>
   const call = await claimMissedCallComment(callId);
   if (!call || call.valuation_id == null) return false;
   const vm = call.voicemail_url ? " Voicemail left — listen in Calls." : "";
-  await addValuationComment(
-    call.valuation_id,
-    "Quo AI",
-    `📞 Missed inbound call from this lead${call.external_number ? ` (•${call.external_number.slice(-4)})` : ""}.${vm}`,
-  );
+  try {
+    await addValuationComment(
+      call.valuation_id,
+      "Quo AI",
+      `📞 Missed inbound call from this lead${call.external_number ? ` (•${call.external_number.slice(-4)})` : ""}.${vm}`,
+    );
+  } catch (err) {
+    // Release so the sweep can retry — without this, a failed comment write
+    // would hold the claim forever and the note would silently never appear.
+    await releaseInsightsClaim(
+      callId,
+      err instanceof Error ? err.message : String(err),
+    );
+    throw err;
+  }
   return true;
+}
+
+/**
+ * Cron sweep: retry/backfill pending call insights and missed-call comments.
+ *
+ * STRICTLY SERIAL, small batch, attempt-capped. This is the deliberate
+ * answer to the 2026-08-18 outage cascade: extraction failures no longer 500
+ * the Quo webhook (which tripped Quo's auto-disable and killed ALL call
+ * ingestion for 3 days) — instead they land here, one Claude request at a
+ * time, so a backlog can never burst past the API rate limit and a
+ * persistently failing call stops after MAX_INSIGHTS_ATTEMPTS.
+ */
+export async function sweepCallInsights(maxPerRun = 5): Promise<{
+  generated: number;
+  commented: number;
+  failed: number;
+}> {
+  let generated = 0;
+  let commented = 0;
+  let failed = 0;
+
+  for (const id of await listInsightsCandidates(maxPerRun)) {
+    try {
+      if (await processCallInsights(id)) generated += 1;
+    } catch (err) {
+      failed += 1;
+      console.error("[sweepCallInsights] insights failed", id, err);
+    }
+  }
+
+  for (const id of await listMissedCommentCandidates(maxPerRun)) {
+    try {
+      if (await processMissedCallComment(id)) commented += 1;
+    } catch (err) {
+      failed += 1;
+      console.error("[sweepCallInsights] missed-call comment failed", id, err);
+    }
+  }
+
+  return { generated, commented, failed };
 }
 
 /** Dry-run helper for the admin regenerate/test endpoint: extract only. */

@@ -1235,6 +1235,21 @@ export async function recordWebhookEvent(id: string): Promise<boolean> {
   }
 }
 
+/**
+ * Newest Quo webhook delivery we have ever recorded, or null before the first
+ * one. Quo event ids are 'EV…'; the same table also holds Resend deliveries
+ * ('msg_…'), which must not count as phone-line liveness.
+ */
+export async function latestQuoWebhookEventAt(): Promise<string | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureMonitorTables();
+  const rows = (await sql`
+    SELECT max(created_at)::text AS at FROM webhook_events WHERE id LIKE 'EV%'
+  `) as Array<{ at: string | null }>;
+  return rows[0]?.at ?? null;
+}
+
 // One-time requalification: force every verified row back through the verify
 // queue (by aging updated_at past the 14-day staleness gate) so the whole
 // verified set is re-rated under the CURRENT engine after a rules change.
