@@ -198,7 +198,11 @@ type Dict = {
     floorNote: string;
     indicativeBlock: string;
     haveQuestions: string;
+    talkHeading: string;
+    callNow: string;
+    callNowNote: string;
     scheduleCall: string;
+    scheduleNote: string;
     nextAvailable: string;
     // Common
     back: string;
@@ -641,7 +645,11 @@ export const DICT: Record<Locale, Dict> = {
       indicativeBlock:
         "This is an indicative range based on your FMCSA snapshot. Final offer is confirmed on a 15-minute call after we review your insurance, MC age, and contract status — then in writing within 24 hours.",
       haveQuestions: "Have questions? Contact us →",
+      talkHeading: "What's next",
+      callNow: "Call us now",
+      callNowNote: "Fastest — talk to us right away",
       scheduleCall: "Schedule a call",
+      scheduleNote: "Pick a time that suits you — 15 minutes",
       nextAvailable: "Next available:",
       back: "← Back",
       errorNumber: "Please enter your MC or DOT number.",
@@ -1082,7 +1090,11 @@ export const DICT: Record<Locale, Dict> = {
       indicativeBlock:
         "Este es un rango indicativo basado en su registro FMCSA. La oferta final se confirma en una llamada de 15 minutos tras revisar seguro, antigüedad de MC y estado del contrato — luego por escrito en 24 horas.",
       haveQuestions: "¿Tiene preguntas? Contáctenos →",
+      talkHeading: "Siguiente paso",
+      callNow: "Llámenos ahora",
+      callNowNote: "Lo más rápido — hable con nosotros ahora mismo",
       scheduleCall: "Agendar llamada",
+      scheduleNote: "Elija el horario que le convenga — 15 minutos",
       nextAvailable: "Próximo disponible:",
       back: "← Atrás",
       errorNumber: "Por favor ingrese su número MC o DOT.",
@@ -1522,7 +1534,11 @@ export const DICT: Record<Locale, Dict> = {
       indicativeBlock:
         "Это ориентировочный диапазон на основе записи FMCSA. Финальное предложение — после 15-минутного звонка с проверкой страховки, возраста MC и контракта — затем письменно в течение 24 часов.",
       haveQuestions: "Есть вопросы? Свяжитесь с нами →",
+      talkHeading: "Что дальше",
+      callNow: "Позвоните нам",
+      callNowNote: "Быстрее всего — поговорим прямо сейчас",
       scheduleCall: "Назначить звонок",
+      scheduleNote: "Выберите удобное время — 15 минут",
       nextAvailable: "Ближайшее время:",
       back: "← Назад",
       errorNumber: "Пожалуйста, введите номер MC или DOT.",

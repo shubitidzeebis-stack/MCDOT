@@ -996,12 +996,23 @@ function Step5({
   hasRelay: "yes" | "no";
 }) {
   const [slots, setSlots] = useState<string[]>([]);
+  // The calendar renders only after the seller picks "Schedule a call" —
+  // the result screen offers call-now vs book-a-slot as an explicit choice.
+  const [showCal, setShowCal] = useState(false);
+  const calRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     fetch("/api/cal/next-slots")
       .then((r) => (r.ok ? r.json() : { slots: [] }))
       .then((data) => setSlots(Array.isArray(data.slots) ? data.slots : []))
       .catch(() => setSlots([]));
   }, []);
+  function openSchedule() {
+    setShowCal(true);
+    // Wait a frame so the embed container exists before scrolling to it.
+    requestAnimationFrame(() => {
+      calRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  }
   const addressLine = [
     carrier.address.street,
     carrier.address.city,
@@ -1086,44 +1097,70 @@ function Step5({
         <p className="text-[13px] leading-relaxed text-white/65">{t.indicativeBlock}</p>
       </div>
 
-      {/* Inline Cal.com calendar — booking happens on this same page,
-          no extra click, no new tab. The user's name + email + carrier
-          context are pre-filled but editable. */}
-      <div className="mt-7">
-        <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
-            {t.scheduleCall}
-          </p>
-          {slots.length > 0 && (
-            <p className="text-[12px] text-white/55">
-              {t.nextAvailable}{" "}
-              <span className="font-medium text-white/85">
-                {formatSlot(slots[0])}
+      {/* Next step — the seller picks the channel: call the company number
+          right now (tel: link, tracked as phone_call_click by the global
+          ClickTracker) or book a slot, which reveals the inline Cal.com
+          calendar with name + email + carrier context pre-filled. */}
+      <div className="mt-7" data-track-source="valuation-result">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.32em] text-[#ff8a1a]">
+          {t.talkHeading}
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <a
+            href={`tel:${SITE.phoneTel}`}
+            className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-[#ff8a1a]/60 hover:bg-[#ff8a1a]/[0.08]"
+          >
+            <span className="text-[15px] font-semibold text-white">{t.callNow}</span>
+            <span className="mt-1 text-[17px] font-semibold tracking-tight text-[#ffb371]">
+              {SITE.phoneDisplay}
+            </span>
+            <span className="mt-1 text-[13px] text-white/55">{t.callNowNote}</span>
+          </a>
+          <button
+            type="button"
+            onClick={openSchedule}
+            className={`group flex flex-col rounded-xl border p-4 text-left transition-all ${
+              showCal
+                ? "border-[#ff8a1a]/60 bg-[#ff8a1a]/[0.08]"
+                : "border-white/10 bg-white/[0.03] hover:border-[#ff8a1a]/60 hover:bg-[#ff8a1a]/[0.08]"
+            }`}
+          >
+            <span className="text-[15px] font-semibold text-white">{t.scheduleCall}</span>
+            {slots.length > 0 ? (
+              <span className="mt-1 text-[13px] text-emerald-300">
+                {t.nextAvailable} {formatSlot(slots[0])}
               </span>
-            </p>
-          )}
+            ) : (
+              <span className="mt-1 text-[13px] text-white/55">{t.scheduleNote}</span>
+            )}
+          </button>
         </div>
-        {slots.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {slots.slice(0, 3).map((iso) => (
-              <span
-                key={iso}
-                className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-300"
-              >
-                {formatSlot(iso)}
-              </span>
-            ))}
+
+        {showCal && (
+          <div ref={calRef} className="mt-4 scroll-mt-6">
+            {slots.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {slots.slice(0, 3).map((iso) => (
+                  <span
+                    key={iso}
+                    className="rounded-full border border-emerald-400/20 bg-emerald-500/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-300"
+                  >
+                    {formatSlot(iso)}
+                  </span>
+                ))}
+              </div>
+            )}
+            <CalEmbed
+              calLink="lukaveritor/15min"
+              origin="https://cal.eu"
+              prefill={{
+                name: contact.name || undefined,
+                email: contact.email || undefined,
+                notes,
+              }}
+            />
           </div>
         )}
-        <CalEmbed
-          calLink="lukaveritor/15min"
-          origin="https://cal.eu"
-          prefill={{
-            name: contact.name || undefined,
-            email: contact.email || undefined,
-            notes,
-          }}
-        />
       </div>
 
       <div className="mt-7 text-center">
