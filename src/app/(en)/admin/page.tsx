@@ -16,10 +16,8 @@ import { resolveFromAddress } from "@/lib/email/send-as";
 import { ensureValuationsSchema } from "@/lib/db/valuations";
 import { AdminMonitorPanel } from "@/components/AdminMonitorPanel";
 import { OutreachDraftsPanel } from "@/components/OutreachDraftsPanel";
-import { ActionItemsPanel } from "@/components/admin/ActionItemsPanel";
 import { MeetingsPanel, type MeetingView } from "@/components/admin/MeetingsPanel";
 import { listMonitorCandidates, listOutreachDrafts } from "@/lib/db/monitor";
-import { listOpenActionItems } from "@/lib/db/action-items";
 import { listUpcomingMeetings } from "@/lib/db/meetings";
 import { syncIfStale } from "@/lib/cal/sync";
 
@@ -188,8 +186,6 @@ export default async function AdminPage() {
   const { partials, valuations } = await loadLeads();
   const monitor = isFullAdmin ? await listMonitorCandidates() : [];
   const outreachDrafts = isFullAdmin ? await listOutreachDrafts() : [];
-  // Call-extracted to-dos. Donnie sees them too — half the items are his.
-  const actionItems = await listOpenActionItems(30);
   const valuationsWithEmail = valuations.filter((v) => v.contact_email);
   const relayValuations = valuations.filter((v) => v.has_amazon_relay === true);
   const currentUser = { name: session.name, email: session.email };
@@ -262,8 +258,6 @@ export default async function AdminPage() {
           </a>
         )}
       </div>
-
-      <ActionItemsPanel initial={actionItems} />
 
       {/* fromAddress is resolved server-side (allowlist-checked) purely so the
           composer's helper text names the mailbox this person actually sends

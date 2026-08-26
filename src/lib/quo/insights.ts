@@ -1,10 +1,9 @@
-// Call insights — turns a Quo call transcript into a structured deal brief
-// and pushes it to where Lukas actually works:
-//
-//   1. A "Quo AI" comment on the matched lead (summary + key facts like bank,
-//      factoring company, Amazon Relay status — flagged by importance).
-//   2. Rows in lead_action_items for the commitments made on the call ("send
-//      the BoS", "call back Tuesday") — surfaced as a to-do list on /admin.
+// Call insights — turns a Quo call transcript into a structured deal brief,
+// pushed as a "Quo AI" comment on the matched lead: summary, key facts
+// (bank, factoring company, Amazon Relay status — flagged by importance),
+// and the commitments made on the call ("send the BoS", "call back Tuesday").
+// (Those commitments used to also feed a lead_action_items to-do list on
+// /admin, removed 2026-08-27 as unused — the comment is the record now.)
 //
 // Extraction runs through Claude (claude-opus-5) with a structured-output
 // schema, NOT Quo's own generic summary: Quo's summarizer doesn't know that
@@ -33,7 +32,6 @@ import {
   saveCallInsights,
   type InsightsCall,
 } from "@/lib/db/calls";
-import { addActionItems } from "@/lib/db/action-items";
 
 const MODEL = "claude-opus-5";
 // Hard cap on transcript characters sent to the model — a multi-hour call
@@ -293,7 +291,6 @@ export async function processCallInsights(callId: string): Promise<boolean> {
         "Quo AI",
         formatInsightsComment(insights, call),
       );
-      await addActionItems(call.valuation_id, callId, insights.action_items);
     }
     return true;
   } catch (err) {
