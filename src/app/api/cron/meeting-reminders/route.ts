@@ -31,21 +31,14 @@ export const maxDuration = 60;
 const FROM = process.env.MEETING_REMINDER_FROM || "+13262225444";
 
 // Every recipient gets the meeting time rendered in THEIR timezone, labeled
-// so a reminder forwarded between them can't be misread (Lukas is in
-// Mallorca, Donnie in Tbilisi — 2h apart, exactly the gap that causes a
-// missed meeting).
+// so a forwarded reminder can't be misread. (Donnie was removed 2026-08-27
+// along with his admin account — do not re-add without Lukas's say-so.)
 const RECIPIENTS = [
   {
     name: "Lukas",
     to: process.env.MEETING_REMINDER_TO || "+13264670388",
     tz: "Europe/Madrid",
     tzLabel: "Mallorca time",
-  },
-  {
-    name: "Donnie",
-    to: process.env.MEETING_REMINDER_TO_2 || "+12832186198",
-    tz: "Asia/Tbilisi",
-    tzLabel: "Tbilisi time",
   },
 ];
 

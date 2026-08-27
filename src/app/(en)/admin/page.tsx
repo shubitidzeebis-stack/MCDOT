@@ -21,11 +21,10 @@ import { listMonitorCandidates, listOutreachDrafts } from "@/lib/db/monitor";
 import { listUpcomingMeetings } from "@/lib/db/meetings";
 import { syncIfStale } from "@/lib/cal/sync";
 
-// Meeting times render in the VIEWER's timezone so nobody does mental math:
-// Donnie works from Tbilisi, Lukas from Mallorca. Keyed by admin account
-// email; anyone else (future accounts) gets Lukas's zone until added here.
+// Meeting times render in the VIEWER's timezone so nobody does mental math.
+// Keyed by admin account email; anyone else (future accounts) gets Lukas's
+// zone until added here.
 const VIEWER_TZ: Record<string, { tz: string; label: string }> = {
-  "donnie@groupveritor.com": { tz: "Asia/Tbilisi", label: "Tbilisi" },
   "luka@groupveritor.com": { tz: "Europe/Madrid", label: "Mallorca" },
 };
 const DEFAULT_TZ = { tz: "Europe/Madrid", label: "Mallorca" };
