@@ -6,6 +6,9 @@ import { ALL_STATES } from "@/lib/areas";
 // every build trains Google to discount the sitemap's freshness signals
 // over time. Bump these when content actually changes.
 const BASELINE = new Date("2026-05-01");
+// Money pages shipped 2026-08-28 — dated separately so their freshness
+// signal is real without re-dating the whole site.
+const MONEY_PAGES_DATE = new Date("2026-08-28");
 
 type LocaleAware = {
   path: string;
@@ -60,6 +63,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     }),
   );
+
+  // SEO money pages — EN-only, transactional, dated at their ship date.
+  const moneyPageEntries: MetadataRoute.Sitemap = [
+    "/sell-my-trucking-company",
+    "/sell-my-mc-authority",
+    "/sell-amazon-relay-account",
+  ].map((path) => ({
+    url: `${base}${path}`,
+    lastModified: MONEY_PAGES_DATE,
+    changeFrequency: "monthly",
+    priority: 0.9,
+    alternates: { languages: { "x-default": `${base}${path}` } },
+  }));
 
   // Each multi-locale path emits THREE entries — one per locale —
   // because Google reads hreflang from the URL it found, and each
@@ -135,5 +151,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }))
   );
 
-  return [...multiLocaleEntries, ...enOnlyEntries, ...blogEntries, ...areaOverview, ...stateEntries, ...cityEntries];
+  return [...multiLocaleEntries, ...enOnlyEntries, ...moneyPageEntries, ...blogEntries, ...areaOverview, ...stateEntries, ...cityEntries];
 }
