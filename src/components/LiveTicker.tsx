@@ -14,7 +14,7 @@ const ENTRIES: string[] = [
   "Average wire: same business day after signing",
   "Funds escrowed with attorneys, not direct",
   "We respond to every enquiry in under 4 working hours",
-  "400+ LLCs closed nationwide",
+  "150+ valuations delivered every month",
 ];
 
 const ROTATE_MS = 5000;

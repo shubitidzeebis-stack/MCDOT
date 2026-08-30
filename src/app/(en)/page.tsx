@@ -16,7 +16,7 @@ export default function Home() {
     <>
       <ServiceSchema
         name="Veritor Group — US trucking company sales"
-        description="Sell a US trucking company, including carriers running Amazon Relay. Free FMCSA valuation, written offer in 24 hours, in-person bank closing in 3–5 business days. No fees or commission to the seller. 400+ sales closed."
+        description="Sell a US trucking company, including carriers running Amazon Relay. Free FMCSA valuation, written offer in 24 hours, in-person bank closing in 3–5 business days. No fees or commission to the seller — every sale closed in person and documented."
         url="/"
       />
       <Header locale="en" />

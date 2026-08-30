@@ -182,7 +182,7 @@ export function emailShell({
                   <a href="mailto:${safe(SITE.email)}" style="color:${COLORS.accent}; text-decoration:none;">${safe(SITE.email)}</a><br />
                   ${safe(SITE.phoneDisplay)}<br />
                   <a href="${safe(siteUrl)}" style="color:${COLORS.accent}; text-decoration:none;">${safe(siteUrl.replace(/^https?:\/\//, ""))}</a><br />
-                  <span style="color:${COLORS.textMuted};">${safe(SITE.trust.acquisitionsCompleted)} acquisitions · ${safe(SITE.trust.averageCloseDays)} · escrow-backed</span>
+                  <span style="color:${COLORS.textMuted};">Veritor Group LLC (Ohio) · ${safe(SITE.trust.averageCloseDays)} · closed in person at your bank</span>
                 </p>
               </td>
             </tr>

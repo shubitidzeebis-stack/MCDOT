@@ -130,7 +130,7 @@ export function LocalBusinessSchema() {
         logo: `${BASE_URL}/brand/logo-color.png`,
         image: `${BASE_URL}/brand/logo-color.png`,
         description:
-          "Trucking company sales handled end to end for US owner-operators and small fleets, including carriers running Amazon Relay. Written offer, in-person bank closing, average 3–5 business days. 400+ sales closed nationwide.",
+          "Trucking company sales handled end to end for US owner-operators and small fleets, including carriers running Amazon Relay. Written offer, in-person bank closing, average 3–5 business days. Every sale closed in person and documented.",
         telephone: SITE.phoneTel,
         email: SITE.email,
         address: POSTAL_ADDRESS,

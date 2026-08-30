@@ -54,7 +54,7 @@ export default async function BlogIndex() {
               <span className="italic font-light text-white/85">the closing table.</span>
             </h1>
             <p className="mt-6 max-w-[640px] text-[15px] leading-relaxed text-white/65 md:text-[17px]">
-              What 400+ trucking company sales across the United States have taught us —
+              What closing trucking company sales across the United States has taught us —
               written for the people who own them.
             </p>
 

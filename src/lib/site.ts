@@ -30,13 +30,19 @@ export const SITE = {
   instagram: "https://www.instagram.com/groupveritor",
   linkedin: "https://www.linkedin.com/company/groupveritor",
 
-  // Trust numbers — make sure these match what your team would quote on
-  // a due-diligence call. They flow into the homepage TrustBar, OG
-  // images, email signatures, and ad-network metadata.
+  // Trust numbers — every value here must survive a due-diligence call and
+  // a public-records check. 2026-08-30: the unverifiable "400+ sales /
+  // 5+ years" claims were removed sitewide (the entity's own filings date it
+  // to May 2026 — see /verification) and replaced with numbers the
+  // production database actually backs. Update companiesSold as deals close.
   trust: {
-    acquisitionsCompleted: "400+",
+    // Completed valuations delivered per month (DB: 150-170/mo, Aug 2026).
+    valuationsMonthly: "150+",
     averageCloseDays: "3–5 business days",
-    yearsActive: "5+",
+    // Documented closed sales since June 2026 — matches /admin closed_won.
+    companiesSold: "10+",
+    // The seller keeps the full accepted price — no fees, no commissions.
+    sellerKeeps: "100%",
   },
 
   // Legal config — REVIEW WITH ATTORNEY before launch.

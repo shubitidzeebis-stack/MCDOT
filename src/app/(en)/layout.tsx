@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Sell your US trucking company — including carriers running Amazon Relay. Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank in 3–5 business days. No fees, no commission. 400+ sales closed nationwide.",
+    "Sell your US trucking company — including carriers running Amazon Relay. Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank in 3–5 business days. No fees, no commission — every sale closed in person and documented.",
   keywords: KEYWORDS,
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: `${SITE.name} — Sell your trucking company, closed in 3–5 days`,
     description:
-      "Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank. You keep 100% of the number you accept. 400+ sales closed.",
+      "Free FMCSA valuation, written offer in 24 hours, in-person closing at your bank. You keep 100% of the number you accept.",
     images: [DEFAULT_OG_IMAGE],
   },
   twitter: {

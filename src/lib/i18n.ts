@@ -246,10 +246,10 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Track record",
-      acquisitionsLabel: "Sales closed",
+      acquisitionsLabel: "Valuations a month",
       closeLabel: "Average close",
       closeValue: "3–5 business days",
-      yearsLabel: "Years doing this",
+      yearsLabel: "Of the price is yours",
     },
     requirements: {
       eyebrow: "What qualifies",
@@ -327,7 +327,7 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Discretion by default.",
-          body: "Your identity stays private — nothing disclosed to drivers, dispatchers, or competitors. Confidentiality is standard, and 400+ closings back it up.",
+          body: "Your identity stays private — nothing disclosed to drivers, dispatchers, or competitors. Confidentiality is standard on every closing.",
         },
       ],
     },
@@ -690,10 +690,10 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Trayectoria",
-      acquisitionsLabel: "Ventas cerradas",
+      acquisitionsLabel: "Valuaciones al mes",
       closeLabel: "Cierre promedio",
       closeValue: "3–5 días hábiles",
-      yearsLabel: "Años en el negocio",
+      yearsLabel: "Del precio es suyo",
     },
     requirements: {
       eyebrow: "Qué califica",
@@ -771,7 +771,7 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Discreción por defecto.",
-          body: "Su identidad permanece privada — nada se revela a choferes, dispatchers o competidores. La confidencialidad es estándar, y más de 400 cierres lo respaldan.",
+          body: "Su identidad permanece privada — nada se revela a choferes, dispatchers o competidores. La confidencialidad es estándar en cada cierre.",
         },
       ],
     },
@@ -1135,10 +1135,10 @@ export const DICT: Record<Locale, Dict> = {
     },
     trust: {
       eyebrow: "Опыт",
-      acquisitionsLabel: "Закрытых продаж",
+      acquisitionsLabel: "Оценок в месяц",
       closeLabel: "Среднее время закрытия",
       closeValue: "3–5 рабочих дней",
-      yearsLabel: "Лет в бизнесе",
+      yearsLabel: "Цены остаётся вам",
     },
     requirements: {
       eyebrow: "Что подходит",
@@ -1216,7 +1216,7 @@ export const DICT: Record<Locale, Dict> = {
         },
         {
           title: "Конфиденциальность по умолчанию.",
-          body: "Ваша личность остаётся закрытой — ничего не раскрывается водителям, диспетчерам или конкурентам. Конфиденциальность — стандарт, это подтверждают более 400 закрытых сделок.",
+          body: "Ваша личность остаётся закрытой — ничего не раскрывается водителям, диспетчерам или конкурентам. Конфиденциальность — стандарт каждой сделки.",
         },
       ],
     },

@@ -10,9 +10,9 @@ export function TrustBar({ locale = "en" as Locale }: { locale?: Locale }) {
   const t = DICT[locale].trust;
 
   const items = [
-    { value: SITE.trust.acquisitionsCompleted, label: t.acquisitionsLabel },
+    { value: SITE.trust.valuationsMonthly, label: t.acquisitionsLabel },
     { value: t.closeValue, label: t.closeLabel },
-    { value: SITE.trust.yearsActive, label: t.yearsLabel },
+    { value: SITE.trust.sellerKeeps, label: t.yearsLabel },
   ];
 
   return (

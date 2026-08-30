@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: `%s · ${SITE.name}`,
   },
   description:
-    "Venda su empresa de transporte en EE. UU. — incluyendo transportistas con Amazon Relay activo. Valuación gratis por FMCSA, oferta por escrito en 24 horas, cierre en persona en su banco en 3–5 días hábiles. Sin honorarios, sin comisión. Más de 400 ventas cerradas en todo el país.",
+    "Venda su empresa de transporte en EE. UU. — incluyendo transportistas con Amazon Relay activo. Valuación gratis por FMCSA, oferta por escrito en 24 horas, cierre en persona en su banco en 3–5 días hábiles. Sin honorarios, sin comisión — cada venta se cierra en persona y queda documentada.",
   applicationName: SITE.name,
   authors: [{ name: SITE.legalName }],
   generator: "Next.js",

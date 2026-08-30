@@ -14,7 +14,7 @@ export default function OgImage() {
     headlineLine2: "For owner-operators.",
     trustRow: [
       "Founded by drivers",
-      "400+ sales closed",
+      "Closed at your own bank",
       "In-person bank closing",
       "No fees, no commission",
     ],

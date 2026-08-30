@@ -15,7 +15,7 @@ import { DEFAULT_OG_IMAGE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Why sell through Veritor — a sale you can verify",
   description:
-    "Written purchase agreement, funds through a closing attorney's escrow account, money landing as the documents execute. You keep 100% of the number you accept. 400+ sales closed.",
+    "Written purchase agreement, funds through a closing attorney's escrow account, money landing as the documents execute. You keep 100% of the number you accept — every sale closed in person and documented.",
   keywords: [
     "Veritor Group reviews",
     "safe way to sell a trucking company",

@@ -47,7 +47,7 @@ export default function AreasPage() {
               {[
                 { value: "50", label: "states covered" },
                 { value: "300+", label: "cities covered" },
-                { value: "400+", label: "LLCs acquired" },
+                { value: "150+", label: "Valuations a month" },
                 { value: "3–5 days", label: "average close" },
               ].map((stat) => (
                 <div key={stat.label}>

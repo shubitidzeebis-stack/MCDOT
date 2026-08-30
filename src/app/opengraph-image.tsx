@@ -20,7 +20,7 @@ export default function OgImage() {
     headlineLine1: "Sell your trucking LLC.",
     headlineLine2: "Closed in 3–5 business days.",
     trustRow: [
-      "400+ sales closed",
+      "Closed at your own bank",
       "3–5 day close",
       "You keep 100%",
       "Nationwide US",

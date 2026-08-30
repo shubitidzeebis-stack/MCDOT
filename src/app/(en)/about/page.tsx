@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { PageHero } from "@/components/PageHero";
 import { TrustBar } from "@/components/TrustBar";
@@ -17,7 +18,7 @@ import { SITE } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About — built by drivers, for owner-operators",
   description:
-    "Veritor Group handles US trucking company sales, including carriers running Amazon Relay. Founded by drivers and owner-operators. 400+ sales closed nationwide, average close in 3–5 business days.",
+    "Veritor Group handles US trucking company sales, including carriers running Amazon Relay. Founded by drivers and owner-operators. 10+ companies sold since June 2026, average close in 3–5 business days.",
   keywords: [
     "about Veritor Group",
     "Veritor Group reviews",
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: `About ${SITE.name} — built by drivers, for owner-operators`,
     description:
-      "Founded by people who started as drivers and became owner-operators. 400+ trucking company sales closed, average 3–5 business days, in person at the seller's own bank.",
+      "Founded by people who started as drivers and became owner-operators. 10+ company sales closed since June 2026, average 3–5 business days, in person at the seller's own bank.",
     url: "/about",
     // Image is auto-injected by `src/app/about/opengraph-image.tsx`. Don't
     // set `images` here or it overrides the dynamic OG card.
@@ -48,7 +49,7 @@ export default function AboutPage() {
         items={[
           {
             q: "Who is Veritor Group?",
-            a: "Veritor Group handles the sale of US trucking companies, including carriers running Amazon Relay contracts. Founded by people who started as drivers and became owner-operators. 400+ sales closed across the United States. Headquartered in Dayton, Ohio.",
+            a: "Veritor Group handles the sale of US trucking companies, including carriers running Amazon Relay contracts. Founded by people who started as drivers and became owner-operators. 10+ companies sold since June 2026, each closed in person at the seller's bank and documented. Headquartered in Dayton, Ohio — Veritor Group LLC, an Ohio limited liability company (see groupveritor.com/verification).",
           },
           {
             q: "What does Veritor Group actually do?",
@@ -56,7 +57,7 @@ export default function AboutPage() {
           },
           {
             q: "How many trucking company sales has Veritor Group closed?",
-            a: "Over 400 across the United States, with an average close time of 3 to 5 business days.",
+            a: "More than ten since June 2026, across the United States, with an average close time of 3 to 5 business days — every one documented and closed in person at the seller's bank. Veritor Group LLC was formed in Ohio in May 2026; the entity and its public filings are listed at groupveritor.com/verification.",
           },
           {
             q: "Where is Veritor Group based?",
@@ -192,9 +193,12 @@ export default function AboutPage() {
             schemes, boring is the feature. Every step leaves something you can check.
           </p>
           <p>
-            To date that&rsquo;s {SITE.trust.acquisitionsCompleted} sales closed across the
-            United States, with an average close time of{" "}
-            {SITE.trust.averageCloseDays.toLowerCase()}.
+            Veritor Group LLC was formed in Ohio in May 2026, and since June it has
+            closed {SITE.trust.companiesSold} company sales across the United States —
+            each one documented, closed in person, with an average close time of{" "}
+            {SITE.trust.averageCloseDays.toLowerCase()}. The entity, the filings, and
+            what to demand from us before signing are all published on the{" "}
+            <Link href="/verification">verification page</Link>.
           </p>
           <h3>What you get from us, every time</h3>
           <ul>
