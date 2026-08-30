@@ -70,7 +70,16 @@ export function OrganizationSchema() {
         "@type": "Organization",
         "@id": `${BASE_URL}#organization`,
         name: SITE.legalName,
+        legalName: SITE.legalName,
         alternateName: SITE.name,
+        // Ohio Articles of Organization #202614100848, effective 2026-05-21
+        // (Ohio SoS entity 5616277) — shown with sources on /verification.
+        foundingDate: "2026-05-21",
+        identifier: {
+          "@type": "PropertyValue",
+          name: "Ohio Secretary of State entity number",
+          value: "5616277",
+        },
         url: BASE_URL,
         logo: `${BASE_URL}/brand/logo-color.png`,
         description: SITE.tagline,

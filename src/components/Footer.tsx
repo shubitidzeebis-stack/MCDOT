@@ -41,6 +41,7 @@ export async function Footer({ locale = "en" as Locale }: { locale?: Locale }) {
               <li><Link className="text-white/70 hover:text-white" href="/how-it-works">{t.nav.howItWorks}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/why-veritor">{t.nav.whyUs}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/operators-vs-brokers">Selling safely</Link></li>
+              <li><Link className="text-white/70 hover:text-white" href="/verification">Verify us</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/blog">{t.nav.blog}</Link></li>
             </ul>
           </div>

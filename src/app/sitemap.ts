@@ -69,6 +69,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/sell-my-trucking-company",
     "/sell-my-mc-authority",
     "/sell-amazon-relay-account",
+    "/verification",
   ].map((path) => ({
     url: `${base}${path}`,
     lastModified: MONEY_PAGES_DATE,
