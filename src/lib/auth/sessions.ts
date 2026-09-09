@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 // Stateless session tokens — payload is base64url(JSON), signed with
 // HMAC-SHA256(secret). No DB lookup per request; the cookie itself
@@ -20,18 +20,31 @@ export type SessionPayload = {
 export const ADMIN_COOKIE = "veritor_admin";
 export const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days
 
-function getSecret(): string {
+// Returns null when no usable secret is configured. In production that
+// means every session is rejected and none can be minted — auth fails
+// CLOSED. The old behaviour (fall back to a string committed to this repo)
+// let anyone who read the source forge an admin cookie the moment the env
+// var went missing. Local dev without the var still works via a
+// process-lifetime random key: sessions survive until the dev server
+// restarts, and nothing forgeable is ever hard-coded.
+let devSecret: string | null = null;
+function getSecret(): string | null {
   const s = process.env.ADMIN_SESSION_SECRET;
-  if (!s || s.length < 16) {
-    // Fallback so dev still works without setting the var. Production
-    // MUST set ADMIN_SESSION_SECRET — server logs the warning.
-    console.warn(
-      "[auth] ADMIN_SESSION_SECRET not set — using insecure fallback. " +
-        "Set this env var on Vercel before any real deployment.",
+  if (s && s.length >= 16) return s;
+  if (process.env.NODE_ENV === "production") {
+    console.error(
+      "[auth] ADMIN_SESSION_SECRET missing or under 16 chars in production — " +
+        "refusing to sign or verify admin sessions.",
     );
-    return "veritor-dev-fallback-do-not-use-in-prod";
+    return null;
   }
-  return s;
+  if (!devSecret) {
+    devSecret = randomBytes(32).toString("hex");
+    console.warn(
+      "[auth] ADMIN_SESSION_SECRET not set — using a random per-process dev key.",
+    );
+  }
+  return devSecret;
 }
 
 function b64urlEncode(buf: Buffer | string): string {
@@ -41,7 +54,7 @@ function b64urlEncode(buf: Buffer | string): string {
 
 function b64urlDecode(s: string): Buffer | null {
   try {
-    let pad = s.length % 4;
+    const pad = s.length % 4;
     let b = s.replace(/-/g, "+").replace(/_/g, "/");
     if (pad === 2) b += "==";
     else if (pad === 3) b += "=";
@@ -59,7 +72,9 @@ export function signSession(
   const full: SessionPayload = { ...payload, exp };
   const json = JSON.stringify(full);
   const payloadB64 = b64urlEncode(json);
-  const sig = createHmac("sha256", getSecret()).update(payloadB64).digest();
+  const secret = getSecret();
+  if (!secret) throw new Error("ADMIN_SESSION_SECRET is not configured");
+  const sig = createHmac("sha256", secret).update(payloadB64).digest();
   return `${payloadB64}.${b64urlEncode(sig)}`;
 }
 
@@ -71,7 +86,9 @@ export function verifySession(token: string | undefined | null): SessionPayload 
   const sigB64 = token.slice(dot + 1);
   if (!payloadB64 || !sigB64) return null;
 
-  const expected = createHmac("sha256", getSecret()).update(payloadB64).digest();
+  const secret = getSecret();
+  if (!secret) return null;
+  const expected = createHmac("sha256", secret).update(payloadB64).digest();
   const provided = b64urlDecode(sigB64);
   if (!provided || provided.length !== expected.length) return null;
   if (!timingSafeEqual(provided, expected)) return null;

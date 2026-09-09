@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Not source: stale git worktrees under .claude/ (each with its own
+    // .next/ + node_modules/) and reference .tsx snippets kept in docs/.
+    ".claude/**",
+    "docs/**",
   ]),
 ]);
 

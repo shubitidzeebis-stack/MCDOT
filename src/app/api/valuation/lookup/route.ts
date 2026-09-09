@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { lookupCarrier, deriveCarrierFlags } from "@/lib/fmcsa";
-import { createValuation } from "@/lib/db/valuations";
+import { createValuation, countValuationsByIp } from "@/lib/db/valuations";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { SITE } from "@/lib/site";
 
 // Step 1 of the wizard: take MC or DOT, fetch FMCSA, save snapshot,
 // return display data to the client. Pricing is NOT computed here —
@@ -13,6 +15,14 @@ import { createValuation } from "@/lib/db/valuations";
 
 const LIMIT = 10;
 const WINDOW_MS = 10 * 60 * 1000;
+
+// Daily cap (Lukas, 2026-09-09, after a 29-row test burst from two IPs):
+// one IP gets at most DAILY_LIMIT valuation rows per rolling 24 hours,
+// counted from the valuations table itself so it holds across every
+// serverless instance. Logged-in admins are exempt so internal testing
+// keeps working. Test-mode rows count too — that is the point.
+const DAILY_LIMIT = 3;
+const DAILY_WINDOW_HOURS = 24;
 
 export const dynamic = "force-dynamic";
 // Worst-case upstream chain (QCMobile + Motus + SAFER, each with retries) can
@@ -55,6 +65,27 @@ export async function POST(req: Request) {
     const raw = await req.json();
     if (!isLookupBody(raw)) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
+    }
+
+    // Per-IP daily cap — see DAILY_LIMIT above. Runs before the FMCSA
+    // lookup so a capped caller never burns upstream quota either.
+    if (ip !== "unknown") {
+      const admin = await requireAdmin().catch(() => null);
+      if (!admin) {
+        const recent = await countValuationsByIp(ip, DAILY_WINDOW_HOURS);
+        if (recent >= DAILY_LIMIT) {
+          return NextResponse.json(
+            {
+              error: `This network has already run ${DAILY_LIMIT} valuations in the last 24 hours. Call ${SITE.phoneDisplay} or use the contact page and we will run it for you.`,
+              reason: "daily_limit",
+            },
+            {
+              status: 429,
+              headers: { "Retry-After": String(DAILY_WINDOW_HOURS * 3600) },
+            },
+          );
+        }
+      }
     }
 
     const lookup = await lookupCarrier(raw.number, raw.kind);

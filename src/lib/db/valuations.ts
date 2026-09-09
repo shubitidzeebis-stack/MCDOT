@@ -407,3 +407,26 @@ export async function finalizeValuation(
     return { ok: false };
   }
 }
+
+/**
+ * Rows created from one IP in the last `hours` hours — the basis for the
+ * per-IP daily cap in /api/valuation/lookup. Counts every row (partial,
+ * completed and test) because each one is a wizard run and an admin entry.
+ * Returns 0 when the DB is unavailable so the wizard fails open, not closed.
+ */
+export async function countValuationsByIp(ip: string, hours: number): Promise<number> {
+  const sql = getSql();
+  if (!sql || !ip) return 0;
+  try {
+    const rows = (await sql`
+      SELECT count(*)::int AS n
+        FROM valuations
+       WHERE ip = ${ip}
+         AND created_at > now() - make_interval(hours => ${hours})
+    `) as Array<{ n: number }>;
+    return Number(rows[0]?.n ?? 0);
+  } catch (err) {
+    console.error("[valuations] countValuationsByIp failed", err);
+    return 0;
+  }
+}
