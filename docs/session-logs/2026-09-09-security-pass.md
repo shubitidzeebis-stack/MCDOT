@@ -35,3 +35,17 @@ Trigger: a 29-row valuation test burst from two IPs earlier today.
 - Deploy (`vercel --prod` / git flow) and verify: admin login works, a
   wizard run from a fresh IP works, 4th run from the same IP gets 429.
 - Consider `git worktree remove .claude/worktrees/admin-meetings-calendar`.
+
+## Update (same day, later)
+- Pushed `2151f00` to origin/main → Vercel auto-built Production
+  `veritor-ba27cxhpk` (Ready). /owner-operators was already 404 on prod, so
+  the git deploy dropped nothing.
+- Test-row cleanup: Lukas's Windows PC IP is `176.221.177.213` (15 rows,
+  Sep 1 – Sep 9, = the 12 unflagged + 3 earlier). The machine's public IP
+  after the power cut is `46.18.76.111` (0 rows). The bulk DELETE was
+  blocked by the auto-mode classifier — script left at the scratchpad
+  `ipdelete.mjs` for Lukas to run himself. Mac test rows (`104.28.200.68`,
+  17 rows, flagged is_test) untouched.
+- Noticed, not investigated: `valuations` has 57,407 rows and 127 rows
+  with `ip IS NULL` in the last 36 h — far above the ~8/day of real wizard
+  traffic. Probably monitor/cron snapshots; worth a look.
