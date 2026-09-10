@@ -1,0 +1,787 @@
+<title>Veritor Call Desk</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+ --paper:#F4F5F2; --paper-2:#EAECE7; --card:#FFFFFF; --ink:#1C201E; --ink-2:#4A524E; --ink-3:#7A827D;
+ --line:#D5D9D3; --accent:#CF4F1C; --accent-ink:#FFFFFF; --steel:#2C4A63; --steel-bg:#E4ECF3;
+ --ok:#2F6B45; --ok-bg:#E2EFE6; --warn:#8A5A0B; --warn-bg:#F6EBD2; --bad:#9B2D22; --bad-bg:#F7E1DE;
+ --focus:#CF4F1C;
+}
+@media (prefers-color-scheme: dark){
+ :root:not([data-theme="light"]){
+ --paper:#15191B; --paper-2:#1E2427; --card:#1A1F22; --ink:#E6E9E4; --ink-2:#B4BBB6; --ink-3:#7F8884;
+ --line:#2F373B; --accent:#F0733C; --accent-ink:#15191B; --steel:#9DBBD6; --steel-bg:#1E2C38;
+ --ok:#8CC9A2; --ok-bg:#1B2E23; --warn:#E5B85C; --warn-bg:#332A14; --bad:#F09A90; --bad-bg:#3A1F1C; --focus:#F0733C;
+ }
+}
+:root[data-theme="dark"]{
+ --paper:#15191B; --paper-2:#1E2427; --card:#1A1F22; --ink:#E6E9E4; --ink-2:#B4BBB6; --ink-3:#7F8884;
+ --line:#2F373B; --accent:#F0733C; --accent-ink:#15191B; --steel:#9DBBD6; --steel-bg:#1E2C38;
+ --ok:#8CC9A2; --ok-bg:#1B2E23; --warn:#E5B85C; --warn-bg:#332A14; --bad:#F09A90; --bad-bg:#3A1F1C; --focus:#F0733C;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.5;padding-block:0 4rem}
+h1,h2,h3{font-family:"Barlow Semi Condensed","Arial Narrow",sans-serif;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:1.35rem;font-weight:700;letter-spacing:0.01em}
+h2{font-size:1.5rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:600;margin:1.4rem 0 0.5rem}
+p{margin:0 0 0.8rem}
+a{color:var(--steel)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mono{font-family:"IBM Plex Mono",monospace}
+.eyebrow{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.12em;font-size:0.72rem;font-weight:600;color:var(--accent)}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:5;background:var(--paper-2);border-bottom:1px solid var(--line);padding:0 16px}
+.top .in{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;min-height:54px}
+.brand{display:flex;align-items:center;gap:0.5rem;font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:1.05rem;margin-right:auto}
+.brand span{display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:1px}
+.tabs{display:flex;gap:0.15rem;flex-wrap:wrap}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:0.9rem 0.7rem 0.75rem;cursor:pointer;color:var(--ink-2);font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:0.95rem;text-transform:uppercase;letter-spacing:0.06em}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:hover{color:var(--ink)}
+.dealbar{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;font-size:0.85rem;color:var(--ink-2)}
+.dealbar select{padding:0.3rem 0.5rem;border:1px solid var(--line);border-radius:3px;background:var(--card);max-width:230px}
+.dealbar button{padding:0.3rem 0.6rem}
+
+main{max-width:1120px;margin:0 auto;padding:1.5rem 16px 0}
+.panel{display:none}
+.panel[aria-hidden="false"]{display:block}
+.intro{display:flex;justify-content:space-between;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.2rem}
+.intro p{max-width:62ch;color:var(--ink-2);margin:0.3rem 0 0}
+
+/* buttons */
+.btn{border:1px solid var(--line);background:var(--card);border-radius:3px;padding:0.45rem 0.8rem;cursor:pointer;font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;font-size:0.82rem;color:var(--ink)}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{padding:0.25rem 0.55rem;font-size:0.74rem}
+.btn.ghost{background:transparent}
+
+/* forms */
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,0.85fr);gap:1.5rem;align-items:start}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+fieldset{border:1px solid var(--line);border-radius:4px;padding:0.9rem 1rem 0.5rem;margin:0 0 1rem;background:var(--card)}
+legend{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.1em;font-size:0.74rem;font-weight:700;color:var(--steel);padding:0 0.4rem}
+.f{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.6rem 1rem;margin-bottom:0.5rem}
+.f label,.field label{display:block;font-size:0.78rem;color:var(--ink-2);margin-bottom:0.2rem;text-transform:uppercase;letter-spacing:0.05em;font-family:"Barlow Semi Condensed",sans-serif;font-weight:600}
+.f input,.f select,.f textarea,.field input,.field select,.field textarea{width:100%;padding:0.45rem 0.55rem;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink)}
+.f textarea,.field textarea{min-height:64px;resize:vertical}
+.field{margin-bottom:0.7rem}
+.check{display:flex;align-items:flex-start;gap:0.5rem;font-size:0.92rem;margin:0.35rem 0;text-transform:none;letter-spacing:0;font-family:"IBM Plex Sans",sans-serif;font-weight:400;color:var(--ink)}
+.check input{width:auto;margin-top:0.25rem}
+.hint{font-size:0.8rem;color:var(--ink-3);margin:0.2rem 0 0.6rem}
+
+/* verdict */
+.verdict{position:sticky;top:64px}
+.vcard{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1rem 1.1rem;margin-bottom:1rem}
+.vhead{display:flex;align-items:center;justify-content:space-between;gap:1rem;border-bottom:2px solid var(--ink);padding-bottom:0.6rem;margin-bottom:0.8rem}
+.vhead h2{font-size:1.6rem}
+.status{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;font-size:0.82rem;padding:0.25rem 0.6rem;border-radius:2px}
+.status.ok{background:var(--ok-bg);color:var(--ok)} .status.warn{background:var(--warn-bg);color:var(--warn)} .status.bad{background:var(--bad-bg);color:var(--bad)} .status.steel{background:var(--steel-bg);color:var(--steel)}
+.big{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:2rem;font-variant-numeric:tabular-nums;line-height:1}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:0.35rem 1rem;font-size:0.9rem;margin:0.6rem 0}
+.kv b{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.06em;font-size:0.72rem;color:var(--ink-3);padding-top:0.2rem}
+.kv span.mono{font-variant-numeric:tabular-nums}
+.flags{list-style:none;padding:0;margin:0.5rem 0}
+.flags li{display:grid;grid-template-columns:auto 1fr;gap:0.6rem;padding:0.4rem 0;border-bottom:1px solid var(--line);font-size:0.9rem;align-items:start}
+.flags li:last-child{border-bottom:0}
+.pill{display:inline-block;font-family:"Barlow Semi Condensed",sans-serif;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0.15rem 0.45rem;border-radius:2px;white-space:nowrap;margin-top:0.15rem}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.steel{background:var(--steel-bg);color:var(--steel)}
+.say{border-left:4px solid var(--ok);background:var(--ok-bg);padding:0.7rem 0.9rem;border-radius:0 4px 4px 0;margin:0.6rem 0;font-size:0.92rem}
+.say .tag,.never .tag{display:block;font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.1em;font-size:0.68rem;font-weight:700;margin-bottom:0.25rem;color:var(--ok)}
+.never{border-left:4px solid var(--bad);background:var(--bad-bg);padding:0.7rem 0.9rem;border-radius:0 4px 4px 0;margin:0.6rem 0;font-size:0.92rem}
+.never .tag{color:var(--bad)}
+.note{border-left:4px solid var(--steel);background:var(--steel-bg);padding:0.7rem 0.9rem;border-radius:0 4px 4px 0;margin:0.6rem 0;font-size:0.9rem}
+.out{width:100%;min-height:200px;font-family:"IBM Plex Mono",monospace;font-size:0.8rem;line-height:1.45;padding:0.7rem;border:1px solid var(--line);border-radius:3px;background:var(--paper);color:var(--ink);white-space:pre-wrap}
+.toolbar{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin:0.5rem 0 0.8rem}
+.toast{font-size:0.82rem;color:var(--ok);min-height:1.2em}
+
+/* talk tracks */
+.search{width:100%;padding:0.6rem 0.8rem;border:1px solid var(--line);border-radius:3px;background:var(--card);font-size:1rem;margin-bottom:1rem}
+.tracks{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0.9rem}
+.track{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.5rem}
+.track h3{margin:0;font-size:1.05rem}
+.track .q{font-size:0.82rem;color:var(--ink-3);font-style:italic}
+.track .say{margin:0}
+.track .never{margin:0}
+.track .foot{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-top:auto}
+.track .cat{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.08em;font-size:0.68rem;color:var(--ink-3)}
+
+/* ladder */
+.ladder{list-style:none;padding:0;margin:0;counter-reset:s}
+.ladder li{display:grid;grid-template-columns:2rem auto 1fr auto;gap:0.7rem;align-items:start;padding:0.7rem 0;border-bottom:1px solid var(--line)}
+.ladder li::before{counter-increment:s;content:counter(s);font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:1.2rem;color:var(--accent);line-height:1.2}
+.ladder li.done::before{color:var(--ink-3)}
+.ladder li.done .t{text-decoration:line-through;color:var(--ink-3)}
+.ladder li.next{background:var(--steel-bg);margin:0 -0.6rem;padding-left:0.6rem;padding-right:0.6rem;border-radius:3px}
+.ladder .t{font-weight:600}
+.ladder .d{font-size:0.85rem;color:var(--ink-2)}
+.ladder input{margin-top:0.35rem}
+.ladder .when{font-family:"IBM Plex Mono",monospace;font-size:0.72rem;color:var(--ink-3);white-space:nowrap;padding-top:0.3rem}
+
+/* deal sheet */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.2rem}
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin:0.3rem 0 0.6rem}
+.chip{display:inline-flex;align-items:center;gap:0.35rem;border:1px solid var(--line);border-radius:999px;padding:0.2rem 0.7rem 0.2rem 0.5rem;font-size:0.85rem;background:var(--paper);cursor:pointer}
+.chip input{margin:0}
+
+/* texts */
+.tpl{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0.8rem 1rem;margin-bottom:0.8rem}
+.tpl .when{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.08em;font-size:0.72rem;color:var(--steel);font-weight:700}
+.tpl .body{margin:0.35rem 0 0.5rem;font-size:0.95rem}
+.tpl .foot{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.tpl .n{font-size:0.78rem;color:var(--ink-3)}
+footer{max-width:1120px;margin:2.5rem auto 0;padding:1rem 16px 0;border-top:1px solid var(--line);font-size:0.8rem;color:var(--ink-3)}
+@media (prefers-reduced-motion:no-preference){.panel[aria-hidden="false"]{animation:fade .18s ease-out}}
+@keyframes fade{from{opacity:.6}to{opacity:1}}
+@media (max-width:600px){.ladder li{grid-template-columns:1.6rem auto 1fr}.ladder .when{grid-column:2/4}}
+</style>
+
+<div class="top"><div class="in">
+  <div class="brand"><span></span>Veritor Call Desk</div>
+  <div class="tabs" role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-qualify" aria-selected="true" aria-controls="p-qualify">Qualify</button>
+    <button role="tab" id="tab-tracks" aria-selected="false" aria-controls="p-tracks">Talk tracks</button>
+    <button role="tab" id="tab-ladder" aria-selected="false" aria-controls="p-ladder">Ladder</button>
+    <button role="tab" id="tab-sheet" aria-selected="false" aria-controls="p-sheet">Deal sheet</button>
+    <button role="tab" id="tab-texts" aria-selected="false" aria-controls="p-texts">Texts</button>
+  </div>
+  <div class="dealbar">
+    <label for="dealPick" class="mono" style="font-size:.72rem;letter-spacing:.06em">DEAL</label>
+    <select id="dealPick" aria-label="Current deal"></select>
+    <button class="btn small" id="newDeal" type="button">New</button>
+    <button class="btn small ghost" id="delDeal" type="button" title="Delete this deal from this browser">Delete</button>
+  </div>
+</div></div>
+
+<main>
+
+<!-- ================= QUALIFY ================= -->
+<section class="panel" id="p-qualify" role="tabpanel" aria-labelledby="tab-qualify" aria-hidden="false">
+  <div class="intro">
+    <div><div class="eyebrow">While the seller is on the line</div><h2>Qualify</h2>
+    <p>Fill it in the order of the script. The verdict, the 180-day date and the flags update as you type. Everything saves in this browser under the deal name.</p></div>
+  </div>
+  <div class="grid2">
+  <form id="qf" autocomplete="off">
+    <fieldset><legend>1 · Who and what</legend>
+      <div class="f">
+        <div><label for="q_company">Company</label><input id="q_company" placeholder="Legal name as on FMCSA"></div>
+        <div><label for="q_mc">MC / USDOT</label><input id="q_mc" placeholder="MC 1684914 · DOT 4392886"></div>
+        <div><label for="q_state">State</label><input id="q_state" placeholder="FL"></div>
+        <div><label for="q_contact">Who is on the line</label><input id="q_contact" placeholder="Name, role"></div>
+        <div><label for="q_entity">Entity</label><select id="q_entity"><option value="">Not asked yet</option><option value="llc">LLC</option><option value="corp">Corporation</option><option value="sole">Sole proprietor (SSN)</option></select></div>
+        <div><label for="q_members">Members</label><select id="q_members"><option value="">Not asked yet</option><option value="only">Only member</option><option value="partners">Partners / co-owners</option></select></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>2 · The record, read aloud</legend>
+      <div class="f">
+        <div><label for="q_auth">Authority</label><select id="q_auth"><option value="">Not checked</option><option value="active">Active, authorized</option><option value="inactive">Inactive / revoked / not authorized</option><option value="pending">Pending</option></select></div>
+        <div><label for="q_date">Granted or reinstated on</label><input id="q_date" type="date"><div class="hint">Use the reinstatement date if there is one.</div></div>
+        <div><label for="q_ins">Insurance</label><select id="q_ins"><option value="">Not checked</option><option value="active">Active, no lapse in 6 months</option><option value="lapsed6">Active now, lapsed in last 6 months</option><option value="none">No insurance on file</option></select></div>
+        <div><label for="q_rating">Safety rating</label><select id="q_rating"><option value="">Not checked</option><option value="S">Satisfactory</option><option value="U">Unrated / none</option><option value="C">Conditional</option><option value="X">Unsatisfactory</option></select></div>
+        <div><label for="q_doos">Driver OOS %</label><input id="q_doos" type="number" min="0" max="100" step="0.1" placeholder="nat. avg 5.5"></div>
+        <div><label for="q_voos">Vehicle OOS %</label><input id="q_voos" type="number" min="0" max="100" step="0.1" placeholder="nat. avg 20.7"></div>
+        <div><label for="q_insp">Inspections</label><input id="q_insp" type="number" min="0" placeholder="count"></div>
+        <div><label for="q_crash">Crashes, 24 months</label><input id="q_crash" type="number" min="0" placeholder="0"></div>
+        <div><label class="check"><input id="q_mcs" type="checkbox"> MCS-150 outdated</label></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>3 · What comes with it</legend>
+      <div class="f">
+        <div><label for="q_email">FMCSA email conveys</label><select id="q_email"><option value="">Not asked yet</option><option value="yes">Yes</option><option value="fused">Yes, but it is a personal / family email</option><option value="no">Owner will not give it up</option></select></div>
+        <div><label for="q_phone">FMCSA phone conveys</label><select id="q_phone"><option value="">Not asked yet</option><option value="yes">Yes</option><option value="personal">It is the owner's personal cell</option><option value="no">Excluded</option></select></div>
+        <div><label for="q_relay">Amazon Relay</label><select id="q_relay"><option value="">Not asked yet</option><option value="active">Active contract on the LLC</option><option value="unused">Active, never or barely used</option><option value="pending">Applied / pending</option><option value="none">None</option><option value="denied">Denied or suspended</option><option value="dsp">Amazon DSP only</option></select></div>
+        <div><label for="q_score">Relay score</label><select id="q_score"><option value="">Unknown</option><option value="A">A / A+</option><option value="B">B</option><option value="C">C or worse</option><option value="none">No score yet</option></select></div>
+        <div><label for="q_bank">Bank on Relay</label><select id="q_bank"><option value="">Not asked yet</option><option value="chase">Chase</option><option value="bofa">Bank of America</option><option value="wells">Wells Fargo</option><option value="other">Other bank</option><option value="na">No Relay / not applicable</option></select></div>
+        <div><label for="q_verify">Highway / RMIS / MyCarrierPackets</label><select id="q_verify"><option value="">Not asked yet</option><option value="yes">Set up</option><option value="no">Not set up / never heard of them</option></select></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>4 · Money on the company</legend>
+      <div class="f">
+        <div><label for="q_debt">Debt or liens on the LLC</label><select id="q_debt"><option value="">Not asked yet</option><option value="none">None</option><option value="disclosed">Some, disclosed, payoff at closing</option><option value="truck">Financed truck titled to the LLC</option><option value="personal">Debt is personal, not on the LLC</option></select></div>
+        <div><label for="q_factor">Factoring</label><select id="q_factor"><option value="">Not asked yet</option><option value="none">None</option><option value="free">Yes, no contract</option><option value="contract">Yes, under contract</option><option value="unknown">Yes, contract status unknown</option></select></div>
+        <div><label for="q_factorco">Factoring company</label><input id="q_factorco" placeholder="Name, spelled back"></div>
+        <div><label for="q_premium">Insurance per month</label><input id="q_premium" placeholder="$1,300 at 5,000 mi"></div>
+        <div><label for="q_motus">Motus registered</label><select id="q_motus"><option value="">Not asked yet</option><option value="yes">Yes</option><option value="no">No</option><option value="unknown">Doesn't know</option></select></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>5 · The two questions people forget</legend>
+      <div class="f">
+        <div><label for="q_offers">Other offers</label><input id="q_offers" placeholder="Who, how much, how real"></div>
+        <div><label for="q_ask">Their number (ask last)</label><input id="q_ask" placeholder="$"></div>
+      </div>
+      <div class="field"><label for="q_notes">Notes</label><textarea id="q_notes" placeholder="Anything the lead card should know"></textarea></div>
+    </fieldset>
+  </form>
+
+  <aside class="verdict" aria-live="polite">
+    <div class="vcard">
+      <div class="vhead"><h2 id="v_title">Not enough yet</h2><span class="status steel" id="v_status">Asking</span></div>
+      <div id="v_reason" class="hint" style="font-size:.9rem;color:var(--ink-2)"></div>
+      <div class="kv">
+        <b>Profile</b><span id="v_profile">–</span>
+        <b>Authority age</b><span id="v_age" class="mono">–</span>
+        <b>Sellable from</b><span id="v_from" class="mono">–</span>
+        <b>Engine range</b><span id="v_engine" class="mono">–</span>
+        <b>Buyers paid</b><span id="v_market">–</span>
+      </div>
+      <div class="hint">The engine range mirrors the website's valuation formula. A guide for the call, never an offer. Only Lukas puts a number in writing.</div>
+      <div class="say" id="v_say"><span class="tag">Say</span><span id="v_say_t">Run the script in order. Read the FMCSA record aloud as you go.</span></div>
+    </div>
+    <div class="vcard">
+      <h3 style="margin-top:0">Flags</h3>
+      <ul class="flags" id="v_flags"><li><span class="pill steel">Start</span><span>Nothing flagged yet.</span></li></ul>
+    </div>
+    <div class="vcard">
+      <h3 style="margin-top:0">Before you hang up</h3>
+      <ul class="flags" id="v_next"></ul>
+      <div class="toolbar"><button class="btn primary" type="button" id="copySummary">Copy call summary</button><span class="toast" id="toast1"></span></div>
+      <textarea class="out" id="summaryOut" rows="10" aria-label="Call summary for the lead card"></textarea>
+    </div>
+  </aside>
+  </div>
+</section>
+
+<!-- ================= TALK TRACKS ================= -->
+<section class="panel" id="p-tracks" role="tabpanel" aria-labelledby="tab-tracks" aria-hidden="true">
+  <div class="intro"><div><div class="eyebrow">Mid-call lookup</div><h2>Talk tracks</h2><p>Type a word the seller just said. Every answer is a real one from the recorded calls, with the banned words removed. Green is what to say; red is what was said and must not be again.</p></div></div>
+  <input class="search" id="trackSearch" type="search" placeholder="broker · scam · email · bank · taxes · Motus · wait · phone · listed…" aria-label="Search talk tracks">
+  <div class="tracks" id="tracks"></div>
+</section>
+
+<!-- ================= LADDER ================= -->
+<section class="panel" id="p-ladder" role="tabpanel" aria-labelledby="tab-ladder" aria-hidden="true">
+  <div class="intro"><div><div class="eyebrow">They give a little, you give a little</div><h2>Ladder</h2><p>Tick each rung as it happens for the deal selected at the top. The next rung is highlighted. Nothing credential-shaped moves before the seller is paid in full; the desk will tell you if the order slips.</p></div>
+  <div><button class="btn" type="button" id="copyLadder">Copy status</button> <span class="toast" id="toast2"></span></div></div>
+  <div class="note" id="ladderWarn" hidden></div>
+  <ol class="ladder" id="ladder"></ol>
+  <div class="say" style="margin-top:1rem"><span class="tag">The explanation, word for word</span>We structured it so they give a little, you give a little, they give a little, you give a little. The email login, the FMCSA login and the Amazon login are what really matter for you. The documents are nice to have, but without those three things the buyer doesn't have anything. So you're paid in full before you give those up. It's a protection thing.</div>
+</section>
+
+<!-- ================= DEAL SHEET ================= -->
+<section class="panel" id="p-sheet" role="tabpanel" aria-labelledby="tab-sheet" aria-hidden="true">
+  <div class="intro"><div><div class="eyebrow">For the front office</div><h2>Deal sheet</h2><p>Everything the Bill of Sale generator needs, in one message, so the document is right the first time and never leaves with a PENDING chip on it. Company, MC and contact fields carry over from Qualify.</p></div></div>
+  <div class="two">
+  <form id="sf" autocomplete="off">
+    <fieldset><legend>Deal</legend>
+      <div class="f">
+        <div><label for="s_price">Purchase price</label><input id="s_price" placeholder="$20,000.00"></div>
+        <div><label for="s_date">Effective / closing date</label><input id="s_date" type="date"></div>
+        <div><label for="s_terms">Payment terms</label><select id="s_terms"><option value="staged">Staged: first payment, then balance (use when the ladder was promised)</option><option value="on_transfer">Paid in full after documents and access transferred</option><option value="in_person">Paid in full at an in-person meeting</option></select></div>
+        <div><label for="s_first">First payment</label><input id="s_first" placeholder="$10,000.00"></div>
+        <div><label for="s_second">Balance</label><input id="s_second" placeholder="$10,000.00"></div>
+        <div><label for="s_method">Paid by</label><select id="s_method"><option>Wire</option><option>Zelle</option><option>Wire or Zelle</option><option>Cash in person</option></select></div>
+        <div><label for="s_design">Design</label><select id="s_design"><option value="Instrument">Instrument (cautious buyer wiring money)</option><option value="Masthead">Masthead (buyer already knows us)</option><option value="Term Sheet">Term Sheet (price and terms drive it)</option></select></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Insurance</legend>
+      <div class="f">
+        <div><label for="s_insopt">Arrangement</label><select id="s_insopt"><option value="none">No insurance clause</option><option value="deposit_deducted">Buyer sends a deposit for insurance, deducted from the price</option><option value="refundable_relay">Buyer sends a down payment, refunded if Relay is denied</option><option value="buyer_own_policy">Buyer obtains own policy and bank before transfer</option><option value="buyer_premium_deadline">Buyer pays the upfront premium by a deadline</option></select></div>
+        <div><label for="s_insamt">Amount</label><input id="s_insamt" placeholder="$1,100.00"></div>
+        <div><label for="s_insby">Sent by / pay by</label><input id="s_insby" placeholder="Zelle · or a date"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Parties, as on the IDs</legend>
+      <div class="f">
+        <div><label for="s_seller">Seller legal name</label><input id="s_seller"></div>
+        <div><label for="s_selleraddr">Seller address</label><input id="s_selleraddr"></div>
+        <div><label for="s_coseller">Second seller (partner)</label><input id="s_coseller" placeholder="Leave blank if only member"></div>
+        <div><label for="s_buyer">Buyer legal name</label><input id="s_buyer"></div>
+        <div><label for="s_buyeraddr">Buyer address</label><input id="s_buyeraddr"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Company, as on FMCSA</legend>
+      <div class="f">
+        <div><label for="s_dba">DBA</label><input id="s_dba" placeholder="if any"></div>
+        <div><label for="s_addr">Company address</label><input id="s_addr"></div>
+        <div><label for="s_cemail">Email that transfers</label><input id="s_cemail" placeholder="the address on FMCSA"></div>
+        <div><label for="s_cphone">Phone that transfers</label><input id="s_cphone" placeholder="the number on FMCSA, or EXCLUDED"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Deliverables to leave off</legend>
+      <div class="chips" id="delivChips"></div>
+      <div class="hint">All nine print by default. Untick what this deal excludes; the phone line, most often.</div>
+    </fieldset>
+    <fieldset><legend>Extra clauses</legend>
+      <label class="check"><input type="checkbox" id="c_forward"> Buyer forwards personal mail that lands in the transferred email</label>
+      <label class="check"><input type="checkbox" id="c_noamazon"> Buyer makes no purchases on the seller's private Amazon account</label>
+      <label class="check"><input type="checkbox" id="c_nouse"> No-use period while the ownership record stays in the seller's name, until <input id="c_nouse_date" type="date" style="width:auto;display:inline-block;padding:.15rem .3rem;margin-left:.3rem"> (Lukas reviews wording)</label>
+      <label class="check"><input type="checkbox" id="c_avail"> Seller stays available for <input id="c_avail_n" type="number" min="1" max="12" value="4" style="width:4rem;display:inline-block;padding:.15rem .3rem;margin:0 .3rem"> months for signatures, codes and Motus</label>
+      <label class="check"><input type="checkbox" id="c_excluded"> Excluded Assets (trucks, trailers, bank accounts, personal property)</label>
+      <label class="check"><input type="checkbox" id="c_travel"> Buyer covers travel and insurance costs</label>
+      <label class="check"><input type="checkbox" id="c_postsale"> Post-Sale Obligations (Secretary of State, EIN, insurance and BOC-3 cooperation)</label>
+      <label class="check"><input type="checkbox" id="c_indem"> Indemnification and arbitration</label>
+      <label class="check"><input type="checkbox" id="c_proof"> Proof of Transfer within 7 days (do not pair with a no-use period)</label>
+      <div class="field" style="margin-top:.6rem"><label for="c_custom">Anything else, in plain words</label><textarea id="c_custom" placeholder="Buyer pays $2,000 for the seller's time cleaning up the email…"></textarea></div>
+    </fieldset>
+    <fieldset><legend>Seller's account, for the wire panel</legend>
+      <div class="f">
+        <div><label for="s_bank">Bank name</label><input id="s_bank"></div>
+        <div><label for="s_acctname">Account name</label><input id="s_acctname" placeholder="must match the seller's name"></div>
+        <div><label for="s_routing">Routing number</label><input id="s_routing"></div>
+        <div><label for="s_acct">Account number</label><input id="s_acct"></div>
+      </div>
+      <div class="hint">Collected for the document. Never by text to a personal phone, never read back over a bad line.</div>
+    </fieldset>
+  </form>
+  <div>
+    <div class="vcard" style="position:sticky;top:64px">
+      <div class="vhead"><h2>Message to the front office</h2><span class="status" id="s_status">Checking</span></div>
+      <ul class="flags" id="s_flags"></ul>
+      <div class="toolbar"><button class="btn primary" type="button" id="copySheet">Copy deal sheet</button><span class="toast" id="toast3"></span></div>
+      <textarea class="out" id="sheetOut" rows="26" aria-label="Deal sheet text"></textarea>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ================= TEXTS ================= -->
+<section class="panel" id="p-texts" role="tabpanel" aria-labelledby="tab-texts" aria-hidden="true">
+  <div class="intro"><div><div class="eyebrow">Short, one question, answered in the same message</div><h2>Texts</h2><p>Name and company fill in from the deal at the top. Passwords, codes, bank details and ID photos never go by text.</p></div></div>
+  <div id="tpls"></div>
+  <div class="never"><span class="tag">Never by text</span>Passwords, two-factor codes, full bank details, driver's licence photos. Handle credentials by phone during the handover, after the second payment. "Our agents are out" also breaks the language rule: say "our team".</div>
+</section>
+
+</main>
+<footer>Veritor Call Desk · companion to the Veritor Call Handbook · saves only in this browser · internal, do not forward outside the team.</footer>
+
+<script>
+(function(){
+"use strict";
+const $ = (id) => document.getElementById(id);
+const KEY = "veritor-call-desk-v1";
+const LADDER = [
+  ["Price agreed", "Relayed from the buyer with the reason attached. Lukas confirms in writing."],
+  ["Prep done", "Motus registered by the owner. Factoring release letter. Loss runs. Chase account and stamped letter attached to Relay, if the bank had to change."],
+  ["Bill of sale signed, IDs exchanged", "Drafted by the front office from the deal sheet. Price and terms filled. Both parties sign; IDs cross through us."],
+  ["Bank details on the paper", "Account name, bank, routing, account number, on the wire panel of the document. Not by text."],
+  ["First half received", "Wire or Zelle. Zelle may arrive in blocks over two days. Seller confirms with a screenshot."],
+  ["Documents sent", "Articles of organization, letter of authority, EIN letter, COI. Only after the first half lands."],
+  ["Paid in full", "Second half received and confirmed by the seller."],
+  ["Credentials handed over", "Email login, FMCSA login with PIN, Amazon Relay login. Live on the phone; codes relayed as they arrive."],
+  ["Bank handover", "Authorized signer route (Chase), bank-to-bank appointments, or in person. Bank of America only in person."],
+  ["Phone ported", "Seller gets the account number and port PIN from the carrier; we pass it to the buyer."],
+  ["Buyer's post-close work", "Own insurance in 2–3 days, Secretary of State, EIN, Relay ownership change over 2–4 months. Old bank account stays open until told."],
+];
+const DELIV = ["MC Certificate","FMCSA portal login and DOT PIN","Insurance certificate and COI","Company primary email access","Company primary phone number","Amazon Relay account access","Loss runs","Driver files and ELD records","Other documents the buyer reasonably requests"];
+const QF = ["q_company","q_mc","q_state","q_contact","q_entity","q_members","q_auth","q_date","q_ins","q_rating","q_doos","q_voos","q_insp","q_crash","q_email","q_phone","q_relay","q_score","q_bank","q_verify","q_debt","q_factor","q_factorco","q_premium","q_motus","q_offers","q_ask","q_notes"];
+const SF = ["s_price","s_date","s_terms","s_first","s_second","s_method","s_design","s_insopt","s_insamt","s_insby","s_seller","s_selleraddr","s_coseller","s_buyer","s_buyeraddr","s_dba","s_addr","s_cemail","s_cphone","c_nouse_date","c_avail_n","c_custom","s_bank","s_acctname","s_routing","s_acct"];
+const CB = ["q_mcs","c_forward","c_noamazon","c_nouse","c_avail","c_excluded","c_travel","c_postsale","c_indem","c_proof"];
+
+const EXAMPLE = {
+  id:"example", name:"Example · Florida owner-operator", example:true,
+  q:{q_company:"Example Hauling LLC",q_mc:"MC 1000000",q_state:"FL",q_contact:"Owner's wife, runs the office",q_entity:"llc",q_members:"partners",q_auth:"active",q_date:"2024-09-10",q_ins:"active",q_rating:"U",q_doos:"0",q_voos:"0",q_insp:"2",q_crash:"0",q_email:"fused",q_phone:"yes",q_relay:"unused",q_score:"none",q_bank:"other",q_verify:"yes",q_debt:"none",q_factor:"unknown",q_factorco:"Small factoring company, spelled back",q_premium:"$1,300 at 5,000 mi",q_motus:"yes",q_offers:"None",q_ask:"$15,000 works, wants more",q_notes:"Truck titled to the husband personally. Relay paired to her personal Amazon account. Business line ignores unknown numbers; call the cell."},
+  s:{s_price:"$20,000.00",s_terms:"staged",s_first:"$10,000.00",s_second:"$10,000.00",s_method:"Zelle",s_design:"Instrument",s_insopt:"none",s_cemail:"the address on FMCSA",s_cphone:"the company line on FMCSA",c_avail_n:"4",c_custom:"Buyer forwards anything personal from the mailbox for four months."},
+  cb:{c_forward:true,c_noamazon:true,c_nouse:true,c_avail:true,c_excluded:true},
+  deliv:[], ladder:{0:"Aug 18",1:"Aug 18",2:"Aug 19",3:"Aug 19",4:"Aug 19",5:"Aug 19"},
+};
+
+let db = load();
+let cur = db.current;
+
+function load(){
+  try{ const raw = localStorage.getItem(KEY); if(raw){ const d = JSON.parse(raw); if(d && d.deals) return d; } }catch(e){}
+  return { current:"example", deals:{ example: JSON.parse(JSON.stringify(EXAMPLE)) } };
+}
+function save(){ try{ db.current = cur; localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+function deal(){ return db.deals[cur]; }
+function blank(name){ return { id:"d"+Date.now().toString(36), name, q:{}, s:{s_terms:"staged",s_design:"Instrument",s_insopt:"none",s_method:"Wire",c_avail_n:"4"}, cb:{}, deliv:[], ladder:{} }; }
+
+// ---------- tabs ----------
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function showTab(id){
+  tabs.forEach(t => { const on = t.id === id; t.setAttribute("aria-selected", on); const p = $(t.getAttribute("aria-controls")); p.setAttribute("aria-hidden", !on); });
+  try{ localStorage.setItem(KEY+"-tab", id); }catch(e){}
+}
+tabs.forEach(t => t.addEventListener("click", () => showTab(t.id)));
+try{ const t = localStorage.getItem(KEY+"-tab"); if(t && $(t)) showTab(t); }catch(e){}
+
+// ---------- deal picker ----------
+function renderPicker(){
+  const sel = $("dealPick"); sel.innerHTML = "";
+  Object.values(db.deals).forEach(d => { const o = document.createElement("option"); o.value = d.id; o.textContent = d.name; if(d.id===cur) o.selected = true; sel.appendChild(o); });
+}
+$("dealPick").addEventListener("change", e => { cur = e.target.value; save(); hydrate(); });
+$("newDeal").addEventListener("click", () => {
+  const name = prompt("Deal name (company or seller):"); if(!name) return;
+  const d = blank(name.trim()); db.deals[d.id] = d; cur = d.id; save(); renderPicker(); hydrate(); showTab("tab-qualify"); $("q_company").value = name.trim(); d.q.q_company = name.trim(); save(); recompute();
+});
+$("delDeal").addEventListener("click", () => {
+  const d = deal(); if(!d) return;
+  if(Object.keys(db.deals).length === 1){ alert("Keep at least one deal. Create a new one first."); return; }
+  if(!confirm(`Delete "${d.name}" from this browser?`)) return;
+  delete db.deals[cur]; cur = Object.keys(db.deals)[0]; save(); renderPicker(); hydrate();
+});
+
+// ---------- hydrate / bind ----------
+function hydrate(){
+  const d = deal();
+  QF.forEach(id => { $(id).value = d.q[id] ?? ""; });
+  SF.forEach(id => { const v = d.s[id]; if(v !== undefined) $(id).value = v; else if($(id).tagName==="SELECT") $(id).selectedIndex = 0; else $(id).value = ""; });
+  CB.forEach(id => { $(id).checked = !!d.cb[id]; });
+  renderDeliv(); renderLadder(); recompute(); buildSheet();
+  document.querySelectorAll(".panel h2").forEach(()=>{});
+}
+QF.forEach(id => $(id).addEventListener("input", () => { deal().q[id] = $(id).value; if(id==="q_company" && $(id).value.trim()){ deal().name = $(id).value.trim() + (deal().example ? " (example)" : ""); renderPicker(); } save(); recompute(); buildSheet(); }));
+SF.forEach(id => $(id).addEventListener("input", () => { deal().s[id] = $(id).value; save(); buildSheet(); }));
+CB.forEach(id => $(id).addEventListener("change", () => { deal().cb[id] = $(id).checked; save(); recompute(); buildSheet(); }));
+
+// ---------- qualify logic ----------
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+function daysBetween(a,b){ return Math.floor((b - a)/86400000); }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function dstr(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
+
+function recompute(){
+  const q = deal().q, mcs = !!deal().cb.q_mcs;
+  const flags = [], next = [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  let age = null, from = null;
+  if(q.q_date){ const d = new Date(q.q_date+"T00:00:00"); if(!isNaN(d)){ age = daysBetween(d, today); from = addDays(d, 180); } }
+  const relayActive = q.q_relay === "active" || q.q_relay === "unused";
+  const doos = q.q_doos === "" || q.q_doos == null ? null : Number(q.q_doos);
+  const voos = q.q_voos === "" || q.q_voos == null ? null : Number(q.q_voos);
+  const crash = Number(q.q_crash || 0);
+
+  // verdict
+  let title = "Not enough yet", status = ["steel","Asking"], reason = "", profile = "–", say = "Run the script in order. Read the FMCSA record aloud as you go.";
+  const hard = [];
+  if(q.q_entity === "sole") hard.push(["Sole proprietor", "The authority is tied to a person under an SSN and can never transfer. Flat no, no workaround.", "Unfortunately I wouldn't have any buyers for this, because they can't do a legal transfer with it. The only way a transfer works under FMCSA rules is if it comes with an LLC or corporation."]);
+  if(q.q_rating === "C" || q.q_rating === "X") hard.push(["Rating " + (q.q_rating==="C"?"Conditional":"Unsatisfactory"), "Buyers walk. Not a fit.", "With a conditional or unsatisfactory rating the buyers won't take it. If that gets upgraded, call me back and we'll look again."]);
+  if(q.q_relay === "dsp" ) hard.push(["Amazon DSP", "DSP is a different program and never transfers. Only Relay counts.", "DSP is a different program from Relay and doesn't transfer with the company, so I'd be pricing this as a non-Relay MC."]);
+  if(q.q_auth === "inactive" && !relayActive) hard.push(["Authority inactive, no Relay", "Reactivating resets the age to zero and brokers won't touch it for six months.", "Once it's reactivated the clock starts over at zero, and brokers won't work with it for about six months. Without Relay there's nothing to sell today."]);
+  if(q.q_email === "no") hard.push(["Email does not convey", "No buyer will take it. Changing the FMCSA email suspends Relay and freezes brokers for months.", "The email has to come with it. If it changes on FMCSA, Amazon suspends and brokers freeze the account for months. Three options: forwarding, clean it up before close, or a clause that the buyer forwards anything personal."]);
+
+  if(hard.length){
+    title = "Not a fit"; status = ["bad","Stop"]; reason = hard[0][1]; say = hard[0][2]; profile = "None";
+    hard.forEach(h => flags.push(["bad", h[0], h[1]]));
+  } else if(age !== null && age < 180 && !relayActive){
+    title = "Not yet"; status = ["warn","Date it"]; profile = "Comes back " + dstr(from);
+    reason = `Authority is ${age} days old. Under 180 days is unsellable without an active Relay contract.`;
+    say = `Right now it's ${age} days old, and buyers need 180 days of continuous authority and insurance, or an active Relay contract. On ${dstr(from)} it becomes sellable. If you onboard Relay in the meantime it's worth roughly double. Want me to call you the week before?`;
+    flags.push(["warn","Under 180 days", `Sellable from ${dstr(from)}. Any lapse restarts the clock from the reinstatement date.`]);
+  } else if(q.q_entity && q.q_auth){
+    title = "Qualifies"; status = ["ok","Go"]; profile = relayActive ? "A · Relay attached" : "B · 180+ days, no Relay";
+    reason = relayActive ? "Active Relay on the LLC. This is what every buyer wanted in September." : "Authority and insurance 180+ days. Non-Relay demand was thin in September; price it honestly and offer the Relay path.";
+    say = relayActive ? "You've got the company with Relay attached, which is exactly what the buyers want. Send me screenshots of the Relay home, safety and performance pages and I'll take it to the buyer side today." : "Without Relay the number sits at the lower end. If you onboard Relay first, one to two weeks, it roughly doubles. Either way I'll take it to the buyer side today and you'll hear from me tomorrow either way.";
+  } else {
+    title = "Not enough yet"; status = ["steel","Asking"]; reason = "Entity type and authority status decide whether there is a deal at all. Ask those first.";
+  }
+
+  // soft flags
+  if(q.q_members === "partners") flags.push(["warn","Partners", "Every member signs the bill of sale. Get the partner on the call before any number is discussed."]);
+  if(!q.q_members) next.push("Ask: are you the only member, or are there partners?");
+  if(q.q_ins === "lapsed6") flags.push(["warn","Insurance lapsed in last 6 months", "The 180-day clock runs from the reinstatement. Confirm the date on the record."]);
+  if(q.q_ins === "none") flags.push(["bad","No insurance on file", "Buyer pays a full new down payment. Engine −0.20. Ask when it lapsed and why."]);
+  if(doos !== null && doos >= 50) flags.push(["bad","Driver OOS ≥ 50%", "Engine floors at $8,000 and buyers walk."]);
+  if(voos !== null && voos >= 50) flags.push(["bad","Vehicle OOS ≥ 50%", "Engine floors at $8,000 and buyers walk."]);
+  if(crash > 2) flags.push(["warn",`${crash} crashes in 24 months`, crash > 5 ? "Engine −0.15. Read it aloud before they hear it from the buyer." : "Engine −0.10. Read it aloud."]);
+  if(q.q_email === "fused") flags.push(["warn","Personal email on FMCSA", "It still conveys. Offer forwarding clause, cleanup time, or a price bump for the cleanup. Put it on the deal sheet."]);
+  if(q.q_phone === "personal") flags.push(["warn","FMCSA phone is a personal cell", "Exclude it and untick the deliverable, or the seller ports their own cell. Never let 'company phone' mean a cell without reading the number aloud."]);
+  if(q.q_phone === "no") flags.push(["steel","Phone excluded", "Worth $1,000 to $3,000 to a buyer. Untick the deliverable and add Excluded Assets."]);
+  if(q.q_relay === "pending") flags.push(["warn","Relay pending", "Price as non-Relay until approved. If a buyer moves early, use the refundable insurance down payment."]);
+  if(q.q_relay === "denied") flags.push(["bad","Relay denied or suspended", "Treat as non-Relay and find out why. A suspension for a record change is a red flag on the history."]);
+  if(relayActive && q.q_bank === "other") flags.push(["warn","Bank not Chase / BofA / Wells", "Seller opens a Chase business account in the LLC name, gets the stamped confirmation letter, attaches it to Relay, waits a day or two. Or a buyer takes it without the bank."]);
+  if(relayActive && q.q_bank === "bofa") flags.push(["steel","Bank of America", "Handover only works in person."]);
+  if(q.q_debt === "truck") flags.push(["bad","Financed truck titled to the LLC", "Debt follows the entity. Usually fatal unless paid off or retitled before closing."]);
+  if(q.q_debt === "disclosed") flags.push(["warn","Debt on the LLC", "Payoff is structured into closing. Get the balance and the lender."]);
+  if(q.q_factor === "contract" || q.q_factor === "unknown") flags.push(["warn","Factoring", (q.q_factorco ? q.q_factorco + ". " : "") + "Letter of release needed; ask about an early-termination penalty. A UCC filing is a lien. Never tell them to hide the sale."]);
+  if(q.q_motus === "no" || q.q_motus === "unknown") flags.push(["warn","Motus not registered", "The original owner must register at motus.dot.gov before anything on the record can change. Say the URL exactly."]);
+  if(q.q_verify === "no") flags.push(["steel","Not on Highway / RMIS / MCP", "Fine for Relay buyers. Non-Relay buyers want it; explain that the bigger brokers verify carriers there."]);
+  if(q.q_offers && !/^(none|no|n\/a|-)?$/i.test(q.q_offers.trim())) flags.push(["steel","Other offers: " + q.q_offers, "If it's real and above the market, tell them to take it. Never bid against yourself."]);
+  if(q.q_state && /^(ca|nv|california|nevada)$/i.test(q.q_state.trim())) flags.push(["steel","California / Nevada", "Priced down for insurance cost."]);
+  if(age !== null && age > 730) flags.push(["steel",`Authority ${Math.floor(age/365)} years old`, "Small premium only: $3,000 to $5,000 at five years. The big money is ten to twenty."]);
+
+  // next asks
+  if(!q.q_entity) next.push("Ask: is this an LLC or corporation, or a sole proprietorship?");
+  if(!q.q_auth) next.push("Pull the record: authority status, granted or reinstated date, insurance, inspections, OOS.");
+  if(!q.q_email || !q.q_phone) next.push("Ask: does it come with the LLC, the email on FMCSA and the phone on FMCSA?");
+  if(!q.q_relay) next.push("Ask: do you have Amazon Relay set up? Score? Which bank is attached?");
+  if(relayActive) next.push("Get screenshots of the Relay home, safety and performance pages before you hang up.");
+  if(!q.q_debt) next.push("Ask: any debts, liens or loss runs, on the LLC or on you personally?");
+  if(!q.q_factor) next.push("Ask: factoring still tied to the MC? Which company, in a contract, letter of release?");
+  if(!q.q_motus) next.push("Ask: did you register on Motus yet? motus.dot.gov");
+  if(!q.q_offers) next.push("Ask: have you had any other offers?");
+  if(!q.q_ask) next.push("Ask last: how much are you looking to get?");
+  next.push("Say exactly what happens next and when you will call. Then call at that time.");
+
+  // engine mirror
+  let engine = "–", market = "–";
+  if(title === "Qualifies" || title === "Not yet"){
+    const floored = (doos !== null && doos >= 50) || (voos !== null && voos >= 50) || q.q_auth === "inactive";
+    if(floored){ engine = fmt(8000) + " floor"; }
+    else {
+      let f = 0;
+      if(relayActive) f += 0.3;
+      if(age !== null){ if(age >= 180 && age <= 365) f += 0.25; else if(age > 365 && age <= 730) f += 0.1; else if(age > 730) f -= 0.1; }
+      if(voos !== null && voos < 20.72) f += 0.15;
+      if(doos !== null && doos < 5.51) f += 0.15;
+      if(crash > 5) f -= 0.15; else if(crash > 2) f -= 0.1;
+      if(q.q_ins === "none") f -= 0.2;
+      if(mcs) f -= 0.05;
+      f = Math.max(0, Math.min(1, f));
+      const ceiling = relayActive && q.q_rating === "S" ? 25000 : 22000;
+      const mid = 8000 + (ceiling - 8000) * f;
+      const lo = Math.max(8000, Math.round((mid - 1500)/100)*100), hi = Math.min(ceiling, Math.round((mid + 1500)/100)*100);
+      engine = fmt(lo) + " – " + fmt(hi) + (doos === null || voos === null ? " (OOS blank)" : "");
+    }
+    if(relayActive){
+      market = q.q_score === "A" ? "$20,000+ with an A score" : q.q_score === "B" ? "$15,000 – $18,000" : q.q_score === "C" ? "Score drags it toward $12,000 – $15,000" : "$13,000 – $16,000 (unused or no score)";
+    } else market = "$7,000 – $12,000; buyers scarce without Relay";
+    if(title === "Not yet") market = "Nothing until " + dstr(from) + "; with Relay by then, " + "$13,000 – $16,000";
+  }
+
+  // paint
+  $("v_title").textContent = title;
+  const st = $("v_status"); st.className = "status " + status[0]; st.textContent = status[1];
+  $("v_reason").textContent = reason;
+  $("v_profile").textContent = profile;
+  $("v_age").textContent = age === null ? "–" : `${age} days` + (age >= 180 ? " · past 180" : "");
+  $("v_from").textContent = from ? (age >= 180 ? "Already" : dstr(from)) : "–";
+  $("v_engine").textContent = engine;
+  $("v_market").textContent = market;
+  $("v_say_t").textContent = say;
+  const fl = $("v_flags"); fl.innerHTML = "";
+  if(!flags.length) fl.innerHTML = '<li><span class="pill ok">Clean</span><span>Nothing flagged so far.</span></li>';
+  flags.forEach(f => { const li = document.createElement("li"); li.innerHTML = `<span class="pill ${f[0]}">${esc(f[1])}</span><span>${esc(f[2])}</span>`; fl.appendChild(li); });
+  const nx = $("v_next"); nx.innerHTML = ""; next.slice(0,7).forEach(t => { const li = document.createElement("li"); li.innerHTML = `<span class="pill steel">Next</span><span>${esc(t)}</span>`; nx.appendChild(li); });
+
+  // summary text
+  const L = [];
+  L.push(`${q.q_company || "Company"}${q.q_mc ? " · " + q.q_mc : ""}${q.q_state ? " · " + q.q_state : ""} — ${title.toUpperCase()}${profile !== "–" ? " · " + profile : ""}`);
+  if(q.q_contact) L.push(`On the line: ${q.q_contact}`);
+  L.push(`Entity: ${label("q_entity")} · Members: ${label("q_members")}`);
+  L.push(`Authority: ${label("q_auth")}${q.q_date ? " since " + q.q_date : ""}${age !== null ? " (" + age + " days)" : ""} · Insurance: ${label("q_ins")} · Rating: ${label("q_rating")}`);
+  L.push(`Inspections: ${q.q_insp || "?"} · Driver OOS: ${q.q_doos || "?"}% · Vehicle OOS: ${q.q_voos || "?"}% · Crashes 24mo: ${q.q_crash || "0"}${mcs ? " · MCS-150 outdated" : ""}`);
+  L.push(`Relay: ${label("q_relay")}${q.q_score ? " · score " + label("q_score") : ""} · Bank: ${label("q_bank")}`);
+  L.push(`Email conveys: ${label("q_email")} · Phone conveys: ${label("q_phone")} · Highway/RMIS/MCP: ${label("q_verify")}`);
+  L.push(`Debt: ${label("q_debt")} · Factoring: ${label("q_factor")}${q.q_factorco ? " (" + q.q_factorco + ")" : ""} · Motus: ${label("q_motus")} · Insurance/mo: ${q.q_premium || "?"}`);
+  L.push(`Other offers: ${q.q_offers || "none stated"} · Seller's number: ${q.q_ask || "not asked"}`);
+  L.push(`Engine range: ${engine} · Buyers paid: ${market}`);
+  if(flags.length) L.push("Flags: " + flags.map(f => f[1]).join("; "));
+  if(q.q_notes) L.push("Notes: " + q.q_notes);
+  L.push("Next: " + next.slice(0,3).join(" / "));
+  $("summaryOut").value = L.join("\n");
+}
+function label(id){ const el = $(id); if(el.tagName !== "SELECT") return el.value || "?"; const o = el.options[el.selectedIndex]; return o && o.value ? o.textContent : "not asked"; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+// ---------- copy ----------
+function copy(text, toastId){
+  const t = $(toastId);
+  const done = () => { t.textContent = "Copied"; setTimeout(() => t.textContent = "", 1800); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, () => fallback()); } else fallback();
+  function fallback(){ const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); done(); }catch(e){ t.textContent = "Select the text and copy it"; } document.body.removeChild(ta); }
+}
+$("copySummary").addEventListener("click", () => copy($("summaryOut").value, "toast1"));
+$("copySheet").addEventListener("click", () => copy($("sheetOut").value, "toast3"));
+$("copyLadder").addEventListener("click", () => copy(ladderText(), "toast2"));
+
+// ---------- ladder ----------
+function renderLadder(){
+  const d = deal(); const ol = $("ladder"); ol.innerHTML = "";
+  let nextIdx = LADDER.findIndex((_, i) => !d.ladder[i]);
+  LADDER.forEach((r, i) => {
+    const li = document.createElement("li"); li.className = (d.ladder[i] ? "done" : "") + (i === nextIdx ? " next" : "");
+    const id = "l" + i;
+    li.innerHTML = `<input type="checkbox" id="${id}" ${d.ladder[i] ? "checked" : ""} aria-label="${esc(r[0])}"><div><label for="${id}" class="t">${esc(r[0])}</label><div class="d">${esc(r[1])}</div></div><span class="when">${d.ladder[i] ? esc(d.ladder[i]) : ""}</span>`;
+    li.querySelector("input").addEventListener("change", e => {
+      if(e.target.checked){ const stamp = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric"}); d.ladder[i] = d.ladder[i] || stamp; } else delete d.ladder[i];
+      save(); renderLadder();
+    });
+    ol.appendChild(li);
+  });
+  const w = $("ladderWarn"); const msgs = [];
+  if(d.ladder[5] && !d.ladder[4]) msgs.push("Documents are ticked before the first half. Hold documents until the first payment lands.");
+  if(d.ladder[7] && !d.ladder[6]) msgs.push("Credentials are ticked before paid in full. Nothing password-shaped moves before the second payment.");
+  if(d.ladder[9] && !d.ladder[6]) msgs.push("Phone port before full payment. The port is the last thing, after the money.");
+  if(d.ladder[2] && !d.ladder[0]) msgs.push("Bill of sale signed before a price is agreed and confirmed in writing. Check the document has the price on it.");
+  w.hidden = !msgs.length; w.textContent = msgs.join(" ");
+}
+function ladderText(){ const d = deal(); return `${d.name} — ladder\n` + LADDER.map((r,i) => `${d.ladder[i] ? "[x]" : "[ ]"} ${i+1}. ${r[0]}${d.ladder[i] ? " (" + d.ladder[i] + ")" : ""}`).join("\n"); }
+
+// ---------- deliverables chips ----------
+function renderDeliv(){
+  const d = deal(); const box = $("delivChips"); box.innerHTML = "";
+  DELIV.forEach((t, i) => {
+    const l = document.createElement("label"); l.className = "chip";
+    const excluded = d.deliv.includes(i);
+    l.innerHTML = `<input type="checkbox" ${excluded ? "" : "checked"} aria-label="${esc(t)}"> ${esc(t)}`;
+    l.querySelector("input").addEventListener("change", e => { if(e.target.checked) d.deliv = d.deliv.filter(x => x !== i); else if(!d.deliv.includes(i)) d.deliv.push(i); save(); buildSheet(); });
+    box.appendChild(l);
+  });
+}
+
+// ---------- deal sheet ----------
+function buildSheet(){
+  const d = deal(), q = d.q, s = d.s, cb = d.cb;
+  const fl = []; const L = [];
+  const need = (v, what) => { if(!v || !String(v).trim()) fl.push(["warn", "Pending", what]); };
+  L.push(`BILL OF SALE — deal sheet for ${q.q_company || "[COMPANY]"}`);
+  L.push(`From: ${d.example ? "Example deal" : "the call desk"} · ${new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}`);
+  L.push("");
+  L.push("COMPANY");
+  L.push(`  Legal name: ${q.q_company || "[PENDING]"}${s.s_dba ? " · DBA " + s.s_dba : ""}`);
+  L.push(`  MC / USDOT: ${q.q_mc || "[PENDING]"}`);
+  L.push(`  Address: ${s.s_addr || "[from FMCSA lookup]"}`);
+  L.push(`  Email that transfers: ${s.s_cemail || "[PENDING — the address on FMCSA]"}`);
+  L.push(`  Phone that transfers: ${s.s_cphone || "[PENDING — the number on FMCSA, or EXCLUDED]"}`);
+  L.push(`  Interest transferred: 100% Membership Interest`);
+  L.push("");
+  L.push("PARTIES (as on the IDs)");
+  L.push(`  Seller: ${s.s_seller || "[PENDING]"}${s.s_selleraddr ? ", " + s.s_selleraddr : ""}`);
+  if(s.s_coseller) L.push(`  Second seller: ${s.s_coseller}`);
+  else if(q.q_members === "partners") L.push(`  Second seller: [PENDING — seller said there are partners; every member signs]`);
+  L.push(`  Buyer: ${s.s_buyer || "[PENDING]"}${s.s_buyeraddr ? ", " + s.s_buyeraddr : ""}`);
+  L.push("");
+  L.push("DEAL");
+  L.push(`  Purchase price: ${s.s_price || "[PENDING]"}`);
+  L.push(`  Effective date: ${s.s_date || "[PENDING]"}`);
+  const termsTxt = { staged: `Staged — first payment ${s.s_first || "[AMOUNT]"} then balance ${s.s_second || "[AMOUNT]"}, by ${s.s_method || "wire"}. Plus a custom section stating the order: first payment, then documents, then balance, then credentials.`, on_transfer: "Paid in full after documents and access transferred (note: this contradicts the ladder if the ladder was promised)", in_person: "Paid in full at an in-person meeting" }[s.s_terms || "staged"];
+  L.push(`  Payment terms: ${termsTxt}`);
+  const insTxt = { none: "No insurance clause", deposit_deducted: `Buyer sends a deposit of ${s.s_insamt || "[AMOUNT]"} by ${s.s_insby || "[METHOD]"} for insurance, deducted from the price`, refundable_relay: `Buyer sends an insurance down payment of ${s.s_insamt || "[AMOUNT]"} by ${s.s_insby || "[METHOD]"}, refunded in full if Relay is denied`, buyer_own_policy: "Buyer obtains own policy and adds own bank before transfer", buyer_premium_deadline: `Buyer pays the upfront premium of ${s.s_insamt || "[AMOUNT]"} no later than ${s.s_insby || "[DATE]"}` }[s.s_insopt || "none"];
+  L.push(`  Insurance: ${insTxt}`);
+  L.push(`  Design: ${s.s_design || "Instrument"}`);
+  L.push("");
+  L.push("DELIVERABLES");
+  const ex = DELIV.filter((_, i) => d.deliv.includes(i));
+  L.push(ex.length ? "  Leave off: " + ex.join("; ") : "  All nine standard lines. Email and phone lines to print the actual address and number.");
+  L.push("");
+  L.push("EXTRA CLAUSES");
+  const cl = [];
+  if(cb.c_forward) cl.push("Buyer forwards any personal mail that lands in the transferred email");
+  if(cb.c_noamazon) cl.push("Buyer makes no purchases on the seller's private Amazon account");
+  if(cb.c_nouse) cl.push(`No-use period: buyer does not operate under the authority while the ownership record stays in the seller's name, and completes the change by ${s.c_nouse_date || "[DATE]"} — Lukas to review wording`);
+  if(cb.c_avail) cl.push(`Seller stays reasonably available for ${s.c_avail_n || "4"} months for signatures, verification codes and Motus (library Cooperation Period says 30 days; use this number instead)`);
+  if(cb.c_excluded) cl.push("Excluded Assets (library)");
+  if(cb.c_travel) cl.push("Buyer Travel and Insurance Costs (library)");
+  if(cb.c_postsale) cl.push("Post-Sale Obligations (library)");
+  if(cb.c_indem) cl.push("Indemnification and Dispute Resolution (library)");
+  if(cb.c_proof) cl.push("Proof of Transfer within 7 days (library)");
+  if(s.c_custom && s.c_custom.trim()) cl.push("Custom: " + s.c_custom.trim());
+  L.push(cl.length ? cl.map(c => "  - " + c).join("\n") : "  None");
+  L.push("");
+  L.push("WIRE PANEL (seller's account)");
+  L.push(`  Bank: ${s.s_bank || "[PENDING]"} · Account name: ${s.s_acctname || "[PENDING]"}`);
+  L.push(`  Routing: ${s.s_routing || "[PENDING]"} · Account: ${s.s_acct || "[PENDING]"}`);
+  L.push("");
+  L.push("CHECK BEFORE IT GOES OUT: no PENDING chips; price on it; payment terms match what was said on the phone; email and phone lines name the real address and number; every member is a signer.");
+  $("sheetOut").value = L.join("\n");
+
+  // flags
+  need(s.s_price, "Purchase price"); need(s.s_seller, "Seller legal name"); need(s.s_buyer, "Buyer legal name"); need(s.s_cemail, "Email that transfers"); need(s.s_cphone, "Phone that transfers, or EXCLUDED");
+  if(s.s_terms === "staged" && (!s.s_first || !s.s_second)) fl.push(["warn","Pending","Staged amounts"]);
+  if(s.s_terms === "on_transfer") fl.push(["bad","Mismatch","Paid-after-transfer terms contradict the ladder. Use Staged if half-and-half was promised."]);
+  if(cb.c_proof && cb.c_nouse) fl.push(["bad","Conflict","Proof of Transfer in 7 days and a no-use period cannot both be in the document."]);
+  if(q.q_members === "partners" && !s.s_coseller) fl.push(["bad","Signer","Seller said there are partners; the second seller must be named."]);
+  if(q.q_phone === "personal" && !d.deliv.includes(4) && !/exclud/i.test(s.s_cphone || "")) fl.push(["bad","Phone","The FMCSA phone is a personal cell and the phone line is still a deliverable. Exclude it or confirm the seller is porting their own number."]);
+  if(q.q_email === "fused" && !cb.c_forward) fl.push(["warn","Email","Personal email conveys; add the forwarding clause."]);
+  if(s.s_terms === "staged" && s.s_price && s.s_first && s.s_second){
+    const n = x => Number(String(x).replace(/[^0-9.]/g,"")) || 0;
+    if(Math.abs(n(s.s_price) - n(s.s_first) - n(s.s_second)) > 0.5) fl.push(["bad","Arithmetic","First payment plus balance does not equal the price."]);
+  }
+  const box = $("s_flags"); box.innerHTML = "";
+  const st = $("s_status");
+  if(!fl.length){ st.className = "status ok"; st.textContent = "Ready"; box.innerHTML = '<li><span class="pill ok">Ready</span><span>Nothing pending. Send it.</span></li>'; }
+  else { const bad = fl.some(f => f[0] === "bad"); st.className = "status " + (bad ? "bad" : "warn"); st.textContent = bad ? "Fix first" : "Pending"; fl.forEach(f => { const li = document.createElement("li"); li.innerHTML = `<span class="pill ${f[0]}">${esc(f[1])}</span><span>${esc(f[2])}</span>`; box.appendChild(li); }); }
+}
+// auto-split price into halves when staged and halves are empty
+$("s_price").addEventListener("blur", () => {
+  const s = deal().s; if((s.s_terms || "staged") !== "staged") return;
+  const n = Number(String(s.s_price || "").replace(/[^0-9.]/g,"")); if(!n || s.s_first || s.s_second) return;
+  const half = "$" + (n/2).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  s.s_first = half; s.s_second = half; $("s_first").value = half; $("s_second").value = half; save(); buildSheet();
+});
+
+// ---------- talk tracks ----------
+const TRACKS = [
+  {cat:"Positioning", q:"\"So you're a broker?\"", say:"Fair question. We're not the buyer and nothing comes out of your number. We find the buyer, verify everything on both sides, prepare the bill of sale and walk both of you through the bank. You get the full price you agree to.", never:"\"Technically we're an intermediary.\" \"We buy logistics companies.\" \"They give us a commission on the back end.\" Never broker, middleman, agent, agency or intermediary, not even to deny them.", keys:"broker middleman agent intermediary commission who are you what is veritor consulting"},
+  {cat:"Positioning", q:"\"Who's the buyer?\"", say:"A separate carrier. Carriers who need a Relay-approved company today rather than in six months. The structure gets walked through with Lukas before anything is signed.", never:"The buyer's city, fleet size, vacation, hospital, or how many companies he has bought from us.", keys:"buyer who is buying carrier chicago fleet"},
+  {cat:"Why it sells", q:"\"Why can't the buyer just onboard Relay himself?\"", say:"It's a long process, and if whoever onboards doesn't match what's on FMCSA they flat out suspend the account, because they don't know who this person is. The asset is the matched identity, not the number.", keys:"relay onboard why pay why worth amazon suspend match"},
+  {cat:"Why it sells", q:"\"Can I just sell the MC number?\"", say:"Per FMCSA regulations it has to come with the business entity, the LLC or the corporation. You cannot buy or sell a straight MC number. What's sold is the company, and the authority goes with it.", keys:"mc number only just the mc sell mc fmcsa"},
+  {cat:"Qualify", q:"Sole proprietor", say:"Unfortunately I wouldn't have any buyers for this, because they can't do a legal transfer with it. The only way it works under FMCSA rules is if it comes with an LLC or corporation.", keys:"sole prop ssn proprietor individual not a fit"},
+  {cat:"Qualify", q:"Under 180 days / reinstated", say:"It says reinstated on [date], so it goes by the reinstatement, not the year you opened. Buyers need 180 days of continuous authority and insurance, or an active Relay contract. On [date] it becomes sellable; with Relay by then it's worth roughly double.", keys:"180 days age reinstated young new authority not yet wait"},
+  {cat:"Qualify", q:"\"I'll just wait for it to age\"", say:"At five years it might bump $3,000 to $5,000. The big money for aged MCs is ten, fifteen, twenty years. In the meantime you're paying insurance on it.", keys:"wait age old aged years hold"},
+  {cat:"Qualify", q:"Dormant authority, thirty years old", say:"Reactivating resets the age to zero, and brokers won't touch it for six months. Without an active Relay contract there's nothing to sell today.", keys:"inactive dormant reactivate revoked old"},
+  {cat:"Qualify", q:"Asking for Relay screenshots", say:"If you could send me screenshots of the home, safety and performance pages. Not saying you're lying to me, but the buyers still want to see and confirm. We've had people say they've got what they don't, and then we go through all the hoops and it doesn't turn out that way.", keys:"screenshot proof verify relay score performance safety page"},
+  {cat:"Pricing", q:"\"My company is worth $150,000\" / \"I've had offers of $35,000\"", say:"Buyers don't price off revenue or customers. They price off what's on FMCSA: the age, the inspections, the out-of-service rate, and whether Relay is attached. An A-plus Amazon company doesn't go for $35,000. If you've got a real offer above that, take it.", never:"\"That's just a standard valuation.\" \"I'll see if I can get rid of it to somebody.\" Any number above the engine ceiling. Bidding against yourself: \"would $15,000 work? $20,000? I can try $26,000\".", keys:"worth price offer 150 35 revenue value high anchor expensive lowball"},
+  {cat:"Pricing", q:"Relaying a buyer's number", say:"The buyer's at $18,000, and the reason is the score on the safety page. Let me take your number back to them. Lukas puts whatever's agreed in writing.", never:"Inventing a number. Only Lukas makes an offer.", keys:"offer number quote how much relay buyer price counter"},
+  {cat:"Pricing", q:"\"What about my trucks and my customers?\"", say:"The buyers already have equipment rolling. What they want is the company and its record. Trucks and trailers would need a separate buyer, and customer relationships don't move the number.", keys:"trucks trailers equipment customers contracts lanes"},
+  {cat:"Trust", q:"\"Is this a scam? How do I know you're real?\"", say:"You'll receive half the payment before you send anything. Then you're paid in full before you send the logins, which are the only thing the buyer can't get without you. IDs are exchanged both ways, and you can meet the buyer in person if you'd rather.", never:"\"We've had sellers take the money and run.\" Any story about another seller.", keys:"scam real legit trust fraud how do i know scammed"},
+  {cat:"Trust", q:"Seller thinks the buyer is already in their account", say:"It's not possible, he doesn't have the login or the password. Those screenshots are examples I send so you know what Amazon will ask for. Anytime you have a concern, call me and we'll sort it immediately.", keys:"screenshots access account already logged in panic"},
+  {cat:"Trust", q:"\"Can we do it all at once? I'll notarize everything.\"", say:"The two-step protects both sides. You're paid in full before the logins move, and the buyer isn't wiring the whole amount before anything moves. If you'd rather do it in person at the bank, that's one of the options.", keys:"all at once notarize one step same time"},
+  {cat:"Trust", q:"\"Why record the call?\"", say:"All our calls are recorded so both sides have the exact words if anything's ever questioned. It protects you as much as anyone.", never:"\"Because sellers have run off on our buyers.\"", keys:"recording recorded robot why record"},
+  {cat:"Email & phone", q:"\"I'm not giving up my email\"", say:"The email has to come with it. If it changes on FMCSA, Amazon suspends and brokers freeze the account for months. Three options: set up forwarding, clean it up before close, or we write a clause that the buyer forwards anything personal. If cleanup takes your time, we can ask the buyer to make that up in the price.", keys:"email gmail hotmail personal keep forward change mcs-150"},
+  {cat:"Email & phone", q:"\"I'm not giving up my phone number\"", say:"That's fine, we'll exclude it. It's worth about $2,000 to the buyer, so the number comes down a little. Some buyers keep the number the same.", keys:"phone number cell port exclude keep my number"},
+  {cat:"Email & phone", q:"Seller about to change the FMCSA email", say:"No, no, no. If you change that email on FMCSA, Amazon suspends immediately and you'll never get it back. And none of our buyers will take it, because after an email change no broker will work with it for two to four months.", keys:"change email update mcs-150 fmcsa email suspend"},
+  {cat:"Bank", q:"\"Why do you need my bank account?\"", say:"Amazon ties the payment account to the company. If the buyer swaps in his own, Amazon shuts it down. So the account transfers with the company, and Chase is the easiest bank for that. There are four ways to do it and you're removed from the account completely.", keys:"bank account why chase transfer signer"},
+  {cat:"Bank", q:"Relay bank is not Chase / BofA / Wells", say:"Open a Chase business account in the LLC's name, they're free. While you're there get the bank confirmation letter with the stamp in the middle; I'll send you an example. Add the new payment details on Relay, upload the letter when Amazon asks, and a day or two later it's accepted. Then the handover is one appointment.", keys:"chase small bank credit union navy federal confirmation letter stamp"},
+  {cat:"Record", q:"\"My name stays on FMCSA for months? What if there's an accident?\"", say:"You're right to ask. The buyer keeps the record as is until Amazon's ownership change goes through, and the bill of sale carries a no-use clause and a deadline for that. I'll have Lukas walk you through exactly what's in writing.", never:"\"It's not legally possible for anything to come back on you.\" That is a legal opinion.", keys:"fmcsa record name liability accident months ownership change legal"},
+  {cat:"Record", q:"\"Did you register on Motus?\"", say:"Say the URL exactly: motus dot D-O-T dot gov. Half of carriers do it in fifteen minutes, half take two to four weeks. The original owner has to do it before anything on the record can change.", never:"\"Modus\", \"Modis\", \"notice.gov\".", keys:"motus modus register urs portal"},
+  {cat:"Record", q:"Phishing email \"from DOT\"", say:"That's not official. FMCSA mail comes from a dot-gov address. Save it, call FMCSA, they'll probably reset your password and issue a new PIN.", keys:"phishing email dot suspicious fake fmcsa scam email"},
+  {cat:"Closing", q:"The ladder", say:"We structured it so they give a little, you give a little, they give a little, you give a little. The email login, the FMCSA login and the Amazon login are what really matter for you. The documents are nice to have, but without those three things the buyer doesn't have anything. So you're paid in full before you give those up.", keys:"ladder half sequence order steps process how does it work payment"},
+  {cat:"Closing", q:"The document list", say:"After the first payment you send: articles of organization, letter of authority, EIN letter, COI. After the final payment: email login, FMCSA login and PIN, Amazon login. Nothing password-related moves until the money has.", keys:"documents articles ein letter of authority coi what do you need"},
+  {cat:"Closing", q:"\"I'll be done with it completely?\"", say:"You'll have the signed bill of sale. The bank is transferred out of your name 100% into the buyer's, and the bank confirms it. Secretary of State gets updated with his information. EIN gets updated. After that you have no attachment to the company.", keys:"done attachment liability after sale finished clean"},
+  {cat:"Closing", q:"Porting the phone", say:"Call your carrier, give them your account number, say you need a PIN to port the number to another phone. Text me the account number and PIN, I give it to the buyer, he calls, done. Usually a day or two, and you're already paid before that.", keys:"port phone verizon pin carrier number transfer"},
+  {cat:"Closing", q:"Utility bill for Amazon", say:"It has to be water or electric, not internet, cell or a credit card. Amazon cares about the address, so it can be in your name if you run the business from home.", keys:"utility bill amazon address proof water electric"},
+  {cat:"Closing", q:"\"How long does it take?\"", say:"Typically three to five business days after an offer is accepted when everything's in order. If Relay onboarding or a bank change is involved, one to two weeks is realistic.", never:"\"Wrapped up by Friday.\" \"Same day.\" \"Ten to fifteen minutes.\" Every one of those slipped.", keys:"how long timeline days weeks fast when friday"},
+  {cat:"Closing", q:"\"I don't want to wait six months\"", say:"There's no six-month wait on our side. With the bill of sale signed you're paid in halves over a couple of days. The months are the buyer's Amazon paperwork, not yours.", keys:"six months wait long paperwork"},
+  {cat:"Incident", q:"\"My company is listed for sale online / Highway flagged me\"", say:"I'm sorry, that's serious and I'm getting this to Lukas right away. Read me the exact wording Highway used and the date. You'll hear back from me by [time] today.", never:"Guessing the cause. Denying anything in writing. \"I won't move forward on this anymore.\" Promising a takedown confirmation you can't send.", keys:"listed for sale highway flagged investigation marketplace leak"},
+  {cat:"Incident", q:"Password or code arrives by text", say:"Let's not do passwords over text. I'll call you and we'll do the handover live once the second payment has landed.", never:"Forwarding it. Asking for the next code.", keys:"password code text sms 2fa login"},
+  {cat:"Money", q:"Factoring", say:"Call your factoring company and ask if you're in a contract, whether there's an early-termination penalty, and for a letter of release. A UCC filing is a lien on the receivables, and the release letter is the path.", never:"\"Don't tell them you're selling.\" Said twice in August.", keys:"factoring release letter ucc lien contract penalty"},
+  {cat:"Money", q:"Loans and liens", say:"Loans don't automatically disqualify it, but they have to be disclosed and the payoff is handled as part of closing. Debt on a truck titled to the company is the hard one; let me check with the buyer side.", never:"\"Move the debt off the LLC into your personal name.\"", keys:"loan lien debt truck financing payoff"},
+  {cat:"Money", q:"\"Do I pay anything?\"", say:"No. The valuation is free and nothing is deducted from the price you accept. The buyer pays us separately.", keys:"fee cost charge pay commission free"},
+  {cat:"Money", q:"\"What about taxes?\"", say:"That's a CPA question and I'm not going to guess at it. Generally an equity sale is treated differently from an asset sale, and your accountant will know which applies.", never:"Anything more than that.", keys:"tax taxes cpa capital gains"},
+  {cat:"People", q:"\"It's really my partner's decision\"", say:"Then let's get them on the line before we talk numbers, because every member signs the bill of sale. What time today works for both of you?", keys:"partner husband wife spouse co-owner member decision"},
+  {cat:"People", q:"Unverified buyers calling the seller", say:"Judge them by what they do: no ID, no paperwork, asking you to keep insurance in your name. Those are the signs.", never:"Anything about nationality or accent. It is discriminatory and it is a liability.", keys:"accent overseas indian foreign texts 120 messages other buyers"},
+  {cat:"People", q:"\"Nobody called me\"", say:"You're right, and I'm sorry. Here's exactly where it stands: [status]. You'll hear from me by [date] either way.", never:"\"I'm just waiting for somebody that wants it.\"", keys:"nobody called follow up update waiting status angry"},
+];
+function renderTracks(filter){
+  const box = $("tracks"); box.innerHTML = "";
+  const f = (filter || "").trim().toLowerCase().split(/\s+/).filter(Boolean);
+  TRACKS.filter(t => !f.length || f.every(w => (t.q + " " + t.say + " " + (t.never||"") + " " + t.keys + " " + t.cat).toLowerCase().includes(w))).forEach((t, i) => {
+    const el = document.createElement("article"); el.className = "track";
+    el.innerHTML = `<h3>${esc(t.q)}</h3><div class="say"><span class="tag">Say</span>${esc(t.say)}</div>${t.never ? `<div class="never"><span class="tag">Not this</span>${esc(t.never)}</div>` : ""}<div class="foot"><span class="cat">${esc(t.cat)}</span><button class="btn small" type="button">Copy</button></div>`;
+    el.querySelector("button").addEventListener("click", (e) => { copy(t.say, "toast1"); e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1500); });
+    box.appendChild(el);
+  });
+  if(!box.children.length) box.innerHTML = '<p class="hint">Nothing matches. Try one word.</p>';
+}
+$("trackSearch").addEventListener("input", e => renderTracks(e.target.value));
+renderTracks("");
+
+// ---------- texts ----------
+const TPLS = [
+  ["Missed inbound call", "Sorry we missed your call, Veritor Group here. Reply with your MC or DOT number and we'll call you right back.", "55% replied, usually within minutes"],
+  ["After hours", "Our team's out for the day but I'm reading texts. Send your MC number now and I'll have someone call first thing tomorrow.", ""],
+  ["Cold first touch", "Hi [name], this is Donnie with Veritor Group. A colleague passed along your contact, sounds like you might be open to selling [company]. Let me know if that's still true and I'll walk you through how it works.", "33% replied; keep it to one question"],
+  ["Buyer found", "Good news [name], I found a buyer for [company]. They'd like to agree a price and get moving. When's a good time to talk today or tomorrow?", ""],
+  ["Document list", "Here's exactly how it works. After the first payment you send: Articles of Organization, Letter of Authority, EIN letter, COI. After the final payment: general email login, FMCSA login and PIN, Amazon login. Nothing password-related moves until the money has. That protects you.", "Send after the ladder call, never instead of it"],
+  ["Relay screenshots", "When you get a second, screenshots of the Relay home page, safety page and performance page please. It's what the buyers check first.", ""],
+  ["Motus", "The registration is at motus.dot.gov. The original owner has to do it. Some carriers finish in fifteen minutes; if it asks for more, tell me what it says and I'll help."],
+  ["Chase letter", "At Chase, ask for a bank confirmation letter for the business account, the one with the stamp in the middle. Attach it to Relay under payment details when Amazon emails you. Example attached."],
+  ["Follow-up", "Hey [name], any update on [step]? No rush, just keeping it moving whenever you're ready.", "Reword every time; generic check-ins need two or three sends"],
+  ["Closing day", "Everything's signed and the buyer's ready today. Once your ID and the signed bill of sale are back, the first payment goes out. I'll keep you posted at every step.", ""],
+  ["Before the first payment", "First payment is on its way. Please confirm with a screenshot when it lands, then send the articles, letter of authority, EIN letter and COI to [email].", ""],
+  ["Status promised", "Quick status on [company]: [status]. You'll hear from me by [date] either way.", "The line to send when nothing has happened yet"],
+];
+function renderTpls(){
+  const q = deal().q; const name = (q.q_contact || "").split(",")[0].split(" ")[0] || "[name]"; const company = q.q_company ? q.q_company.replace(/\s*\(example\)/i,"") : "[company]";
+  const box = $("tpls"); box.innerHTML = "";
+  TPLS.forEach(t => {
+    const body = t[1].replace(/\[name\]/g, name).replace(/\[company\]/g, company);
+    const el = document.createElement("div"); el.className = "tpl";
+    el.innerHTML = `<div class="when">${esc(t[0])}</div><div class="body">${esc(body)}</div><div class="foot"><span class="n">${esc(t[2] || "")}</span><button class="btn small" type="button">Copy</button></div>`;
+    el.querySelector("button").addEventListener("click", (e) => { copy(body, "toast1"); e.target.textContent = "Copied"; setTimeout(() => e.target.textContent = "Copy", 1500); });
+    box.appendChild(el);
+  });
+}
+["q_company","q_contact"].forEach(id => $(id).addEventListener("input", renderTpls));
+$("dealPick").addEventListener("change", renderTpls);
+
+// ---------- boot ----------
+renderPicker(); hydrate(); renderTpls();
+})();
+</script>

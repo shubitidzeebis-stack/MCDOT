@@ -1,0 +1,711 @@
+<title>Veritor Call Handbook</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F4F5F2; --paper-2:#EAECE7; --ink:#1C201E; --ink-2:#4A524E; --ink-3:#7A827D;
+  --line:#D5D9D3; --accent:#CF4F1C; --accent-ink:#FFFFFF; --steel:#2C4A63; --steel-bg:#E4ECF3;
+  --ok:#2F6B45; --ok-bg:#E2EFE6; --warn:#8A5A0B; --warn-bg:#F6EBD2; --bad:#9B2D22; --bad-bg:#F7E1DE;
+  --script-bg:#FFFFFF; --agent:#2C4A63; --caller:#7A4C1E;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#15191B; --paper-2:#1E2427; --ink:#E6E9E4; --ink-2:#B4BBB6; --ink-3:#7F8884;
+    --line:#2F373B; --accent:#F0733C; --accent-ink:#15191B; --steel:#9DBBD6; --steel-bg:#1E2C38;
+    --ok:#8CC9A2; --ok-bg:#1B2E23; --warn:#E5B85C; --warn-bg:#332A14; --bad:#F09A90; --bad-bg:#3A1F1C;
+    --script-bg:#1A1F22; --agent:#9DBBD6; --caller:#D9A66B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#15191B; --paper-2:#1E2427; --ink:#E6E9E4; --ink-2:#B4BBB6; --ink-3:#7F8884;
+  --line:#2F373B; --accent:#F0733C; --accent-ink:#15191B; --steel:#9DBBD6; --steel-bg:#1E2C38;
+  --ok:#8CC9A2; --ok-bg:#1B2E23; --warn:#E5B85C; --warn-bg:#332A14; --bad:#F09A90; --bad-bg:#3A1F1C;
+  --script-bg:#1A1F22; --agent:#9DBBD6; --caller:#D9A66B;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.6}
+a{color:var(--steel)}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4{font-family:"Barlow Semi Condensed","Arial Narrow",sans-serif;text-wrap:balance;line-height:1.1;margin:0}
+h1{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:700;letter-spacing:-0.01em}
+h2{font-size:1.9rem;font-weight:700;margin-top:0.2rem}
+h3{font-size:1.25rem;font-weight:600;margin-top:2rem;margin-bottom:0.6rem}
+h4{font-size:1.05rem;font-weight:600;margin-top:1.4rem;margin-bottom:0.4rem;color:var(--ink-2)}
+p{margin:0 0 1rem}
+.eyebrow{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.12em;font-size:0.78rem;font-weight:600;color:var(--accent)}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:0;min-height:100vh}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--line);padding:2rem 1.25rem;background:var(--paper-2)}
+nav.toc .brand{font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:0.5rem}
+nav.toc .brand span{display:inline-block;width:10px;height:10px;background:var(--accent);border-radius:1px}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:mod}
+nav.toc li{counter-increment:mod;margin:0}
+nav.toc a{display:grid;grid-template-columns:1.6rem 1fr;gap:0.4rem;align-items:baseline;text-decoration:none;color:var(--ink-2);padding:0.38rem 0.4rem;border-radius:3px;font-size:0.92rem;line-height:1.3}
+nav.toc a::before{content:counter(mod,decimal-leading-zero);font-family:"IBM Plex Mono",monospace;font-size:0.75rem;color:var(--ink-3)}
+nav.toc a:hover{background:var(--paper);color:var(--ink)}
+nav.toc .sub{margin-top:1.5rem;font-size:0.8rem;color:var(--ink-3);line-height:1.5}
+main{padding:3rem clamp(1.25rem,4vw,4rem) 6rem;max-width:860px}
+header.hero{border-bottom:2px solid var(--ink);padding-bottom:1.5rem;margin-bottom:2.5rem}
+header.hero p.lede{font-size:1.15rem;color:var(--ink-2);max-width:62ch;margin-top:1rem}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-top:1.5rem}
+.meta div{border-top:1px solid var(--line);padding-top:0.5rem}
+.meta b{display:block;font-family:"Barlow Semi Condensed",sans-serif;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.meta small{color:var(--ink-3);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em}
+section.module{padding-top:2.5rem;margin-top:2.5rem;border-top:1px solid var(--line)}
+section.module .modnum{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:0.85rem;margin-bottom:0.3rem}
+section.module p,section.module li{max-width:68ch}
+ul,ol{padding-left:1.3rem;margin:0 0 1rem}
+li{margin-bottom:0.35rem}
+.callout{border-left:4px solid var(--steel);background:var(--steel-bg);padding:0.9rem 1.1rem;margin:1.2rem 0;border-radius:0 4px 4px 0}
+.callout .tag{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.1em;font-size:0.72rem;font-weight:700;display:block;margin-bottom:0.35rem}
+.callout.say{border-color:var(--ok);background:var(--ok-bg)} .callout.say .tag{color:var(--ok)}
+.callout.never{border-color:var(--bad);background:var(--bad-bg)} .callout.never .tag{color:var(--bad)}
+.callout.rule{border-color:var(--steel)} .callout.rule .tag{color:var(--steel)}
+.callout.gap{border-color:var(--warn);background:var(--warn-bg)} .callout.gap .tag{color:var(--warn)}
+.callout p:last-child{margin-bottom:0}
+.script{background:var(--script-bg);border:1px solid var(--line);border-radius:4px;padding:0.9rem 1.1rem;margin:1.2rem 0;font-size:0.93rem}
+.script .src{font-family:"IBM Plex Mono",monospace;font-size:0.72rem;color:var(--ink-3);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.06em}
+.script .line{display:grid;grid-template-columns:4.2rem 1fr;gap:0.6rem;margin-bottom:0.45rem}
+.script .who{font-family:"Barlow Semi Condensed",sans-serif;font-weight:600;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.06em;padding-top:0.15rem}
+.script .who.a{color:var(--agent)} .script .who.c{color:var(--caller)}
+.script .why{margin-top:0.6rem;padding-top:0.6rem;border-top:1px dashed var(--line);color:var(--ink-2);font-size:0.88rem}
+.script .why b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:0.92rem;margin:1rem 0 1.5rem}
+.tablewrap{overflow-x:auto}
+th,td{text-align:left;padding:0.55rem 0.7rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:"Barlow Semi Condensed",sans-serif;text-transform:uppercase;letter-spacing:0.08em;font-size:0.75rem;color:var(--ink-2)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font-family:"Barlow Semi Condensed",sans-serif;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:0.1rem 0.45rem;border-radius:2px;vertical-align:middle}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.steel{background:var(--steel-bg);color:var(--steel)}
+.steps{counter-reset:step;list-style:none;padding:0;margin:1rem 0 1.5rem}
+.steps li{counter-increment:step;display:grid;grid-template-columns:2.4rem 1fr;gap:0.7rem;padding:0.6rem 0;border-bottom:1px solid var(--line);margin:0}
+.steps li::before{content:counter(step);font-family:"Barlow Semi Condensed",sans-serif;font-weight:700;font-size:1.3rem;color:var(--accent);line-height:1}
+.steps li b{display:block}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin:1rem 0}
+.quiz{background:var(--paper-2);border:1px solid var(--line);border-radius:4px;padding:1rem 1.2rem;margin:1rem 0}
+.quiz summary{cursor:pointer;font-weight:600}
+.quiz p{margin-top:0.7rem}
+kbd{font-family:"IBM Plex Mono",monospace;font-size:0.85em;background:var(--paper-2);padding:0.05rem 0.35rem;border-radius:3px;border:1px solid var(--line)}
+.small{font-size:0.85rem;color:var(--ink-2)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  nav.toc ol{columns:2;column-gap:1rem}
+}
+</style>
+
+<div class="layout">
+<nav class="toc" aria-label="Modules">
+  <div class="brand"><span></span>Veritor Call Handbook</div>
+  <ol>
+    <li><a href="#m1">What we are, and how to say it</a></li>
+    <li><a href="#m2">Why anyone pays for this</a></li>
+    <li><a href="#m3">Who qualifies</a></li>
+    <li><a href="#m4">The qualification call</a></li>
+    <li><a href="#m5">Pricing</a></li>
+    <li><a href="#m6">The transfer, step by step</a></li>
+    <li><a href="#m7">The Bill of Sale</a></li>
+    <li><a href="#m8">One deal, eleven calls</a></li>
+    <li><a href="#m9">Objections</a></li>
+    <li><a href="#m10">Texting</a></li>
+    <li><a href="#m11">When it goes wrong</a></li>
+    <li><a href="#m12">Lines you never cross</a></li>
+    <li><a href="#m13">Sellers you will meet</a></li>
+    <li><a href="#m14">Closing checklist</a></li>
+    <li><a href="#m15">Self-check</a></li>
+    <li><a href="#m16">Open items for Lukas</a></li>
+  </ol>
+  <div class="sub">Built from 148 recorded calls and 1,159 texts on the Veritor Quo line, Aug 9 to Sep 9, 2026, plus the site, the valuation engine and the legal file. Internal. Do not forward outside the team.</div>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">New employee course · Seller desk</div>
+  <h1>Veritor Call Handbook</h1>
+  <p class="lede">Everything a new hire needs to take a seller from "how much is my MC worth?" to money in their account, built from what actually happened on our phone line over the last month. Where the calls and the website disagree, this handbook says so, and tells you what to do until Lukas settles it.</p>
+  <div class="meta">
+    <div><b>148</b><small>Calls studied</small></div>
+    <div><b>1,159</b><small>Texts studied</small></div>
+    <div><b>$8k–$20k</b><small>Prices actually agreed</small></div>
+    <div><b>16</b><small>Modules</small></div>
+  </div>
+</header>
+
+<!-- ============ MODULE 1 ============ -->
+<section class="module" id="m1">
+  <div class="modnum">Module 01</div>
+  <h2>What we are, and how to say it</h2>
+  <p>Veritor Group helps owners of small US trucking companies sell their company. Not the MC number, the company: the LLC that the MC, DOT, email, phone, bank account and Amazon Relay contract all hang off. A separate buyer pays for the company. The seller keeps 100% of the number they accept. The buyer pays Veritor on the back end.</p>
+  <p>That last part is where nearly every call last month went off-script. Sellers ask "so you're a broker?" and the honest-sounding answer that came out was "technically we're an intermediary, we pair buyers with sellers, they pay us a commission." It was said in at least fifteen calls. It is exactly what the house rules forbid, because the words broker, middleman, agent, intermediary and "we buy" all create legal exposure the company is trying to avoid, and they make sellers suspicious of a spread being taken off their price.</p>
+
+  <div class="callout rule"><span class="tag">The language rule</span>
+  <p>Describe Veritor only through what we do: we <b>value</b> the company, <b>verify</b> the record, <b>prepare</b> the paperwork, <b>coordinate</b> the buyer and the bank, and <b>close</b>. Never "we buy", "we purchase", "we're the buyer", "we sell it for you". Never broker, middleman, agent, agency or intermediary about Veritor, not even to deny them. If asked who is buying: "the buyer is a separate carrier; the structure gets walked through with Lukas before anything is signed."</p></div>
+
+  <div class="two">
+    <div class="callout say"><span class="tag">Say this</span>
+    <p>"Fair question. We're not the buyer and nothing comes out of your number. We find the buyer, verify everything on both sides, prepare the bill of sale and walk both of you through the bank. You get the full price you agree to."</p></div>
+    <div class="callout never"><span class="tag">Not this</span>
+    <p>"Technically we're an intermediary. I've got a network of buyers and they give us a commission on the back end." (Aug 11)<br>"We buy logistic companies." (Aug 31)<br>"We pay maximum of $20,000 and we buy only the LLC." (Sep 9)</p></div>
+  </div>
+
+  <h3>Who is who</h3>
+  <ul>
+    <li><b>Lukas</b> (the site says "Luka S.") founded the company and is the only person who can make a binding offer. Sellers book valuation calls with him. On the phone line he is almost never mentioned, and when a seller asked, one agent described him as "in our marketing department". Do not do that. He is the founder and the decision-maker.</li>
+    <li><b>Donnie</b> runs the calls this handbook is built from. Most of the good lines here are his. So are most of the mistakes, which is what happens when one person carries 150 calls a month with no script.</li>
+    <li><b>The front office</b> drafts bills of sale, sends emails, runs the valuation pulls. Sellers experience their mistakes as yours: a wrong email typed in the front office nearly killed a $20,000 deal on Aug 26.</li>
+  </ul>
+
+  <h3>The one-line pitch</h3>
+  <p>"You've got a company with an active MC and a clean record. There are carriers who will pay real money for that company because it saves them six months of waiting and a lot of paperwork. We find that carrier, check them, and run the handover so you're paid before you give anything up."</p>
+</section>
+
+<!-- ============ MODULE 2 ============ -->
+<section class="module" id="m2">
+  <div class="modnum">Module 02</div>
+  <h2>Why anyone pays for this</h2>
+  <p>You cannot sell an MC number. FMCSA says so, and Donnie's best line on the subject is the one to memorise: "per FMCSA regulations, it has to come with the business entity, whether it's the LLC or the corporation. You cannot just buy or sell a straight MC number." What buyers pay for is the <b>matched identity</b>: an LLC whose FMCSA record, email, phone, bank account and Amazon Relay contract all agree with each other and have history.</p>
+
+  <h3>The Relay lock</h3>
+  <p>Amazon Relay is the whole market right now. Buyers said no to every non-Relay company in September. Relay only lets a carrier onboard after 180 days of continuous active authority and insurance, and it checks that the bank account, email and phone on the application match the FMCSA record. If a new owner swaps in his own details, Amazon suspends the account. So a buyer cannot recreate what the seller has by starting fresh, and cannot take it over by force. He has to buy the company whole and change the record slowly, in the right order.</p>
+
+  <div class="script"><div class="src">Aug 27 · outbound · Donnie</div>
+    <div class="line"><span class="who c">Seller</span><span>I wonder why the new buyer just couldn't onboard with them if they had the current MC.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>To do that, it's quite a long process. If whoever onboards doesn't match what's on FMCSA, they'll just flat out suspend the account, because they don't know who this person is.</span></div>
+    <div class="why"><b>Why it works:</b> one sentence explains the entire economics. The asset is the matched identity, not the number.</div>
+  </div>
+
+  <h3>Who the buyers are</h3>
+  <p>Fleet operators running fifty to a hundred trucks on Amazon, often out of Chicago. Amazon shuts a carrier account down after three or four violations, so they need a steady supply of clean, aged, Relay-attached companies to keep trucks rolling. A clean account that graduates to an A+ score unlocks Project Blocks rates. That is why an unused Relay account is worth less than a used clean one, and why a bad safety score can knock $4,000 off an accepted price overnight (it did, on Sep 9).</p>
+  <p>Say this to a seller as "carriers who need a Relay-approved company today rather than in six months". Do not say the buyer's city, fleet size, vacation plans or how many companies he has bought from us. All of that was said on recorded calls last month.</p>
+
+  <h3>The same asset attracts fraud</h3>
+  <p>Aged authorities are also what cargo-theft rings want: buy the company, leave the FMCSA record unchanged, book and steal ten loads under the old name, disappear. That is why $25,000 to $40,000 cash offers exist in the market and why sellers get 120 messages a day from overseas numbers. It is also why our pricing looks low next to the street number, and why the handover order in Module 06 matters more than the price.</p>
+</section>
+
+<!-- ============ MODULE 3 ============ -->
+<section class="module" id="m3">
+  <div class="modnum">Module 03</div>
+  <h2>Who qualifies</h2>
+  <p>Disqualify fast and with the reason. The best calls last month were ninety-second no's that left the seller grateful. The worst were seven-minute conversations with someone who could never sell.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>Gate</th><th>Requirement</th><th>What kills it</th></tr>
+    <tr><td>Entity</td><td>LLC or corporation</td><td>Sole proprietor under an SSN. The authority is tied to a person and can never transfer. Flat no, no workaround.</td></tr>
+    <tr><td>Authority</td><td>Active, authorized, in good standing</td><td>Inactive, revoked, "not authorized". Reactivating resets the age to zero.</td></tr>
+    <tr><td>Age</td><td>180+ days continuous MC and insurance, <i>or</i> an active Relay contract</td><td>Under six months. Any lapse restarts the clock, and the clock runs from the reinstatement date, not the founding date.</td></tr>
+    <tr><td>Safety</td><td>Rating Satisfactory or unrated; OOS rates below 50%</td><td>Conditional or Unsatisfactory rating. Driver or vehicle OOS at 50%+ is a flat $8,000 floor in the engine, and buyers walk.</td></tr>
+    <tr><td>Relay</td><td>Active Amazon Relay contract on the LLC</td><td>Relay pending, denied, suspended, or a driver-only login. Amazon DSP is a different program and never transfers.</td></tr>
+    <tr><td>Email</td><td>The FMCSA email transfers with the company</td><td>Owner will not give it up. Non-negotiable for buyers: changing it suspends Relay and freezes brokers for months.</td></tr>
+    <tr><td>Debt</td><td>No financed equipment or liens sitting on the LLC</td><td>$80,000 on a truck titled to the LLC is fatal. Factoring contracts need a release letter first.</td></tr>
+  </table></div>
+
+  <div class="callout gap"><span class="tag">Questions nobody asked last month</span>
+  <p>In 148 calls, no one asked whether the entity was an LLC or a sole proprietorship, no one asked the safety rating, and no one asked who has authority to sign before quoting a price. A partner "on the road" or a co-owner who "just listed myself a couple months ago" stalled at least four deals. Ask all three in the first two minutes.</p></div>
+
+  <div class="script"><div class="src">Aug 24 · inbound · Donnie · a clean no</div>
+    <div class="line"><span class="who a">Donnie</span><span>I'm trying to figure out, is this an LLC? Because it says legal…</span></div>
+    <div class="line"><span class="who c">Seller</span><span>No. That's a sole proprietor.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>So unfortunately I wouldn't have any buyers for this, because they can't do a legal transfer with it. The only way you can do a legal transfer by FMCSA rules is if it comes with an LLC or corporation.</span></div>
+    <div class="why"><b>Why it works:</b> ninety seconds, reason given, no false hope, relationship intact.</div>
+  </div>
+
+  <h3>The "not yet" seller</h3>
+  <p>An authority granted in March is worth nothing in August and $13,000 to $15,000 in late September if the owner onboards Relay in the meantime. Give the date, give the number at the date, and give them the work to do. Donnie did this on Aug 24 and the seller volunteered to come back.</p>
+</section>
+
+<!-- ============ MODULE 4 ============ -->
+<section class="module" id="m4">
+  <div class="modnum">Module 04</div>
+  <h2>The qualification call</h2>
+  <p>Donnie runs the same script on nearly every call. It works because it is short, it is in a fixed order, and it ends by making the seller name their number first. This is the script with the three missing questions added.</p>
+
+  <ol class="steps">
+    <li><b>"You got a few minutes to answer some questions?"</b> Permission gate. Then "What's your MC so I can pull it up on FMCSA?" and read the record while they wait.</li>
+    <li><b>"Is this an LLC or corporation, and are you the only member?"</b> New. Sole prop ends the call. Partners mean you need everyone on the bill of sale.</li>
+    <li><b>"Does it come with the LLC, the email on FMCSA, and the phone number on FMCSA?"</b> Email is required. Phone is worth $1,000 to $3,000 either way.</li>
+    <li><b>"Do you have Amazon Relay set up?"</b> Then: "Do you know your score, like an A or a B?" and "Which bank is attached to Relay?" If yes, ask for screenshots of the home, safety and performance pages before the call ends.</li>
+    <li><b>"Any debts, liens, or loss runs?"</b> Follow up: is it on the LLC or on you personally, is it truck financing, how much is left.</li>
+    <li><b>"Are you set up on Highway, RMIS and MyCarrierPackets?"</b> If they've never heard of them, they probably aren't. Explain: "the bigger brokers use these to verify carriers".</li>
+    <li><b>"Do you have factoring tied to the MC still?"</b> Which company, are you in a contract, can you get a letter of release, is there an early-termination penalty.</li>
+    <li><b>"Did you register on Motus yet?"</b> Say the URL exactly: motus.dot.gov. It was mangled as "modus", "modis" and "notice.gov" on calls and sellers could not find it. Half of carriers do it in fifteen minutes, half take two to four weeks. The original owner must do it before anything on the record can change.</li>
+    <li><b>"How much do you pay per month for insurance?"</b> Logistics, not price. It tells you whether a lapse is coming.</li>
+    <li><b>"Have you had any other offers?"</b> New. Ask it here, not after ten minutes. One seller had a competing buyer's plane ticket booked before the qualification finished.</li>
+    <li><b>"How much are you looking to get?"</b> Always last. Let them anchor, then correct with a fact from the record (Module 05).</li>
+  </ol>
+
+  <h3>Read the record aloud</h3>
+  <p>Sellers trust what you read off FMCSA more than what you say. "Twelve inspections, that's good. The out-of-service rate on the vehicle side is high, that'll affect it." "It says reinstated 12/29/2023, so it goes by the reinstatement, not the year you opened it." Read the date, the inspections, the OOS percentages and the insurance status every time.</p>
+
+  <div class="script"><div class="src">Sep 8 · outbound · Donnie · asking for proof without offending</div>
+    <div class="line"><span class="who a">Donnie</span><span>If you could just send me the screenshots of the home and the safety and performance page. Not saying you're lying to me, but the buyers still want to see and confirm.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>No, no. You always verify. Always.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>We've had problems in the past where people say they've got what they don't, and then we go through all the hoops and it doesn't turn out that way.</span></div>
+    <div class="why"><b>Why it works:</b> pre-empts offence, attributes the ask to the buyer, and the seller ends up endorsing the policy.</div>
+  </div>
+
+  <div class="callout rule"><span class="tag">Before you hang up</span>
+  <p>Tell them exactly what happens next and when you will call. "I'm going to take this to the buyer side today. You'll hear from me by tomorrow afternoon either way." Five sellers last month called back angry because "nobody called me". A promised email that never arrived cost us a $20,000 deal.</p></div>
+</section>
+
+<!-- ============ MODULE 5 ============ -->
+<section class="module" id="m5">
+  <div class="modnum">Module 05</div>
+  <h2>Pricing</h2>
+  <p>The website's valuation engine produces a range from $8,000 to $22,000, or up to $25,000 with Relay and a Satisfactory safety rating. Buyers actually paid between $8,000 and $20,000 last month. Here is what moved the number on real calls.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>Lever</th><th>Effect in practice</th><th>Engine weight</th></tr>
+    <tr><td>Active Amazon Relay, good standing</td><td>Roughly doubles the price. $7–8k becomes $13–16k. Without it, no buyer at all in September.</td><td class="num">+0.30</td></tr>
+    <tr><td>Relay score A / 96–97%</td><td>Pushes to $20,000+. A 50% unsafe-driving score cut an accepted $22,000 to $18,000.</td><td class="num">n/a</td></tr>
+    <tr><td>Authority age 180–365 days</td><td>Sweet spot. Under 180 is unsellable.</td><td class="num">+0.25</td></tr>
+    <tr><td>Age beyond ~2 years</td><td>Small premium only: "maybe $3,000 to $5,000 at five years, the big money is ten to twenty years".</td><td class="num">−0.10 past 730 days</td></tr>
+    <tr><td>FMCSA phone number included</td><td>Plus $1,000 to $3,000. Buyers want it for Highway verification. Excludable.</td><td class="num">n/a</td></tr>
+    <tr><td>FMCSA email included</td><td>Required. No email, no buyer.</td><td class="num">n/a</td></tr>
+    <tr><td>Clean OOS record</td><td>Both sides below the national average helps. 50%+ on either side floors it at $8,000.</td><td class="num">+0.15 each</td></tr>
+    <tr><td>Insurance lapsed</td><td>Buyer has to pay a full new down payment. Drops toward the floor.</td><td class="num">−0.20</td></tr>
+    <tr><td>Bank not Chase / BofA / Wells</td><td>Seller must open a Chase business account first. Delays, does not always discount.</td><td class="num">n/a</td></tr>
+    <tr><td>State</td><td>California and Nevada priced down for insurance cost. Iowa, Ohio, Texas fine.</td><td class="num">n/a</td></tr>
+    <tr><td>Debt on the LLC</td><td>Subtracts or kills. Debt follows the entity.</td><td class="num">n/a</td></tr>
+  </table></div>
+
+  <h3>How to anchor</h3>
+  <p>Ask their number last, then correct it with a fact they didn't know about their own record. Never argue about value.</p>
+  <div class="script"><div class="src">Aug 26 · inbound · Donnie · killing a $50,000 anchor</div>
+    <div class="line"><span class="who a">Donnie</span><span>Amazon A-plus doesn't even go for $50,000.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>My company has more than five years.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>So for a five-year-old company without Amazon, the most I could probably get is… oh, actually, you were reinstated in 2024, so it's a two-year-old company now. The most would be around $12,000.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>The 12? That's okay for me.</span></div>
+    <div class="why"><b>Why it works:</b> he doesn't argue, he corrects a fact. The seller can't dispute his own FMCSA record.</div>
+  </div>
+
+  <h3>Solve the objection instead of discounting for it</h3>
+  <p>The best negotiating moves last month were not price moves. A buyer wanted $23,000 off because the email didn't convey; the seller offered to create a new email and hand it over and kept the price. An owner couldn't afford the $1,100 premium due before close; Donnie got the buyer to cover it as a clause and the deal closed at $14,000 the next day. An owner didn't want to lose personal mail; the answer was a forwarding clause plus $2,000 for the cleanup time.</p>
+
+  <div class="callout rule"><span class="tag">Who says numbers</span>
+  <p>You may quote the website range and explain the levers. You may say "with Relay this usually lands around $14,000 to $16,000". You may relay a buyer's number word for word with the reason attached. You may not invent a number, and you may not bid against yourself. On Aug 24 one call went "would $15,000 work?", "would $20,000 work?", "I can try for $26,000" in four minutes without a buyer ever being consulted, and the seller walked anyway. Only Lukas makes an offer, and the site promises it in writing.</p></div>
+
+  <div class="callout never"><span class="tag">Do not say</span>
+  <p>"That's just a standard valuation" about the website number. It undercuts our own product. Say what drives it instead.<br>"I'll see if I can get rid of it to somebody." It is a man's company.<br>A number above the engine's ceiling. $26,000 and $28,000 were entertained on Aug 24 with no rating verified.</p></div>
+</section>
+
+<!-- ============ MODULE 6 ============ -->
+<section class="module" id="m6">
+  <div class="modnum">Module 06</div>
+  <h2>The transfer, step by step</h2>
+  <p>This is the sequence as practised on every closing last month. Learn the "they give a little, you give a little" explanation word for word: it is the single best asset in 148 calls, and it is the honest answer to "is this a scam".</p>
+
+  <div class="script"><div class="src">Aug 19 · outbound · Donnie · the ladder</div>
+    <div class="line"><span class="who a">Donnie</span><span>We structured it so they give a little, you give a little, they give a little, you give a little. The general email logins, the FMCSA login, and the Amazon login are what's really important for you. The documents are nice to have, but without those three things the buyer doesn't have anything. So the seller is paid in full before they give those up. It's a protection thing.</span></div>
+    <div class="why"><b>Why it works:</b> it explains the sequence by explaining the seller's leverage, so the structure sells itself.</div>
+  </div>
+
+  <ol class="steps">
+    <li><b>Price agreed.</b> Relayed from the buyer with the reason attached. Lukas confirms it in writing.</li>
+    <li><b>Prep work, if needed.</b> Motus registration by the original owner. Factoring release letter. Loss runs. FMCSA email or address corrected. Relay onboarding (one to two weeks). If the Relay bank is not Chase, Bank of America or Wells Fargo: the seller opens a Chase business account in the LLC's name, gets the bank confirmation letter "with the stamp in the middle", attaches it to Relay, waits one or two days for Amazon to accept.</li>
+    <li><b>Bill of sale (Module 07).</b> Drafted by the front office from the seller's ID, sent to the company email, reviewed, e-signed by both parties. IDs exchanged through us. Clauses go in here: forwarding personal mail, buyer covers a premium, seller stays available for Motus, buyer's timeline for the ownership change, no new debts after the sale date.</li>
+    <li><b>Bank details.</b> Seller gives account name, bank, main-branch address, routing and account number. Not by text to a personal phone. See Module 12.</li>
+    <li><b>First half of the money.</b> Wire or Zelle. Zelle may come in blocks over two days for a first-time payee.</li>
+    <li><b>Documents.</b> Articles of organization, letter of authority, EIN letter, COI. Only after the first half lands. "Hold off on the documents until you get the first payment."</li>
+    <li><b>Second half.</b> Seller is paid in full.</li>
+    <li><b>Credentials.</b> General email login, FMCSA login with password and PIN, Amazon Relay login. Verification codes get relayed live during the handover.</li>
+    <li><b>Bank handover.</b> One of four ways: seller adds the buyer as an authorized signer and the buyer removes the seller (fastest, Chase only); both make simultaneous bank appointments and the banks talk; buyer flies the seller to his bank and covers the trip; buyer or his rep flies to the seller. Bank of America only works in person.</li>
+    <li><b>Phone port, if included.</b> "Call your carrier, give them your account number, say you need a PIN to port the number. Text me the account number and PIN, I give it to the buyer, he calls, done."</li>
+    <li><b>Buyer's post-close work.</b> Own insurance on within two to three days (seller's falls off). Secretary of State updated to remove the seller. EIN handled. Relay ownership change over two to four months. Do not close the old bank account until told: Amazon may see it and suspend.</li>
+  </ol>
+
+  <div class="script"><div class="src">Aug 31 · outbound · Donnie · the "no attachment" close</div>
+    <div class="line"><span class="who a">Donnie</span><span>You'll have the signed bill of sale. You'll have the bank transferred out of your name 100% into the buyer's name, and Chase will confirm this. Third, Secretary of State gets updated with his information. Fourth, EIN gets updated. After that you have absolutely no attachment to the company.</span></div>
+    <div class="why"><b>Why it works:</b> four countable, verifiable facts. Sellers fear residual attachment more than they fear the price.</div>
+  </div>
+
+  <h3>The FMCSA record question</h3>
+  <p>Buyers are asking to leave the FMCSA ownership record in the seller's name for two to four months, because changing it suspends Relay. Sellers spot the risk instantly ("if there's a fatality claim, it goes under my liability"). The website says records are updated after closing. The legal file marks this as attorney question number one and unresolved. Until Lukas settles it: explain the buyer's request honestly, say it is written into the bill of sale with a no-use clause and a deadline, and do not tell a seller "it's not legally possible for anything to come back on you". That is a legal opinion, and it was given three times last month.</p>
+
+  <div class="callout gap"><span class="tag">Website versus phone</span>
+  <p>The site promises a purchase agreement before sensitive documents, funds through a closing attorney's escrow released on signature, no credentials before closing, and a 3–5 business day close. On the phone the practice is a bill of sale, buyer-to-seller payment in two halves, credentials after full payment, and one to two weeks when Relay or a bank change is involved. Both are defensible on their own terms. Do not promise the website version on a call you cannot deliver, and do not tell a seller escrow exists when it does not. Module 16 lists this for Lukas.</p></div>
+</section>
+
+<!-- ============ MODULE 7 ============ -->
+<section class="module" id="m7">
+  <div class="modnum">Module 07</div>
+  <h2>The Bill of Sale</h2>
+  <p>The bill of sale is the only document in the deal. It is what the seller signs, what the buyer's money is conditioned on, and what a seller reads line by line at the kitchen table before signing. On Aug 19 one did exactly that, for eleven minutes, and every question she asked is answered below. It is generated in our admin by the front office from the lead card; you feed it the terms, read it before it goes out, and explain every section on the phone.</p>
+
+  <h3>What it is</h3>
+  <p>A one-document Membership Interest Purchase Agreement. The seller conveys 100% of the membership interest in the LLC to the buyer. That one line is why FMCSA allows the sale at all: the company changes hands and the authority goes with it. It is not an asset sale and it is not an MC transfer, and you should say so if a seller calls it either. The generator draws it in three designs (Masthead, Instrument, Term Sheet) with identical wording; pick Instrument for a cautious buyer who is about to wire money.</p>
+
+  <h3>Section by section, in the order it prints</h3>
+  <ol class="steps">
+    <li><b>Sale of Membership Interest.</b> "Seller hereby sells, transfers, assigns and conveys to Buyer 100% Membership Interest in the Company, representing all outstanding membership interest." If there is a partner, the front office adds a second seller and the document grows a third signature column. Every member signs or the sale is not complete.</li>
+    <li><b>Purchase Price.</b> One number. The generator prints a flagged PENDING chip when it is missing, precisely so nobody can miss it. A document went out on Aug 18 with the price and the payment terms both pending; the seller noticed before we did.</li>
+    <li><b>Payment Terms.</b> Three options. The default reads "the full purchase price shall be paid by Buyer to Seller after all Company documents have been delivered and all Company access has been transferred to and confirmed received by Buyer". The second is paid in full at an in-person meeting. The third is Staged: an initial payment, then the remaining balance "upon delivery of all Company documents and transfer of all Company access". If you promised the ladder on the phone, the document must say Staged with the two amounts filled in. See the gap below.</li>
+    <li><b>Insurance (optional).</b> Five arrangements the front office can pick: none; a deposit for insurance deducted from the price; a down payment refunded in full if Amazon Relay is denied; the buyer obtains their own policy and adds their own bank before transfer; the buyer pays the upfront premium by a stated date, failing which the seller can treat the document as void. Match the phone to the paper: the $1,100 premium a seller could not afford in August is what the deposit and deadline options are for, and "Relay pending" deals get the refundable one.</li>
+    <li><b>Company Information.</b> Legal name, DBA, address, phone, email, MC number, USDOT number, interest transferred. The email printed here is the mailbox that changes hands. Read it aloud to the seller before they sign.</li>
+    <li><b>Seller Information and Buyer Information.</b> Legal names and addresses, taken from the IDs exchanged through us. The buyer directory behind the generator stores a name and an address only; no government-ID data is kept, so do not paste ID numbers into the notes.</li>
+    <li><b>Seller's Deliverables.</b> Nine standard lines: MC certificate; FMCSA portal login and DOT PIN; insurance certificate and COI; company primary email access; company primary phone number; Amazon Relay access; loss runs; driver files and ELD records; other documents the buyer reasonably requests. The email and phone lines print the actual address and number, for example "Company primary phone number ((352) 232-3706) - transferred to Buyer". That rule exists because a personal number once went onto a bill of sale as the company phone, and the Florida deal in Module 08 shows exactly how it happens: FMCSA had the company line, Relay had the owner's personal cell, and "company primary phone number" nearly meant her cell. If the phone is excluded, the line comes off and Excluded Assets goes on.</li>
+    <li><b>Financial Responsibility Before Closing.</b> Two paragraphs. The seller warrants the company is free and clear of all debts, taxes, tolls, tickets, penalties, violations, loans and insurance balances at closing; and everything incurred before the closing date is the seller's, the buyer assumes none of it. This is the section sellers circle. The honest explanation: "anything from before the sale date is yours, anything after is his. That's why we ask about factoring and liens at the start, so nothing surprises either side at this line."</li>
+    <li><b>Additional clauses.</b> The clause library holds six: Cooperation Period (30 days of reasonable cooperation, no new liabilities either way); Post-Sale Obligations (seller completes the Secretary of State transfer, EIN and insurance/BOC-3 cooperation, buyer files everything after); Buyer Travel and Insurance Costs; Excluded Assets (trucks, trailers, company bank accounts and balances, personal property); Indemnification and Dispute Resolution (binding arbitration in the company's state, prevailing party recovers fees); Proof of Transfer (written proof the company is out of the seller's name within seven days, with the updated FMCSA record). Anything else is typed in as a custom section. Each one becomes its own numbered section before Governing Law.</li>
+    <li><b>Governing Law.</b> The laws of the state in which the company operates.</li>
+    <li><b>Signatures.</b> Seller, buyer, and a co-seller column when there is one. E-signature from a phone is fine. When a buyer wants a notary, the August deals used an online notary service: the whole file is uploaded, one signer per session, and each party does their own.</li>
+    <li><b>Wire transfer instructions.</b> The seller's bank name, account name, routing and account number print on the document itself. That is where bank details belong: collected by the front office for the paper, not texted to an agent's personal phone. If the buyer pays by Zelle, the name on the receiving account must match the seller's name on the document.</li>
+  </ol>
+
+  <div class="callout gap"><span class="tag">Paper versus phone</span>
+  <p>On the phone the ladder is "you're paid in full before the logins move". On paper, both the default term and the Staged term say the money, or the balance, is paid <i>after</i> documents and access are delivered. A seller who reads carefully will see the two disagree, and the Florida seller did: "shouldn't there be a blurb saying first half up front, second half after documents and logins?" Until the library has a payment term that matches the ladder, ask the front office for Staged terms with both amounts and a custom section that spells out the order: first payment, then documents, then balance, then credentials. Module 16 lists this for Lukas.</p></div>
+
+  <h3>Clauses real deals needed that are not in the library</h3>
+  <ul>
+    <li><b>Forwarding personal mail.</b> The buyer forwards anything personal that lands in the transferred mailbox. Asked for on Aug 18 and again later in the month; type it in.</li>
+    <li><b>No use of the seller's private Amazon account.</b> When Relay is paired to the owner's shopping account, the buyer agrees not to purchase on it. Asked for on Aug 19; type it in.</li>
+    <li><b>No-use period while the record stays in the seller's name.</b> The buyer keeps the FMCSA ownership record unchanged for the Relay ownership change, does not operate under the authority meanwhile, and completes the change by a date. This is the FMCSA record question in Module 06 and attorney item one in Module 16. Write the buyer's request down honestly, put the date in, and let Lukas review the wording. Do not pair it with Proof of Transfer, which promises the opposite within seven days.</li>
+    <li><b>Availability window.</b> Cooperation Period says thirty days. Buyers asked for four months on the Florida deal. Put the number the buyer actually needs in the clause, and tell the seller the same number on the phone.</li>
+    <li><b>Buyer covers a cost.</b> Insurance premium, travel, the seller's time to clean up an email. The insurance options cover most of it; travel is in the library; cleanup time is a custom line with a dollar figure.</li>
+  </ul>
+
+  <h3>Walking a seller through it</h3>
+  <p>Read it in print order, one sentence per section, and answer every question with a fact about the document rather than reassurance. This is the Aug 19 walk-through, edited only for the banned words.</p>
+  <div class="script"><div class="src">Aug 19 · outbound · Donnie · line by line</div>
+    <div class="line"><span class="who c">Seller</span><span>Number six says the company has no undisclosed loans or factoring liabilities. I've written next to it that the factoring company said they're not worried about it.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>Perfect. Then it's disclosed, and the buyer's already said it's not an issue.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>Equipment financing obligations. The truck is under my husband's name, not the business, so no equipment is included, just the LLC.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>Correct. The LLC only.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>And I'm to be available for four months, to December 19, and if Amazon delays them I stay available until it's completely done?</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>Correct. It should be well before then. It's a generalised timeline so nobody comes back saying "you said two months and it's been three and a half".</span></div>
+    <div class="line"><span class="who c">Seller</span><span>Are you going to send a filled-out bill of sale, or am I to sign this blank?</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>The price and everything isn't there? That must have come from the front office. I'll have it completed, then you e-sign it from your phone and send it back with your ID, and I'll send you the buyer's ID.</span></div>
+    <div class="why"><b>Why it works:</b> every answer is a verifiable fact about the paper, and the seller reaches the end with nothing left to fear. <b>What to change:</b> the document should never have been blank, and "how does Veritor work?" two minutes later was answered with "technically it's an intermediary". Module 01.</div>
+  </div>
+
+  <div class="callout never"><span class="tag">Never</span>
+  <p>Never send a document with a PENDING chip on it. Never let the buyer draft or edit the bill of sale; document control is the seller protection we sell. Never put a personal phone number or a personal email on the deliverables without the seller reading the line first. Never take bank details by text; they go on the paper. Never promise a clause you have not confirmed with the front office is in the document.</p></div>
+
+  <h3>The deal sheet</h3>
+  <p>Agents cannot open the generator. What the front office needs from you, in one message, so the document is drafted right the first time: legal company name and DBA; MC and USDOT; the FMCSA email and phone, and whether each conveys; seller's legal name and address as on the ID, plus any partner; buyer's legal name and address; price; payment terms (staged amounts if the ladder was promised); insurance arrangement if any; deliverables to exclude; extra clauses in plain words with any dates and dollar figures; the seller's bank details for the wire panel; effective date; which design. The Call Desk tool builds this message for you.</p>
+</section>
+
+<!-- ============ MODULE 8 ============ -->
+<section class="module" id="m8">
+  <div class="modnum">Module 08</div>
+  <h2>One deal, eleven calls</h2>
+  <p>Modules 03 to 07 in one real transaction: an owner-operator couple in Florida, one truck, an MC from 2024 with two clean inspections, Amazon Relay attached but barely used, a small Virginia bank and a small factoring company. First inbound call on Aug 18 at 11:18; signed bill of sale back at 12:42 the next day; first money in Zelle blocks an hour after that; documents and logins within the hour; the phone port that same afternoon with the balance riding on it. Eleven calls and 330 texts, all times Eastern. Quoted $15,000 on the first call, countered at $20,000 by the partner, buyer offered $18,000, buyer agreed $20,000 the same afternoon.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>When</th><th>Call</th><th>What happened</th><th>Grade</th></tr>
+    <tr><td class="num">Aug 18 11:18</td><td>Inbound, 21 min</td><td>Qualification. Record read aloud, Relay confirmed, bank and factoring surfaced, screenshots received, $15,000 with Relay quoted against $7–8,000 without.</td><td><span class="pill ok">Copy</span> <span class="pill warn">Fix</span></td></tr>
+    <tr><td class="num">Aug 18 12:03</td><td>Outbound, 11 min</td><td>Buyer's terms relayed: proper FMCSA change over three to four months, no-use clause, half today and half after credentials. Seller accepts $15,000.</td><td><span class="pill ok">Copy</span> <span class="pill warn">Fix</span></td></tr>
+    <tr><td class="num">Aug 18 12:07</td><td>Inbound, 1 min</td><td>Partner appears. Counter at $20,000 "for today".</td><td><span class="pill warn">Fix</span></td></tr>
+    <tr><td class="num">Aug 18 12:18</td><td>Outbound, 2 min</td><td>Buyer at $18,000. Partner holds at $20,000. By text at 13:40: buyer agrees $20,000, bill of sale sent.</td><td><span class="pill ok">Copy</span></td></tr>
+    <tr><td class="num">Aug 18 14:16</td><td>Outbound, 1 min</td><td>Which documents. Articles of organization only; the FMCSA notice can go in the file.</td><td><span class="pill ok">Copy</span></td></tr>
+    <tr><td class="num">Aug 18 15:44</td><td>Inbound, 6 min</td><td>Relay is paired to her personal Amazon account and the FMCSA email is the family email. Forwarding clause agreed.</td><td><span class="pill ok">Copy</span></td></tr>
+    <tr><td class="num">Aug 19 10:47</td><td>Outbound, 11 min</td><td>Bill of sale read line by line. It arrived blank. Module 07.</td><td><span class="pill ok">Copy</span> <span class="pill bad">Never</span></td></tr>
+    <tr><td class="num">Aug 19 11:10</td><td>Crossed, 6 min</td><td>Scam panic: example screenshots read as the buyer already inside her account. Utility bill rules explained.</td><td><span class="pill ok">Copy</span></td></tr>
+    <tr><td class="num">Aug 19 16:17</td><td>Outbound, 2 min</td><td>The number on FMCSA is the company line; the number on Relay is her personal cell. "This is not good."</td><td><span class="pill warn">Fix</span></td></tr>
+    <tr><td class="num">Aug 19 16:22</td><td>Outbound, 5 min</td><td>Resolved: she keeps her cell, answers Amazon's verification calls, conferences the buyer in.</td><td><span class="pill ok">Copy</span></td></tr>
+    <tr><td class="num">Aug 19 16:33</td><td>Inbound, 3 min</td><td>Husband at the carrier store porting the company line. Port script. Balance to follow.</td><td><span class="pill ok">Copy</span></td></tr>
+  </table></div>
+
+  <h3>Call 1: the qualification (Aug 18, 11:18)</h3>
+  <p>She opened with the right question: "it seems I can't sell my MC, I have to sell the whole thing." The next twenty minutes are the qualification script from Module 04 with two things done exceptionally well and three to fix.</p>
+  <div class="script"><div class="src">Aug 18 · inbound · Donnie · the save</div>
+    <div class="line"><span class="who c">Seller</span><span>My MCSA is linked to my personal email, so I'll just go in and put in an MCS-150 and update the email.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>No, no, no. If you do that, Amazon will suspend immediately and you'll never get it back. And none of our buyers will take it, because if there's an email change no broker will work with it for two to four months.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>Okay. So I guess I'll start deleting my personal stuff out of my email, since I'm going to have to forfeit it.</span></div>
+    <div class="why"><b>Why it works:</b> he stopped a deal-killing change mid-sentence and gave the mechanism, not just the instruction. She acted on it within the hour. <b>Copy also:</b> reading the record aloud ("2024, almost two years, two inspections, no out-of-service"), the factoring questions in order (which company, in a contract, letter of release, penalty), the screenshot ask with the reason attached, and "I'll get back to you within the hour", which he did.</div>
+  </div>
+  <div class="callout gap"><span class="tag">Fix</span>
+  <p>Two minutes on the four bank-handover options before asking which bank she had; she interrupted twice to say "Chesapeake". Ask the bank first. "Don't tell them you're selling" to the factoring company: Module 12. "I actually have a buyer looking for one today" and the buyer's flight plans: nothing about the buyer. And "$15,000, would that work?" is an offer before any buyer was consulted; quote the range with its levers, then go to the buyer.</p></div>
+
+  <h3>Call 2: the buyer's terms (Aug 18, 12:03)</h3>
+  <p>The best terms relay of the month. Every condition came with its reason, in the buyer's words, and ended with "if you see something you don't like, tell me and I'll take it back to them". She said yes to the no-use clause because she understood why it was there.</p>
+  <div class="script"><div class="src">Aug 18 · outbound · Donnie · terms with reasons</div>
+    <div class="line"><span class="who a">Donnie</span><span>They want to make sure 100% the Amazon Relay doesn't get suspended. So the whole process takes about four months: update Motus, amend the articles of organization, update the IRS form, then do the ownership change on Amazon. They're asking for a clause in the bill of sale that they will absolutely not use this MC or LLC while the ownership record stays in your name, and you'll receive copies of each step as it goes.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>If we were to start today, would they pay us at the end of the three to four months, or upfront?</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>Today. They're not taking the bank, so they can pay you today. Half upfront, then you send the articles, the letter of authority, the EIN letter, the email login, the FMCSA login and PIN and the Amazon logins, and they send the second half.</span></div>
+    <div class="why"><b>Why it works:</b> conditions, sequence, timing, and what she receives along the way, in that order. <b>Fix:</b> "there's been a few times sellers have run off on our buyers" as the reason for call recording (Module 12: never blame sellers as a class). "IRS form 2288-B" was a guess; the responsible-party change is Form 8822-B, and Module 12 says confirm and call back. "They'll send you a copy of the bill of sale": the buyer does not draft it, we do. Notice too that the second half was promised "after credentials" here and "before credentials" the next day. Say the ladder the same way every time: half, documents, half, logins.</div>
+  </div>
+
+  <h3>Calls 3 and 4: the partner (Aug 18, 12:07 and 12:18)</h3>
+  <p>Four minutes after accepting $15,000 she called back with her husband: "he's not so happy with the price, I'm thinking more like 20." Donnie did the right thing twice: no argument, "let me make a call", then relayed $18,000 and went back once more for the extra two. The buyer agreed $20,000 by 13:40. The fix is in Module 03: "are you the only member?" in the first two minutes would have put the partner on the first call and saved the reprice. She also called him "Johnny" and "Sunny" across the two calls; confirm names both ways.</p>
+
+  <h3>Call 6: the fused email (Aug 18, 15:44)</h3>
+  <p>She called from the road because Relay was paired to her personal Amazon shopping account under the FMCSA email. The answer was the mechanism (changing it suspends Relay), the fix (buyer forwards personal mail, written into the bill of sale), and the line to memorise: "I'm super glad you asked, because now we don't have to deal with it later." By text that evening she added a second clause, that the buyer would not purchase on her private Amazon account, and the answer was "sure, no problem" within a minute. Both clauses are custom lines in Module 07.</p>
+
+  <h3>Call 7: the bill of sale (Aug 19, 10:47)</h3>
+  <p>Covered in Module 07. She had circled the factoring line, the equipment line, the four-month availability window and the no-new-debt line, and every answer was a fact about the document. The document had gone out blank, with price and payment terms pending, and she asked for the staged-payment wording herself at 11:52. Two lines from this call are in Module 12: "technically it's an intermediary" and the remark about accents.</p>
+
+  <h3>Call 8: scam panic (Aug 19, 11:10)</h3>
+  <div class="script"><div class="src">Aug 19 · crossed lines · Donnie · answering the mechanism</div>
+    <div class="line"><span class="who c">Seller</span><span>I'm curious why they're trying to gain access to Amazon before anything has been shared.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>It's not possible. He doesn't have the login or the password. Those screenshots are examples I send so you can see what Amazon will ask for.</span></div>
+    <div class="line"><span class="who c">Seller</span><span>So they came from you, not from him. I got weirded out for a second.</span></div>
+    <div class="line"><span class="who a">Donnie</span><span>And the utility bill: it has to be water or electric, not internet or cell or a credit card, and it can be in your name since you run the business from home. Amazon cares about the address.</span></div>
+    <div class="why"><b>Why it works:</b> a scam-scarred seller (a broker took a deposit from her last year) was reassured in four lines because the answer was about what is physically possible, not about trust. Label example screenshots as examples when you send them.</div>
+  </div>
+
+  <h3>Calls 9 to 11: the phone number (Aug 19, 16:17 to 16:33)</h3>
+  <p>At 16:17 the deal wobbled: the number on FMCSA was the company line, the number on Relay was her personal cell, and "the company phone number comes with it" suddenly meant her cell. "This is not good" was said out loud to the seller. Five minutes later, after one call to the buyer, it was nothing: she keeps her cell, the company line ports, and she answers Amazon's verification calls and conferences the buyer in. She volunteered that herself. Then the port script, word for word from Module 06, while her husband was on his motorcycle to the carrier store.</p>
+  <div class="callout rule"><span class="tag">What this deal settled</span>
+  <p>The deliverables lines must print the actual phone number and email, so "company primary phone number" cannot quietly mean a personal cell; the generator does this, and you read the line to the seller anyway. Forwarding of personal mail and no-purchase-on-my-Amazon are standard custom clauses. Staged payment terms exist in the generator; this seller is the reason they must be used every time the ladder is promised. And the qualification script gained the partner question, because $5,000 of reprice happened in the four minutes after she said yes.</p></div>
+
+  <h3>What made it fast</h3>
+  <ul>
+    <li>The seller: former executive assistant, documents at her fingertips, COI sent in minutes, inbox already cleaned out. Donnie said so on the last call: "I wish all the clients were as good as you guys."</li>
+    <li>Every call ended with the next step and a time. She never had to ask "what now".</li>
+    <li>Every objection was answered with a mechanism or a document, never with "trust me".</li>
+    <li>The buyer had the money and did not take the bank, so there was no Chase detour.</li>
+  </ul>
+  <p>What nearly broke it: a blank document, an unasked partner question, a personal cell number, and a password sent in plain text by SMS at 14:46 that evening. All four are in Module 12.</p>
+</section>
+
+<!-- ============ MODULE 9 ============ -->
+<section class="module" id="m9">
+  <div class="modnum">Module 09</div>
+  <h2>Objections</h2>
+  <p>The answers below are the best real ones from last month, edited only to remove banned words and other sellers' details.</p>
+
+  <h4>"Is this a scam? How do I know you're real?"</h4>
+  <p>Answer with the sequence, not with reassurance. "You'll receive half the payment before you send anything. Then you're paid in full before you send the logins, which are the only thing the buyer can't get without you. IDs are exchanged both ways, and you can meet the buyer in person if you'd rather." One seller who had been scammed forty times accepted on that alone.</p>
+
+  <h4>"You're a broker, right?"</h4>
+  <p>Module 01. Do not accept the label and do not deny it with a synonym. "We're not the buyer and nothing comes out of your number. We find the buyer, verify both sides, prepare the paperwork and run the handover."</p>
+
+  <h4>"My company is worth $150,000 / I've had offers of $35,000"</h4>
+  <p>"Buyers don't price off revenue or customers. They price off what's on FMCSA: the age, the inspections, the out-of-service rate, and whether Relay is attached. An A-plus Amazon company doesn't go for $35,000." If they have a real offer above the market, tell them to take it. Do not be sarcastic about it.</p>
+
+  <h4>"What about my trucks and my customers?"</h4>
+  <p>"The buyers already have equipment rolling. What they want is the company and its record. Trucks and trailers would need a separate buyer, and customer relationships don't move the number." Say it in the first three minutes, not after ten.</p>
+
+  <h4>"I'll just wait for it to age"</h4>
+  <p>"At five years it might bump $3,000 to $5,000. The big money for aged MCs is ten, fifteen, twenty years. In the meantime you're paying insurance on it." Honest, numeric, and it closes the door without pressure.</p>
+
+  <h4>"I'm not giving up my email / my phone number"</h4>
+  <p>Phone: "That's fine, we'll exclude it. It's worth about $2,000 to the buyer, so the number comes down a little. Some buyers keep the number the same." Email: "The email has to come with it. If it changes on FMCSA, Amazon suspends and brokers freeze the account for months. Three options: set up forwarding, clean it up before close, or we write a clause that the buyer forwards anything personal. If cleanup takes your time, we can ask the buyer to make that up in the price."</p>
+
+  <h4>"My name stays on FMCSA for months? That's risky."</h4>
+  <p>"You're right to ask. The buyer keeps the record as is until Amazon's ownership change goes through, and the bill of sale carries a no-use clause and a deadline for that. I'll have Lukas walk you through exactly what's in writing." Then stop. Do not give a legal opinion.</p>
+
+  <h4>"Why do you need my bank account?"</h4>
+  <p>Name it before they raise it. "Amazon ties the payment account to the company. If the buyer swaps in his own, Amazon shuts it down. So the account transfers with the company, and Chase is the easiest bank for that. There are four ways to do it and you're removed from the account completely."</p>
+
+  <h4>"Can we do it all at once? I'll notarize everything."</h4>
+  <p>"The two-step protects both sides. You're paid in full before the logins move, and the buyer isn't wiring the whole amount before anything moves. If you'd rather do it in person at the bank, that's one of the options." Do not say "we've had sellers take the money and run".</p>
+
+  <h4>"Why would anyone want Relay? It's the worst-paying freight."</h4>
+  <p>Do not let it go with "yeah". "The buyers run big fleets on it, and a clean account that gets to A-plus can bid on Amazon's contract lanes. Amazon shuts accounts down over violations, so they need a supply of clean companies."</p>
+
+  <h4>"Is my company listed for sale somewhere? Highway flagged me."</h4>
+  <p>Module 11. This is an incident, not an objection.</p>
+
+  <h4>"What about taxes?"</h4>
+  <p>"That's a CPA question and I'm not going to guess at it. Generally an equity sale is treated differently from an asset sale, and your accountant will know which applies." Nothing more.</p>
+</section>
+
+<!-- ============ MODULE 10 ============ -->
+<section class="module" id="m10">
+  <div class="modnum">Module 10</div>
+  <h2>Texting</h2>
+  <p>Numbers from 1,159 texts across 64 threads. The missed-call auto-text got a reply from 55% of sellers, usually within minutes. Cold "my colleague gave me your contact" got 33%, and over half never answered at all. Short single-question texts ("Send me the EIN please", "Code please") get answered almost instantly even in dead threads. Generic "just checking in" needs two or three sends.</p>
+
+  <h3>Templates</h3>
+  <div class="tablewrap"><table>
+    <tr><th>When</th><th>Send</th></tr>
+    <tr><td>Missed inbound call</td><td>"Sorry we missed your call, Veritor Group here. Reply with your MC or DOT number and we'll call you right back."</td></tr>
+    <tr><td>After hours</td><td>"Our team's out for the day but I'm reading texts. Send your MC number now and I'll have someone call first thing tomorrow."</td></tr>
+    <tr><td>Cold first touch</td><td>"Hi, this is [name] with Veritor Group. A colleague passed along your contact, sounds like you might be open to selling your company. Let me know if that's still true and I'll walk you through how it works."</td></tr>
+    <tr><td>Buyer found</td><td>"Good news, I found a buyer for [company]. They'd like to agree a price and get moving. When's a good time to talk today or tomorrow?"</td></tr>
+    <tr><td>Document list</td><td>"Here's exactly how it works. After the first payment you send: Articles of Organization, Letter of Authority, EIN letter, COI. After the final payment: general email login, FMCSA login and PIN, Amazon login. Nothing password-related moves until the money has. That protects you."</td></tr>
+    <tr><td>Follow-up</td><td>Reword every time. "Hey [name], any update on [specific step]? No rush, just keeping it moving whenever you're ready."</td></tr>
+    <tr><td>Closing day</td><td>"Everything's signed and the buyer's ready today. Once your ID and the signed bill of sale are back, the first payment goes out. I'll keep you posted at every step."</td></tr>
+  </table></div>
+
+  <div class="callout never"><span class="tag">Never by text</span>
+  <p>Passwords, two-factor codes, full bank details, driver's licence photos. All four went over SMS to a personal phone last month, including a plaintext password and a string of one-time codes. Handle credentials by phone during the handover, or through whatever secure channel Lukas designates. "Our agents are out of office" also breaks the language rule: say "our team".</p></div>
+
+  <p>Answer direct questions in the same message. "Are you charging?" and "why didn't you contact us today?" both went unanswered and both threads died there.</p>
+</section>
+
+<!-- ============ MODULE 11 ============ -->
+<section class="module" id="m11">
+  <div class="modnum">Module 11</div>
+  <h2>When it goes wrong</h2>
+
+  <h3>"My company is listed for sale online and Highway flagged me"</h3>
+  <p>Two separate sellers in two weeks. Highway saw the company circulating as a $18,000 listing, put the carrier under investigation, and the owner could not book a load for two weeks. Donnie's diagnosis on the call: the MC had been passed to a second intermediary who passed it on again. This is the highest-priority operational problem in the data and it cost sellers real revenue.</p>
+  <p>Until Lukas fixes the leak: never share an MC outside our verified buyer list, never confirm to a buyer that a company is "for sale" in writing, and treat confidentiality as asset protection, not a courtesy. If a seller reports a flag: stop, apologise for the situation without admitting a cause you do not know, take down the exact wording Highway used, escalate to Lukas the same hour, and give the seller a time by which they will hear back. Do not say "I won't move forward on this anymore" and hang up. Do not promise a written takedown confirmation you cannot send.</p>
+
+  <h3>Scam panic mid-deal</h3>
+  <p>A seller who was scammed earlier saw example Amazon screenshots and thought the buyer was already in her account. Answer the mechanism: "It's not possible, he doesn't have the password yet. Those screenshots are examples I send so you know what Amazon will ask for." Then "anytime you have a concern, call me and we'll sort it immediately". She was fine in four lines.</p>
+
+  <h3>Phishing email "from DOT"</h3>
+  <p>"That's not official. FMCSA mail comes from a dot.gov address. Save it, call FMCSA, they'll probably reset your password and issue a new PIN." Help even when the company is unsellable. That seller blessed him a hundredfold.</p>
+
+  <h3>Post-payment holdout</h3>
+  <p>One seller took full payment and then demanded more money before releasing the email. It happened because the half-and-half ladder was not used. The ladder is the fix. If it happens anyway, escalate to Lukas; do not phone third parties about the seller, and do not threaten court. A call last month did both, to a notary who turned out not to be the seller's lawyer.</p>
+
+  <h3>Personal life fused to the business</h3>
+  <p>Relay paired to a personal Amazon shopping account. Company email is also the family email. Company phone is the owner's cell. Google Workspace lapsed and the email is dead. Each of these appeared more than once. Ask about all four during qualification, offer the forwarding clause, and get Lukas involved before promising a fix.</p>
+
+  <h3>Dropped calls and bad lines</h3>
+  <p>The complete payment-and-credential sequence was delivered to one family in four broken pieces from a parking lot on Sep 8. Never explain closing mechanics on a bad line. Call back from the office and follow with the document-list text.</p>
+
+  <h3>Wrong seller, wrong file</h3>
+  <p>Another company's phone number was read aloud on a $20,000 close. An offer meant for someone else reached the wrong seller. Screenshots went to the wrong number for a whole call. Confirm the company name at the top of every call and re-read the thread before you send.</p>
+</section>
+
+<!-- ============ MODULE 12 ============ -->
+<section class="module" id="m12">
+  <div class="modnum">Module 12</div>
+  <h2>Lines you never cross</h2>
+  <p>Every item below happened on a recorded call or text last month. None of them was malicious. All of them create exposure for the company or the seller.</p>
+
+  <ol>
+    <li><b>Never coach a misrepresentation.</b> A seller was told to declare a box truck he doesn't own on the Relay application and to swap a stranger's VIN onto his insurance policy so the COI would flow to Amazon. That is insurance fraud and Amazon fraud. If the equipment doesn't qualify, the company doesn't qualify.</li>
+    <li><b>Never give legal, tax or financial advice.</b> "It's not legally possible for anything to come back on you." "You have no case in court." "Move the $150,000 of debt off the LLC into your personal name." Each was said last month. Route to Lukas or tell them to ask their attorney or CPA.</li>
+    <li><b>Never make an offer.</b> "Would $12,000 work?" is an offer. Relay the buyer's number with its reason. Lukas confirms in writing.</li>
+    <li><b>Never discuss other sellers or buyers.</b> Not their names, cities, fleet sizes, deal history, or the one who "took the money and ran". Each of those was shared at least three times.</li>
+    <li><b>Never comment on anyone's nationality or accent.</b> "If they're calling with an Indian accent it's probably not a good sign" was said to a seller on a recorded line. It is discriminatory and it is a liability. Warn about unverified buyers by what they do (no ID, no paperwork, ask you to keep insurance in your name), not where they're from.</li>
+    <li><b>Never take credentials early or by SMS.</b> No logins, PINs, passwords or 2FA codes before full payment, and never by text. "I can't change an email address when I don't have anything signed" was a seller's line, and she was right.</li>
+    <li><b>Never promise a date you can't control.</b> "Wrapped up by Friday, money in your pocket." "Same day." "Ten to fifteen minutes." Every one of these slipped. The site's line is "typically three to five business days after an offer is accepted"; with Relay onboarding or a bank change, say one to two weeks.</li>
+    <li><b>Never tell a seller to hide the sale from a lender or factoring company.</b> "Don't tell them you're selling" was said twice. A UCC lien is a lien; the release letter is the path.</li>
+    <li><b>Never blame sellers as a class.</b> "The only problems I've ever had are with the sellers." Said to a seller.</li>
+    <li><b>Never guess a fact.</b> Motus URL, the IRS form number, whether an email change suspends Relay, whether you can only have one MC per state. Say "let me confirm and call you back", then do.</li>
+    <li><b>Never let the buyer draft the bill of sale.</b> Document control is the seller protection we sell.</li>
+    <li><b>Never touch a seller's or a third party's account.</b> Probing a seller's email against Amazon before any agreement, or resetting an ex-dispatcher's Relay login through the seller's inbox, were both considered last month.</li>
+  </ol>
+</section>
+
+<!-- ============ MODULE 13 ============ -->
+<section class="module" id="m13">
+  <div class="modnum">Module 13</div>
+  <h2>Sellers you will meet</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Persona</th><th>What they say</th><th>What to do</th></tr>
+    <tr><td>Shutting down, needs out</td><td>"All my IRP and 2290s are due today." "I'm doing a food truck now."</td><td>Fastest to close. Establish the insurance cancellation date first and check for debt on the LLC.</td></tr>
+    <tr><td>Paying insurance on a dormant authority</td><td>"I keep paying for insurance and paperwork without using it."</td><td>Largest group. Relay upsell: "$10,000 as is, $14,000 if you onboard Relay, takes one to two weeks."</td></tr>
+    <tr><td>Anchored on revenue or customers</td><td>"You're buying General Motors." "$150,000."</td><td>Reframe to the record in the first three minutes. Disqualify politely if the gap is unbridgeable.</td></tr>
+    <tr><td>Scam-scarred</td><td>"I've been scammed forty times." "How do I know you are who you say?"</td><td>Sequence, IDs, in-person option. Send your own ID if asked. Never rush them.</td></tr>
+    <tr><td>Partner or spouse decides</td><td>"It's really his decision." "Let me talk to the other members."</td><td>Find the signatory before quoting. Get everyone on the bill of sale.</td></tr>
+    <tr><td>Personal identity fused to the business</td><td>"My email goes to everything." "That's my cell number."</td><td>Forwarding clause, phone exclusion, cleanup time priced in.</td></tr>
+    <tr><td>Dormant aged authority, already dead</td><td>"It's thirty years old."</td><td>"Reactivating resets the age to zero and brokers won't touch it for six months." Ninety-second no.</td></tr>
+    <tr><td>Portfolio owner</td><td>"I've got three companies, want to get rid of the ones I'm not using."</td><td>Qualify each separately. Ask which have Relay and which have insurance.</td></tr>
+    <tr><td>Shopping four bids</td><td>"23 was the lowest, 25 the best."</td><td>Ask about other offers at the top. Never bid against yourself. Match only with a real buyer behind it.</td></tr>
+    <tr><td>Estate or health exit</td><td>"My father passed." "My knees are done."</td><td>Slow down, get the death certificate or paperwork picture, hand to Lukas.</td></tr>
+    <tr><td>Language barrier</td><td>"Send me the information, I write the order."</td><td>Written follow-up, not a verbal to-do list. Spanish and Russian pages exist on the site.</td></tr>
+    <tr><td>The remediator</td><td>Fixing a stale FMCSA email before you asked.</td><td>Best leads. Give them the full checklist and a date.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ MODULE 14 ============ -->
+<section class="module" id="m14">
+  <div class="modnum">Module 14</div>
+  <h2>Closing checklist</h2>
+  <div class="two">
+    <div>
+      <h4>Seller provides, in this order</h4>
+      <ol>
+        <li>MC number, answers to the script, entity type, signatory</li>
+        <li>Relay screenshots: home, safety, performance</li>
+        <li>Motus registration done</li>
+        <li>Factoring release letter, penalty amount</li>
+        <li>Loss runs, one to two years</li>
+        <li>Debt or liens off the LLC, or disclosed</li>
+        <li>Chase business account in the LLC name, stamped confirmation letter, attached to Relay (if needed)</li>
+        <li>Signed bill of sale plus ID</li>
+        <li>Bank details for payment, by secure channel</li>
+        <li><i>After first half:</i> articles of organization, letter of authority, EIN letter, COI</li>
+        <li><i>After second half:</i> email login, FMCSA login and PIN, Relay login, live verification codes</li>
+        <li>Carrier account number and port PIN, if the phone conveys</li>
+        <li>Stays reachable for Amazon's verification call (unknown number, may show as spam, one chance)</li>
+        <li>Does not close the old bank account until told</li>
+      </ol>
+    </div>
+    <div>
+      <h4>Buyer does</h4>
+      <ol>
+        <li>Agrees price through us, confirmed by Lukas in writing</li>
+        <li>Signs the bill of sale, sends ID</li>
+        <li>Pays half, then half, direct to the seller</li>
+        <li>Takes the bank account by one of four routes</li>
+        <li>Places own insurance within two to three days</li>
+        <li>Updates Secretary of State, handles EIN</li>
+        <li>Ports the phone if included</li>
+        <li>Completes the Relay ownership change, two to four months, with a no-use clause meanwhile</li>
+        <li>Files the FMCSA ownership change once Relay is done</li>
+        <li>Forwards personal mail per clause</li>
+        <li>Pays Veritor on the back end</li>
+      </ol>
+      <h4>We do</h4>
+      <ol>
+        <li>Valuation, live record check, qualification</li>
+        <li>Relay screenshot verification</li>
+        <li>Relay the price both ways with reasons</li>
+        <li>Draft the bill of sale with the deal's clauses</li>
+        <li>Exchange IDs, send example letters and screenshots</li>
+        <li>Coordinate the bank step and the handover call</li>
+        <li>Stay reachable after close for Motus codes, Amazon document requests, UCR and IFTA questions</li>
+      </ol>
+    </div>
+  </div>
+  <p class="small">Never mentioned on any call, though promised on the site: a written offer document, escrow in writing, an explicit invitation to the seller's attorney, a purchase agreement before sensitive documents, the seller keeping a copy of the closing file. See Module 16.</p>
+</section>
+
+<!-- ============ MODULE 15 ============ -->
+<section class="module" id="m15">
+  <div class="modnum">Module 15</div>
+  <h2>Self-check</h2>
+  <p>Answer out loud before opening each one.</p>
+
+  <details class="quiz"><summary>1. A seller says "so you're basically a broker between me and the buyer?"</summary>
+  <p>Don't accept the label, don't deny it with "intermediary". "We're not the buyer and nothing comes out of your number. We find the buyer, verify both sides, prepare the paperwork and run the handover. You get the full price you agree to."</p></details>
+
+  <details class="quiz"><summary>2. FMCSA shows "reinstated 12/29/2023". The seller says the company opened in 2021. What is the age for pricing?</summary>
+  <p>About twenty months at the time of writing. The clock runs from reinstatement. Read the line aloud, explain it, and if they dispute it, offer to help them check with FMCSA rather than shrugging.</p></details>
+
+  <details class="quiz"><summary>3. A seller wants $30,000 and has an A-plus Relay account, Chase bank, clean record, phone included.</summary>
+  <p>That is the top of the market: $20,000 to $23,000 in practice, $25,000 engine ceiling with a Satisfactory rating verified. Say "an A-plus company with everything included is the best case, and those have been landing around $20,000 to $23,000. I'll take it to the buyer side and Lukas will put the number in writing." Do not say $30,000 is possible.</p></details>
+
+  <details class="quiz"><summary>4. The seller's Relay bank is Navy Federal.</summary>
+  <p>Not transferable. Seller opens a Chase business account in the LLC's name, gets the stamped confirmation letter, attaches it to Relay, waits one to two days for acceptance. Then the authorized-signer route works.</p></details>
+
+  <details class="quiz"><summary>5. A hotshot operator's trailer doesn't qualify for Relay. A buyer suggests he apply as a box truck and VIN-swap the buyer's truck onto his policy.</summary>
+  <p>No. That is a misrepresentation to Amazon and to the insurer. The company doesn't qualify for the Relay path as it stands. Price it as non-Relay or decline.</p></details>
+
+  <details class="quiz"><summary>6. The seller texts "here's my password, code is 714".</summary>
+  <p>Stop the channel. "Let's not do passwords over text. I'll call you and we'll do the handover live once the second payment has landed." Nothing credential-related moves before full payment.</p></details>
+
+  <details class="quiz"><summary>7. "My name stays on FMCSA for three months? What if there's an accident?"</summary>
+  <p>"You're right to ask. The buyer keeps the record as is until Amazon's ownership change completes, and the bill of sale has a no-use clause and a deadline for that. Lukas will walk you through exactly what's in writing." Do not say it's legally impossible for anything to come back on them.</p></details>
+
+  <details class="quiz"><summary>8. A seller calls: Highway flagged his company as "for sale online" and he can't book loads.</summary>
+  <p>Incident. Take the exact wording, don't guess the cause, don't deny in writing, escalate to Lukas the same hour, give the seller a time you'll call back, and call back at that time.</p></details>
+
+  <details class="quiz"><summary>9. The seller declines $18,000 for a local buyer's $15,000 because "I don't want to wait six months".</summary>
+  <p>Correct the misconception before accepting the loss. "There's no six-month wait on our side. With the bill of sale signed you're paid in halves over a couple of days; the months are the buyer's Amazon paperwork, not yours." That deal walked over a fact nobody corrected.</p></details>
+
+  <details class="quiz"><summary>10. Five days after you quoted a number, the seller texts "nobody called me".</summary>
+  <p>You broke the "before you hang up" rule. Call today, apologise once, give the real status, and give a date. "I'm just waiting for somebody that wants it" is not a status.</p></details>
+</section>
+
+<!-- ============ MODULE 16 ============ -->
+<section class="module" id="m16">
+  <div class="modnum">Module 16</div>
+  <h2>Open items for Lukas</h2>
+  <p>These are gaps between what the website promises, what the legal file says, and what happens on the phone. New hires cannot resolve them and should not paper over them. Each one showed up in the calls.</p>
+  <ol>
+    <li><b>Escrow and the purchase agreement.</b> The site promises a closing attorney's escrow and a Membership Interest Purchase Agreement before sensitive documents. Every closing last month used a bill of sale and direct buyer-to-seller payment. Either the site changes or the process does.</li>
+    <li><b>"No credentials before closing."</b> Credentials move after full payment but before the Secretary of State, EIN and FMCSA updates, sometimes months before. Define what "closing" means in writing.</li>
+    <li><b>The FMCSA record.</b> Buyers leave the seller as owner of record for two to four months to protect Relay. The legal file calls this attorney question number one. Sellers are asking about liability on every call and getting improvised legal opinions.</li>
+    <li><b>Timelines.</b> "3–5 business days" on the site versus one to two weeks in practice, and "three to four months" for the ownership change. Sellers hear both and one of them sounds like a lie.</li>
+    <li><b>Who makes offers.</b> The site says written offer from Lukas. On calls, numbers are named by whoever is on the line, including "we pay maximum of $20,000" from an agent introducing himself as Luca. The house language rule is not reaching everyone who answers the phone.</li>
+    <li><b>The buyer-network leak.</b> Two sellers flagged by Highway in two weeks after their MC was passed on beyond our buyer list. This one is costing sellers money now.</li>
+    <li><b>Sensitive data channel.</b> Bank details, IDs, passwords and 2FA codes are moving by SMS to a personal phone. Designate a channel.</li>
+    <li><b>Licensing.</b> The legal file flags unresolved state business-broker licensing questions. The safe posture is introduce, do not negotiate price, do not custody funds. Calls currently negotiate price on every deal.</li>
+    <li><b>Pricing outside the engine.</b> $26,000 and $28,000 were discussed with no safety rating verified; a 50% driver OOS company was quoted $15,000 against an $8,000 floor. Decide whether the engine is the rule or a guide.</li>
+    <li><b>Stale "400+ closings" claims</b> in three blog posts. The verified figure is 10+ since June 2026.</li>
+    <li><b>Payment terms on paper.</b> The phone promises "paid in full before the logins move"; every payment term in the generator says the money or the balance is paid after documents and access are delivered. A seller read the difference aloud on Aug 19. The library needs a term that matches the ladder, or the ladder needs to match the paper.</li>
+    <li><b>Blank documents.</b> A bill of sale with the price and payment terms pending reached a seller on Aug 18. The generator flags pending fields; someone still has to look before it goes out. Decide who signs off on every document that leaves the front office.</li>
+  </ol>
+  <p class="small">Sources: 148 call transcripts and 1,159 texts from the Quo line (Aug 9 to Sep 9, 2026), the groupveritor.com copy and valuation engine, the seller-protection page, and the internal legal reference file. The business brief that underlies Modules 01 to 03 is saved in the repo at docs/training/sources. Module 07 is checked against the Bill of Sale generator source (src/lib/bos); Module 08 is the complete call and text record of one deal.</p>
+</section>
+</main>
+</div>
