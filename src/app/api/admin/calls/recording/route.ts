@@ -30,9 +30,6 @@ export async function GET(req: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
-  }
 
   const id = req.nextUrl.searchParams.get("id");
   const kind = req.nextUrl.searchParams.get("kind") === "voicemail"

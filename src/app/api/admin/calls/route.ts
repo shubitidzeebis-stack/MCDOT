@@ -1,8 +1,8 @@
 // Admin call log: read the feed, and mark a missed call as dealt with.
 //
-// Full-admin only. Donnie's agent-role account must not see call recordings or
-// transcripts — the client hides the nav link, and this route is the actual
-// boundary that enforces it.
+// Any signed-in role. The agent-role account (Donnie) works this line, so the
+// call log and missed-call recovery are part of the desk; requireAdmin() is
+// the boundary.
 
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -19,9 +19,6 @@ export async function GET() {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
   const [calls, missed] = await Promise.all([
     listCalls(),
@@ -42,9 +39,6 @@ export async function POST(req: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   let raw: unknown;

@@ -16,19 +16,16 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 // PATCH   -> update   { id, name, address?, email?, phone?, notes? }
 // DELETE  -> remove   { id }
 //
-// AUTH — FULL ADMIN ON EVERY VERB, INCLUDING READS:
-// Who our buyers are is the most commercially sensitive fact in this
-// business. A buyer list is the one asset a departing or poached agent could
-// walk out with and rebuild the operation around: it identifies exactly who
-// pays for acquired authorities, which is the piece of the model that is not
-// discoverable from public FMCSA data. Agent-role staff work seller leads and
-// never need it — so this route gates on `session.role === "admin"` rather
-// than merely "a valid session", and it gates the READ as hard as the writes.
-// A leaked list is unrecoverable; a leaked write is at least reversible.
+// AUTH — any signed-in role can list, create and update; DELETE is owner-only.
+// The agent (Donnie) drafts bills of sale for the deals they close, so the
+// directory has to be readable and growable from the agent role. Removing a
+// buyer is the one irreversible verb, so it keeps the `session.role ===
+// "admin"` gate, in line with the rest of the agent model (no deletes).
+// For the owner's awareness: the buyer list identifies who pays for
+// authorities, the one fact not discoverable from public FMCSA data.
 //
 // The 401/403 split is deliberate: 401 = not signed in (the client should
-// send you to login), 403 = signed in but not full admin (the client hides
-// the buyer UI entirely rather than showing controls that will never work).
+// send you to login), 403 = signed in but not allowed this verb.
 //
 // PRIVACY NOTE: this route intentionally moves buyer NAME + ADDRESS only —
 // the two fields the Bill of Sale prints. No government-ID data is accepted,
@@ -44,6 +41,17 @@ type Guard =
   | { ok: true; uid: number }
   | { ok: false; response: NextResponse };
 
+async function requireSession(): Promise<Guard> {
+  const session = await requireAdmin();
+  if (!session) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Unauthorized." }, { status: 401 }),
+    };
+  }
+  return { ok: true, uid: session.uid };
+}
+
 async function requireFullAdmin(): Promise<Guard> {
   const session = await requireAdmin();
   if (!session) {
@@ -56,7 +64,7 @@ async function requireFullAdmin(): Promise<Guard> {
     return {
       ok: false,
       response: NextResponse.json(
-        { error: "Buyer directory is restricted to the account owner." },
+        { error: "Removing a saved buyer is restricted to the account owner." },
         { status: 403 },
       ),
     };
@@ -124,7 +132,7 @@ function isIdBody(x: unknown): x is { id: number } {
 
 export async function GET(req: Request) {
   try {
-    const guard = await requireFullAdmin();
+    const guard = await requireSession();
     if (!guard.ok) return guard.response;
 
     const throttled = await limited(req, guard.uid, "read", 120);
@@ -140,7 +148,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const guard = await requireFullAdmin();
+    const guard = await requireSession();
     if (!guard.ok) return guard.response;
 
     const throttled = await limited(req, guard.uid, "write", 60);
@@ -164,7 +172,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const guard = await requireFullAdmin();
+    const guard = await requireSession();
     if (!guard.ok) return guard.response;
 
     const throttled = await limited(req, guard.uid, "write", 60);

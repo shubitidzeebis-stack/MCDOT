@@ -7,8 +7,8 @@
 //                                    with { ok: false } when the call is
 //                                    ineligible or already processed.
 //
-// Full-admin only: transcripts carry seller PII and negotiation detail, same
-// boundary as the calls page and recording proxy.
+// Any signed-in role, the same boundary as the calls page and recording
+// proxy: the agent runs this line and works the lead comments it writes.
 
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
@@ -23,9 +23,6 @@ export async function POST(req: Request) {
   const session = await requireAdmin();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  }
-  if (session.role !== "admin") {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   let body: { callId?: unknown; dryRun?: unknown };

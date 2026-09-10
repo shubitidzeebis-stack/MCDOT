@@ -25,10 +25,9 @@ export default async function AdminAuditPage({
   if (!session) {
     redirect("/admin/login");
   }
-  // The audit tool itself is open to every signed-in role, but its "Draft
-  // Bill of Sale" shortcut points at an owner-only page — pass the role down
-  // so agent-role users aren't offered a link that bounces them.
-  const canDraftBos = session.role === "admin";
+  // The audit tool and its "Draft Bill of Sale" shortcut are open to every
+  // signed-in role: the agent drafts the bill of sale for their own deals.
+  const canDraftBos = true;
 
   // Deep-link support: /admin/calls links here with ?kind=phone&number=… so
   // the operator lands with the lookup already running, not an empty form.

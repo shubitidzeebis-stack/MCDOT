@@ -732,9 +732,8 @@ function Row({
             >
               {expanded ? "Close" : "Detail"}
             </button>
-            {/* Full-admin only — /admin/bill-of-sale bounces agent-role
-                users back to /admin, so this shortcut would be a dead end. */}
-            {canManage && (
+            {/* Every role: /admin/bill-of-sale is open to the agent, who
+                drafts the bill of sale for the deals they close. */}
             <button
               type="button"
               onClick={() => {
@@ -766,7 +765,6 @@ function Row({
             >
               BoS
             </button>
-            )}
             {canManage && (
               <button
                 type="button"

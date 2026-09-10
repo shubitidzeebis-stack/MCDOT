@@ -139,9 +139,10 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  // Agent-role users (e.g. Donnie) get the leads pipeline only: no monitor
-  // roster, no outreach drafts, no partials, no agent-dashboard nav. The
-  // API routes enforce the same boundary server-side.
+  // Agent-role users (e.g. Donnie) get the seller desk: leads, meetings,
+  // calls, the audit tool and the Bill of Sale generator. No monitor roster,
+  // no outreach drafts, no partials, no agent-dashboard nav. The API routes
+  // enforce the same boundary server-side.
   const isFullAdmin = session.role === "admin";
 
   // Refresh the cal.eu meetings mirror if it's older than a couple of
@@ -230,32 +231,29 @@ export default async function AdminPage() {
             Engagement agent →
           </a>
         )}
-        {/* Calls carries recordings + transcripts, so it is full-admin only —
-            /api/admin/calls* enforces the same boundary server-side. */}
-        {isFullAdmin && (
-          <a
-            href="/admin/calls"
-            className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
-          >
-            Calls →
-          </a>
-        )}
+        {/* Calls is open to every signed-in role: the agent makes and takes
+            these calls, so the log, recordings and missed-call recovery are
+            part of the desk. /api/admin/calls* is gated the same way. */}
+        <a
+          href="/admin/calls"
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          Calls →
+        </a>
         <a
           href="/admin/audit"
           className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
         >
           On-demand audit tool →
         </a>
-        {/* Full-admin only: the generator page redirects agent-role users
-            back here, so showing them the link would just bounce them. */}
-        {isFullAdmin && (
-          <a
-            href="/admin/bill-of-sale"
-            className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
-          >
-            Bill of Sale generator →
-          </a>
-        )}
+        {/* Open to every signed-in role: the agent drafts the bill of sale
+            for the deals they close. Deleting a saved buyer stays owner-only. */}
+        <a
+          href="/admin/bill-of-sale"
+          className="rounded-lg bg-white/[0.05] px-4 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/10 hover:bg-white/[0.08]"
+        >
+          Bill of Sale generator →
+        </a>
       </div>
 
       {/* fromAddress is resolved server-side (allowlist-checked) purely so the

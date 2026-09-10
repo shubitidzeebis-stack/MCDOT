@@ -76,11 +76,13 @@ const ALL_DELIVERABLES_ON = Object.fromEntries(
   DELIVERABLE_CATALOG.map((item) => [item.id, item.defaultOn]),
 ) as Record<DeliverableId, boolean>;
 
-// Saved-buyer directory (GET /api/admin/buyers). Full-admin only server-side:
-// a non-admin session gets 403 and the whole buyer UI stays unmounted.
+// Saved-buyer directory (GET /api/admin/buyers). Any signed-in role can read
+// and add to it (the agent drafts bills of sale too); only DELETE is
+// owner-only server-side. A session without access gets 403 and the whole
+// buyer UI stays unmounted.
 //
 // Only `name` and `address` are ever written into the PDF — the rest is the
-// owner's own contact scratchpad. Nothing resembling government-ID data is
+// team's contact scratchpad. Nothing resembling government-ID data is
 // modelled here on purpose; see src/lib/db/buyers.ts.
 type Buyer = {
   id: number;
@@ -269,9 +271,9 @@ export function BillOfSalePanel() {
   // info, seller, company) stay in the browser — the PDF is built client-side
   // — so nothing sensitive about a deal is ever posted back.
   //
-  // `buyersEnabled` flips true only on a successful GET. A 403 (agent-role
-  // session) therefore renders no dropdown and no management UI at all,
-  // rather than dead controls.
+  // `buyersEnabled` flips true only on a successful GET. A 403 therefore
+  // renders no dropdown and no management UI at all, rather than dead
+  // controls.
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [buyersEnabled, setBuyersEnabled] = useState(false);
   const [selectedBuyerId, setSelectedBuyerId] = useState("");
@@ -284,7 +286,7 @@ export function BillOfSalePanel() {
     try {
       const res = await fetch("/api/admin/buyers");
       if (!res.ok) {
-        // 403 = not a full admin; 401/5xx = no session or backend trouble.
+        // 403 = not allowed; 401/5xx = no session or backend trouble.
         // Either way there is nothing useful to show, so hide the feature.
         setBuyersEnabled(false);
         setBuyers([]);

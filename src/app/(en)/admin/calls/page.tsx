@@ -5,9 +5,9 @@
 // it fast and means a Quo outage degrades to stale data rather than a broken
 // screen.
 //
-// Full-admin only. Agent-role users (Donnie) are bounced back to /admin the
-// same way the Bill of Sale generator does it; /api/admin/calls* enforces the
-// same boundary server-side, so hiding the link is UX, not security.
+// Open to every signed-in role. The agent (Donnie) makes and takes these
+// calls, so the log, recordings, transcripts and missed-call recovery are
+// part of the desk; /api/admin/calls* is gated the same way.
 
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -26,9 +26,6 @@ export default async function AdminCallsPage() {
   const session = await requireAdmin();
   if (!session) {
     redirect("/admin/login");
-  }
-  if (session.role !== "admin") {
-    redirect("/admin");
   }
 
   // The recovery board is its own query so an old unhandled missed call
