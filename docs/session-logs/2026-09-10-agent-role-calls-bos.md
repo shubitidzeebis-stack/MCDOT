@@ -29,10 +29,19 @@ self-contained under docs/training and can be dropped with
 ## Verification
 - eslint on the touched files: only the pre-existing `react-hooks/purity`
   and `set-state-in-effect` errors on untouched lines (see 2026-09-09 log).
-- `tsc --noEmit` NOT run: the auto-mode permission classifier blocked it
-  (npx, local binary, and PowerShell). Run `npx tsc --noEmit` before deploy.
-  The edits only delete guard blocks and flip one boolean, so the risk is
-  an unused-import or unused-variable error at most.
+- `npx tsc --noEmit`: exit 0 (passed on a later retry; the auto-mode
+  classifier had blocked the first three attempts).
+
+## Deployed
+- Committed as `edccf03`. Lukas pushed `main` himself (`2151f00..edccf03`,
+  the push from my side was blocked by the classifier). Vercel Production
+  build `veritor-benllqyba` → Ready in 40 s, 2026-09-10 ~17:43 local.
+- The push also carried `6917db5` (docs/training: handbook modules 07/08,
+  Call Desk HTML tool, PDF). Docs only, no effect on the site; revertable.
+- Screenshots before deploy confirmed the gap: Donnie's /admin showed only
+  "On-demand audit tool"; Luka's showed Agent dashboard, Engagement agent,
+  Calls, audit, Bill of Sale generator. Agent dashboard and Engagement
+  agent stay owner-only (not asked for).
 
 ## Note for Lukas
 Call recordings/transcripts and the saved-buyer directory (who pays for
@@ -41,7 +50,7 @@ called these the two most sensitive things in the admin; this change is
 deliberate per the ask. To revoke, restore the `session.role !== "admin"`
 checks in the files above.
 
-## Next
-- `npx tsc --noEmit`, then deploy via the usual git push → Vercel flow.
+## Still to confirm
 - Log in as Donnie and confirm: Calls link, recordings play, BoS generator
   opens with the buyer dropdown, "BoS" on a lead card prefills.
+- Owner-operators feature still uncommitted in the working tree.
