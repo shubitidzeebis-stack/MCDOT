@@ -77,6 +77,39 @@ export function readAttribution(): AttributionRecord | null {
 
 // Compact form for sending to the server. Only the attribute keys
 // that have values get serialized.
+/**
+ * Render a stored attribution blob as ordered "label: value" lines for the
+ * team notification emails. Pure and server-safe — the wizard and the contact
+ * form both use it so both notifications answer "where did this come from?"
+ * the same way (added 2026-09-13; before that the source was captured but
+ * never shown, so every enquiry looked sourceless in the inbox).
+ */
+export function attributionLines(
+  attr: Record<string, string> | null | undefined,
+): string[] {
+  if (!attr) return [];
+  const order: Array<[string, string]> = [
+    ["attr_utm_source", "utm_source"],
+    ["attr_utm_medium", "utm_medium"],
+    ["attr_utm_campaign", "utm_campaign"],
+    ["attr_utm_term", "utm_term"],
+    ["attr_utm_content", "utm_content"],
+    ["attr_gclid", "gclid"],
+    ["attr_gbraid", "gbraid"],
+    ["attr_wbraid", "wbraid"],
+    ["attr_fbclid", "fbclid"],
+    ["attr_msclkid", "msclkid"],
+    ["attr_referrer", "referrer"],
+    ["attr_landing", "landing"],
+  ];
+  const out: string[] = [];
+  for (const [key, label] of order) {
+    const v = attr[key];
+    if (v) out.push(`${label}: ${String(v).slice(0, 200)}`);
+  }
+  return out;
+}
+
 export function attributionPayload(): Record<string, string> | null {
   const r = readAttribution();
   if (!r) return null;

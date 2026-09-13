@@ -277,6 +277,28 @@ export async function getValuationContactEmail(
   }
 }
 
+/**
+ * First-touch attribution stored on the row at lookup time. The wizard's team
+ * notification reads it back so "where did this lead come from" is answerable
+ * from the email alone, without opening the database (added 2026-09-13).
+ */
+export async function getValuationAttribution(
+  id: number,
+): Promise<Record<string, string> | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  try {
+    await ensureTable(sql);
+    const rows = (await sql`
+      SELECT attribution FROM valuations WHERE id = ${id} LIMIT 1
+    `) as Array<{ attribution: Record<string, string> | null }>;
+    return rows[0]?.attribution ?? null;
+  } catch (err) {
+    console.error("[getValuationAttribution] error", err);
+    return null;
+  }
+}
+
 export type CreateValuationInput = {
   sessionId: string;
   carrier: FmcsaCarrier;

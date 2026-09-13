@@ -3,6 +3,7 @@
 // one source of truth.
 
 import { SITE } from "@/lib/site";
+import { tagUrl } from "@/lib/tracking-links";
 import {
   emailShell,
   firstName,
@@ -21,6 +22,19 @@ function safe(value: string | null | undefined): string {
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || "https://groupveritor.com";
+
+/**
+ * Link out of a lifecycle email with campaign tags attached, so a reply visit
+ * that turns into a second enquiry is attributable to the sequence that pulled
+ * it rather than landing in "direct" (added 2026-09-13).
+ */
+function lifecycleLink(path: string, campaign: string): string {
+  return tagUrl(`${SITE_URL}${path}`, {
+    source: "lifecycle",
+    medium: "email",
+    campaign,
+  });
+}
 
 export type TemplateResult = {
   subject: string;
@@ -140,14 +154,14 @@ export const sellerNurtureStep2: TemplateFn = (c) => {
     `3. "How do I know you're not a scam?"`,
     `   Three checks: a written purchase agreement, never a verbal handshake; funds move through a closing attorney's escrow account, never cash, never person to person; and the money lands as the documents execute, not after you've handed the company over. Trade press has documented rings buying authorities for cargo theft schemes — those operations skip the paperwork and deal in cash. We do neither.`,
     ``,
-    `Read the full FAQ: ${SITE_URL}/faq`,
+    `Read the full FAQ: ${lifecycleLink("/faq", "seller-nurture-2")}`,
     ``,
     SIGNATURE_TEXT,
   ].join("\n");
   const html = emailShell({
     preheader,
     unsubscribeUrl: c.unsubscribeUrl,
-    cta: { label: "Read the full FAQ", href: `${SITE_URL}/faq` },
+    cta: { label: "Read the full FAQ", href: lifecycleLink("/faq", "seller-nurture-2") },
     bodyHtml: `
       <p style="${STYLE.paragraph}">Hi ${safe(first)},</p>
       <p style="${STYLE.paragraph}">
@@ -198,14 +212,14 @@ export const sellerNurtureStep3: TemplateFn = (c) => {
     ``,
     `Bottlenecks are usually outside our control: bank takes a day to update signatories, lender consent on a loan payoff, FMCSA portal access transfer. We've seen all of these and we know how to handle them.`,
     ``,
-    `If you'd like a real number on your specific LLC, the form's still open: ${SITE_URL}/contact`,
+    `If you'd like a real number on your specific LLC, the form's still open: ${lifecycleLink("/contact", "seller-nurture-3")}`,
     ``,
     SIGNATURE_TEXT,
   ].join("\n");
   const html = emailShell({
     preheader,
     unsubscribeUrl: c.unsubscribeUrl,
-    cta: { label: "Get a free valuation", href: `${SITE_URL}/contact` },
+    cta: { label: "Get a free valuation", href: lifecycleLink("/contact", "seller-nurture-3") },
     bodyHtml: `
       <p style="${STYLE.paragraph}">Hi ${safe(first)},</p>
       <p style="${STYLE.paragraph}">
@@ -293,7 +307,7 @@ export const partialRecoveryStep1: TemplateFn = (c) => {
     ``,
     `We noticed you started filling out our enquiry form earlier today but didn't finish. No pressure — sometimes life gets in the way.`,
     ``,
-    `If you'd like to pick up where you left off, the form is still here: ${SITE_URL}/contact`,
+    `If you'd like to pick up where you left off, the form is still here: ${lifecycleLink("/contact", "partial-recovery-1")}`,
     ``,
     `Or if it's easier, reply to this email with your LLC name + MC number and I'll come back with a written valuation directly.`,
     ``,
@@ -302,7 +316,7 @@ export const partialRecoveryStep1: TemplateFn = (c) => {
   const html = emailShell({
     preheader,
     unsubscribeUrl: c.unsubscribeUrl,
-    cta: { label: "Resume your enquiry", href: `${SITE_URL}/contact` },
+    cta: { label: "Resume your enquiry", href: lifecycleLink("/contact", "partial-recovery-1") },
     bodyHtml: `
       <p style="${STYLE.paragraph}">Hi ${safe(first)},</p>
       <p style="${STYLE.paragraph}">

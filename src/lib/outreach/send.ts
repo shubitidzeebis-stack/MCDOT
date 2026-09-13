@@ -198,6 +198,13 @@ export async function processOutreachQueue(): Promise<OutreachSendResult> {
         bodyText: row.draft_body_text ?? "",
         unsubscribeUrl: unsub,
         template: templateStyle,
+        // Persona and sender identity ride along on every link, so a carrier
+        // who clicks through is attributable to this programme (and to which
+        // angle and which mailbox pulled them in) once they submit.
+        tracking: {
+          content: row.persona ?? undefined,
+          term: cfg?.name ?? undefined,
+        },
       });
       // From: the configured identity's full header ("Donald Slone <…>");
       // legacy rows keep the env sender. Replies go back to the same address

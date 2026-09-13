@@ -156,6 +156,21 @@ export async function POST(req: Request) {
           <tr><td style="color:#666;">State</td><td>${escape(lead.state || "—")}</td></tr>
           <tr><td style="color:#666;">Locale</td><td>${escape(lead.locale)}</td></tr>
         </table>
+        ${
+          attrLines.length
+            ? `<h3 style="margin:24px 0 8px;font-size:14px;color:#666;">Where this lead came from</h3>
+        <table cellpadding="6" style="border-collapse:collapse;width:100%;font-size:13px;">
+          ${attrLines
+            .map((line) => {
+              const at = line.indexOf(": ");
+              const k = at === -1 ? line : line.slice(0, at);
+              const v = at === -1 ? "" : line.slice(at + 2);
+              return `<tr><td style="color:#666;width:160px;">${escape(k)}</td><td style="word-break:break-all;">${escape(v)}</td></tr>`;
+            })
+            .join("")}
+        </table>`
+            : `<p style="margin:24px 0 0;font-size:13px;color:#999;">No attribution captured — direct visit, or the tab was opened before tracking loaded.</p>`
+        }
         ${lead.notes ? `<div style="margin-top: 20px; padding: 16px; background: #f6f6f6; border-radius: 8px; white-space: pre-wrap; font-size: 14px; line-height: 1.55;">${escape(lead.notes)}</div>` : ""}
       </div>
     `;

@@ -6,6 +6,21 @@
 // exactly what carriers receive.
 
 import { SITE, formatAddressOneLine } from "@/lib/site";
+import { tagUrl, tagUrlsInText, type LinkTags } from "@/lib/tracking-links";
+
+// Default campaign tags for cold outreach. Every first-party link in the mail
+// carries these so a carrier who clicks through and converts is attributable
+// instead of landing in "direct" (see src/lib/tracking-links.ts).
+const DEFAULT_TAGS: LinkTags = {
+  source: "outreach",
+  medium: "email",
+  campaign: "fmcsa-monitor",
+};
+
+// Absolute origin for the links inside the mail. Email clients can't resolve
+// relative URLs, and this must match the host tracking-links.ts treats as
+// first-party.
+const SITE_ORIGIN = "https://groupveritor.com";
 
 function escapeHtml(s: string): string {
   return s
@@ -49,9 +64,19 @@ export function renderOutreachEmail(input: {
   unsubscribeUrl: string;
   /** "plain" (default) = personal-note shell; "branded" = site-UI newsletter shell. */
   template?: OutreachTemplateStyle;
+  /**
+   * Per-send campaign tags (persona in `content`, sender identity in `term`).
+   * Omitted keys fall back to DEFAULT_TAGS; the unsubscribe link is never
+   * tagged because it carries an HMAC and must travel byte-identical.
+   */
+  tracking?: Partial<LinkTags>;
 }): { subject: string; text: string; html: string } {
-  const { subject, bodyText, unsubscribeUrl } = input;
+  const { subject, unsubscribeUrl } = input;
   const address = formatAddressOneLine();
+  const tags: LinkTags = { ...DEFAULT_TAGS, ...(input.tracking ?? {}) };
+  // Tag every first-party link the copy itself contains, before either part is
+  // built, so the text and HTML halves stay identical to each other.
+  const bodyText = tagUrlsInText(input.bodyText, tags);
 
   // The text/plain part is identical for both templates — it IS the personal
   // note, and text-only clients should always get the simplest form.
@@ -64,7 +89,7 @@ export function renderOutreachEmail(input: {
     return {
       subject,
       text,
-      html: brandedHtml(bodyText, unsubscribeUrl, address),
+      html: brandedHtml(bodyText, unsubscribeUrl, address, tags),
     };
   }
 
@@ -89,7 +114,13 @@ function brandedHtml(
   bodyText: string,
   unsubscribeUrl: string,
   address: string,
+  tags: LinkTags,
 ): string {
+  // The three fixed links in the shell. The CTA button is the one carriers
+  // actually click, and it shipped untagged from 2026-08-07 to 2026-09-13 —
+  // every click it sent looked like direct traffic on arrival.
+  const homeUrl = tagUrl(SITE_ORIGIN, tags);
+  const ctaUrl = tagUrl(`${SITE_ORIGIN}/get-offer`, tags);
   const paragraphs = bodyText
     .split(/\n{2,}/)
     .map((para) => {
@@ -104,7 +135,7 @@ function brandedHtml(
     `<table role="presentation" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;">` +
     // Header — dark bar with the wordmark, linked to the site.
     `<tr><td style="background:#0a0a0b;padding:20px 32px;border-radius:12px 12px 0 0;">` +
-    `<a href="https://groupveritor.com" style="text-decoration:none;">` +
+    `<a href="${homeUrl}" style="text-decoration:none;">` +
     `<img src="https://groupveritor.com/brand/logo-on-dark.png" alt="${escapeHtml(SITE.name)}" height="30" style="height:30px;display:block;border:0;"/>` +
     `</a></td></tr>` +
     // Body card — the note itself, then the CTA button.
@@ -112,13 +143,13 @@ function brandedHtml(
     paragraphs +
     `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">` +
     `<tr><td style="background:#ff8a1a;border-radius:8px;">` +
-    `<a href="https://groupveritor.com/get-offer" style="display:inline-block;padding:13px 26px;font-family:${FONT};font-size:15px;font-weight:700;color:#0a0a0b;text-decoration:none;">See what your company is worth</a>` +
+    `<a href="${ctaUrl}" style="display:inline-block;padding:13px 26px;font-family:${FONT};font-size:15px;font-weight:700;color:#0a0a0b;text-decoration:none;">See what your company is worth</a>` +
     `</td></tr></table>` +
     `</td></tr>` +
     // Footer — dark, site + phone links, CAN-SPAM block, unsubscribe.
     `<tr><td style="background:#0a0a0b;padding:24px 32px;border-radius:0 0 12px 12px;font-family:${FONT};font-size:12px;line-height:1.7;color:#8a8a8e;">` +
     `<span style="color:#ffffff;font-weight:600;">${escapeHtml(SITE.legalName)}</span> · ${escapeHtml(address)}<br/>` +
-    `<a href="https://groupveritor.com" style="color:#ffb371;text-decoration:none;">groupveritor.com</a>` +
+    `<a href="${homeUrl}" style="color:#ffb371;text-decoration:none;">groupveritor.com</a>` +
     `&nbsp;·&nbsp;<a href="tel:${SITE.phoneTel}" style="color:#ffb371;text-decoration:none;">${escapeHtml(SITE.phoneDisplay)}</a><br/><br/>` +
     `${escapeHtml(REASON)} ` +
     `<a href="${unsubscribeUrl}" style="color:#8a8a8e;text-decoration:underline;">Unsubscribe</a> and we'll remove you immediately.` +

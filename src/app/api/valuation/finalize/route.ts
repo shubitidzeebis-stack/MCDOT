@@ -5,8 +5,10 @@ import { lookupCarrier } from "@/lib/fmcsa";
 import { computeValuation, formatRange } from "@/lib/valuation";
 import {
   finalizeValuation,
+  getValuationAttribution,
   updateValuationContact,
 } from "@/lib/db/valuations";
+import { attributionLines } from "@/lib/attribution";
 import { queueSequence } from "@/lib/email/queue";
 import { notifySlackNewValuation } from "@/lib/notifications/slack";
 import { stripCrLf } from "@/lib/security/sanitize";
@@ -175,6 +177,12 @@ export async function POST(req: Request) {
         try {
           const resend = new Resend(apiKey);
           const carrier = lookup.carrier;
+          // First-touch source, written onto the row back at /lookup. Read it
+          // here so the notification answers "paid, organic or outreach?"
+          // without anyone opening the database.
+          const attrLines = attributionLines(
+            await getValuationAttribution(raw.valuationId),
+          );
           const priorityFlag = raw.hasAmazonRelay ? "🔥 RELAY" : "💬";
           const subject = stripCrLf(
             `${priorityFlag} Wizard valuation — ${carrier.legalName} (${range})`,
@@ -201,6 +209,13 @@ export async function POST(req: Request) {
             `Name: ${sellerName || "—"}`,
             `Email: ${sellerEmail}`,
             `Phone: ${raw.contact?.phone || carrier.phyStreet ? "(see DB)" : "—"}`,
+            ``,
+            `Where this lead came from:`,
+            ...(attrLines.length
+              ? attrLines
+              : [
+                  "no attribution captured — direct visit, or the tab was opened before tracking loaded",
+                ]),
           ].join("\n");
           await resend.emails.send({
             from: SITE.emailFrom,
