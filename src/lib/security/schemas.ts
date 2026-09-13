@@ -8,11 +8,16 @@ export const contactSchema = z.object({
   phone: z.string().trim().min(7).max(40),
   company: z.string().trim().max(200).optional().or(z.literal("")),
   mc: z.string().trim().max(40).optional().or(z.literal("")),
-  hasRelay: z.enum(["yes", "no"]).optional(),
+  // The client spreads its whole form state, so an untouched <select> arrives
+  // as "" — which a bare .optional() enum REJECTS, 400-ing the whole
+  // submission. Anyone who skipped the pre-form qualifier and left these two
+  // dropdowns alone silently lost their lead. Accept "" the same way
+  // driverApplySchema below does (fixed 2026-09-13).
+  hasRelay: z.enum(["yes", "no"]).optional().or(z.literal("")),
   mcAgeDays: z
     .union([z.string().trim().max(10), z.literal("")])
     .optional(),
-  insurance: z.enum(["active", "inactive"]).optional(),
+  insurance: z.enum(["active", "inactive"]).optional().or(z.literal("")),
   state: z.string().trim().max(60).optional().or(z.literal("")),
   notes: z.string().trim().max(4000).optional().or(z.literal("")),
   locale: z.enum(["en", "es", "ru"]).default("en"),
@@ -38,3 +43,34 @@ export const contactSchema = z.object({
 });
 
 export type ContactPayload = z.infer<typeof contactSchema>;
+
+// Owner-operator recruitment form (/owner-operators). Deliberately light:
+// the commercial terms are discussed on the call, so the form only captures
+// who to call and what they run. Same anti-abuse fields as contactSchema.
+export const driverApplySchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  email: z.string().trim().toLowerCase().email().max(200),
+  phone: z.string().trim().min(7).max(40),
+  state: z.string().trim().max(60).optional().or(z.literal("")),
+  equipment: z
+    .enum(["tractor", "power-only", "box-truck", "other"])
+    .optional()
+    .or(z.literal("")),
+  cdl: z.enum(["yes", "no"]).optional().or(z.literal("")),
+  experience: z
+    .enum(["under-1", "1-3", "3-plus"])
+    .optional()
+    .or(z.literal("")),
+  notes: z.string().trim().max(2000).optional().or(z.literal("")),
+  locale: z.enum(["en", "es", "ru"]).default("en"),
+  turnstileToken: z.string().trim().max(4096).optional(),
+  attribution: z
+    .record(z.string(), z.string().max(500))
+    .nullable()
+    .optional(),
+  // Honeypot: must be empty if present.
+  website: z.string().max(0).optional().or(z.literal("")),
+  test: z.boolean().optional(),
+});
+
+export type DriverApplyPayload = z.infer<typeof driverApplySchema>;
