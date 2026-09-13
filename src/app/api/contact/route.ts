@@ -8,6 +8,13 @@ import { contactAutoreply } from "@/lib/email/autoreply";
 import { queueSequence, unsubscribeUrl } from "@/lib/email/queue";
 import { saveLead } from "@/lib/db/leads";
 import { markPartialConverted } from "@/lib/db/partial-leads";
+import { lookupCarrier } from "@/lib/fmcsa";
+import { computeValuation, formatRange } from "@/lib/valuation";
+import {
+  createValuation,
+  finalizeValuation,
+  updateValuationContact,
+} from "@/lib/db/valuations";
 import { notifySlackNewLead } from "@/lib/notifications/slack";
 import { verifyTurnstile } from "@/lib/security/turnstile";
 import { SITE } from "@/lib/site";
@@ -58,13 +65,82 @@ export async function POST(req: Request) {
       );
     }
 
+    const userAgent = req.headers.get("user-agent") ?? "";
+
+    // ── Turn the submission into a VALUATION, not a separate "enquiry" ──────
+    // Until 2026-09-13 this route only wrote a `leads` row and sent a "New
+    // seller enquiry" email: a second lead pipeline with no /admin surface,
+    // which is why paid clicks landing on an article (Sell's How-It-Works
+    // sitelink) produced leads nobody could see next to the wizard's. The
+    // server now runs the SAME FMCSA lookup the wizard runs and records a real
+    // valuation, so the business has one lead type. The `leads` row below is
+    // kept as the raw audit trail of what was typed.
+    let valuationId: number | null = null;
+    let carrierName: string | null = null;
+    let range: string | null = null;
+    const sessionId = lead.sessionId || `contact-${Date.now()}`;
+    const typedAge = Number.parseInt(lead.mcAgeDays ?? "", 10);
+    const typedAgeDays = Number.isFinite(typedAge) ? typedAge : null;
+
+    if (lead.mc && lead.mc.trim()) {
+      try {
+        // The field is labelled MC, but sellers paste DOT numbers into it.
+        // Try the labelled kind first, then the other one before giving up.
+        const looksDot = /dot/i.test(lead.mc);
+        const first = looksDot ? "dot" : "mc";
+        const second = looksDot ? "mc" : "dot";
+        let lookup = await lookupCarrier(lead.mc, first);
+        if (!lookup.ok && lookup.reason === "not_found") {
+          lookup = await lookupCarrier(lead.mc, second);
+        }
+
+        if (lookup.ok) {
+          const { carrier, mcNumbers, telephone, mcs150FormDate, authorityAgeDays } =
+            lookup;
+          const ageDays = typedAgeDays ?? authorityAgeDays;
+          const saved = await createValuation(
+            {
+              sessionId,
+              carrier,
+              mcNumbers,
+              authorityAgeDays: ageDays,
+              telephone,
+              mcs150FormDate,
+              attribution: lead.attribution ?? null,
+              isTest: lead.test === true,
+            },
+            { ip, userAgent },
+          );
+          if (saved.ok && saved.id) {
+            valuationId = saved.id;
+            carrierName = carrier.legalName;
+            const hasRelay = lead.hasRelay === "yes";
+            const valuation = computeValuation(carrier, {
+              hasAmazonRelay: hasRelay,
+              authorityAgeDays: ageDays,
+            });
+            await finalizeValuation(saved.id, sessionId, hasRelay, valuation);
+            await updateValuationContact(saved.id, sessionId, {
+              name: lead.name,
+              email: lead.email,
+              phone: lead.phone,
+            });
+            range = formatRange(valuation);
+          }
+        } else {
+          console.warn("[contact] FMCSA lookup missed", lookup.reason);
+        }
+      } catch (err) {
+        // Never fail the submission on FMCSA/DB trouble — the lead still
+        // lands via `leads` + the unmatched notification below.
+        console.error("[contact] valuation path failed", err);
+      }
+    }
+
     // Persist to Postgres if DATABASE_URL is set; no-op otherwise. We don't
     // fail the user on DB errors — the email still goes out and the team
     // captures the lead via inbox.
-    const saveResult = await saveLead(lead, {
-      ip,
-      userAgent: req.headers.get("user-agent") ?? "",
-    });
+    const saveResult = await saveLead(lead, { ip, userAgent });
 
     // Internal test submission (?test=1): the row is persisted with
     // is_test=true above; bail before any notification + the partial-link
@@ -102,8 +178,14 @@ export async function POST(req: Request) {
         : saveResult.priority === "medium"
           ? "⚡ MEDIUM"
           : "💬";
+    // One lead type. A matched submission reads exactly like the wizard's
+    // notification (carrier + range); only a submission we could NOT match to
+    // an FMCSA record is called out separately, because that one needs a human
+    // to find the company by hand.
     const subject = stripCrLf(
-      `${priorityFlag} New seller enquiry — ${lead.company || lead.name} (${lead.locale.toUpperCase()})`,
+      valuationId
+        ? `${priorityFlag} Valuation — ${carrierName} (${range})`
+        : `⚠️ Unmatched seller — ${lead.company || lead.name} (${lead.locale.toUpperCase()})`,
     );
 
     // Attribution summary line for the email, when present.
@@ -122,7 +204,16 @@ export async function POST(req: Request) {
     }
 
     const adminText = [
-      `New seller enquiry from the ${SITE.name} website`,
+      valuationId
+        ? `New valuation from the ${SITE.name} website (typed into the contact form, FMCSA matched)`
+        : `Seller submitted the contact form but NO FMCSA record matched — find this company by hand`,
+      ...(valuationId
+        ? [
+            `Carrier: ${carrierName}`,
+            `Range: ${range}`,
+            `It is already in the pipeline at https://groupveritor.com/admin`,
+          ]
+        : []),
       `Priority: ${saveResult.priority ?? "?"}`,
       ``,
       `Name: ${lead.name}`,
@@ -143,7 +234,16 @@ export async function POST(req: Request) {
 
     const adminHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; color: #111;">
-        <h2 style="margin:0 0 16px; font-size: 20px;">New seller enquiry — ${escape(lead.company || lead.name)}</h2>
+        <h2 style="margin:0 0 16px; font-size: 20px;">${
+          valuationId
+            ? `Valuation — ${escape(carrierName ?? "")}`
+            : `Unmatched seller — ${escape(lead.company || lead.name)}`
+        }</h2>
+        ${
+          valuationId
+            ? `<p style="margin:0 0 16px;font-size:14px;color:#111;">Range <strong>${escape(range ?? "")}</strong> · already in the pipeline at <a href="https://groupveritor.com/admin">/admin</a>.</p>`
+            : `<p style="margin:0 0 16px;font-size:14px;color:#a33;">No FMCSA record matched what they typed, so this one is not in the pipeline. Find the company by hand.</p>`
+        }
         <table cellpadding="6" style="border-collapse: collapse; width: 100%; font-size: 14px;">
           <tr><td style="color:#666;width:160px;">Name</td><td><strong>${escape(lead.name)}</strong></td></tr>
           <tr><td style="color:#666;">Email</td><td><a href="mailto:${escape(lead.email)}">${escape(lead.email)}</a></td></tr>
@@ -188,7 +288,7 @@ export async function POST(req: Request) {
     if (error) {
       console.error("[contact] Resend error", error);
       return NextResponse.json(
-        { error: "Couldn't send enquiry. Please try again or email us directly." },
+        { error: "Couldn't send your details. Please try again or email us directly." },
         { status: 500 },
       );
     }

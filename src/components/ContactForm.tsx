@@ -486,6 +486,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
                 <label className="flex flex-col gap-2">
                   <span className={labelClass}>{t.mc}</span>
                   <input
+                    required
                     value={form.mc}
                     onChange={update("mc")}
                     onBlur={blurHandler("mc")}
