@@ -23,7 +23,10 @@ import {
 // nothing new is claimed.
 
 export const metadata: Metadata = {
-  title: "Can you transfer an LLC? How the transfer works with Veritor Group",
+  // The root layout's title template appends "· Veritor Group", so the brand
+  // must not be repeated here (it rendered "...with Veritor Group · Veritor
+  // Group" on first deploy). The openGraph title below is not templated.
+  title: "Can you transfer an LLC? How the transfer works",
   description:
     "Yes — a trucking LLC transfers by selling the company itself. The MC and DOT stay registered to it, the EIN doesn't change, and the money moves through a closing attorney's escrow. Here is the exact sequence, step by step.",
   keywords: [
