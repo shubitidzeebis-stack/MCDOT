@@ -10,6 +10,10 @@
     {
       "path": "/api/cron/meeting-reminders",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/outreach-heartbeat",
+      "schedule": "15 22 * * 1-5"
     }
   ]
 }

@@ -1412,6 +1412,30 @@ export async function getOutreachHealth(
   }
 }
 
+// Sends so far on the CURRENT Eastern-time calendar day, from the agent log.
+// Used by the outreach heartbeat cron (api/cron/outreach-heartbeat): a weekday
+// that ends at zero is an incident — Sep 6–9 2026 went dark for four days with
+// no signal, because the breaker only watches bounces and complaints.
+// Returns -1 when the DB can't be read, so the caller can tell "could not
+// check" apart from "checked and found nothing".
+export async function getOutreachSentTodayEt(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return -1;
+  try {
+    await ensureMonitorTables();
+    const rows = (await sql`
+      SELECT count(*)::int AS n FROM agent_actions
+       WHERE action = 'outreach_sent'
+         AND (created_at AT TIME ZONE 'America/New_York')::date
+             = (now() AT TIME ZONE 'America/New_York')::date
+    `) as { n: number }[];
+    return Number(rows[0]?.n ?? 0);
+  } catch (err) {
+    console.error("[getOutreachSentTodayEt] error", err);
+    return -1;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Dashboard aggregates — all fail-safe (return empty on any error) so the
 // agent dashboard can never 500.
