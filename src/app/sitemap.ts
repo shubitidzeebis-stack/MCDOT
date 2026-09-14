@@ -69,6 +69,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/sell-my-trucking-company",
     "/sell-my-mc-authority",
     "/sell-amazon-relay-account",
+    "/llc-transfer",
+    "/insurance-status",
     "/verification",
     "/seller-protection",
     "/transparency",

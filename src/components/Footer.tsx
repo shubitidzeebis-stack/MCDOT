@@ -57,6 +57,8 @@ export async function Footer({ locale = "en" as Locale }: { locale?: Locale }) {
               <li><Link className="text-white/70 hover:text-white" href="/sell-my-trucking-company">Sell my trucking company</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/sell-my-mc-authority">Sell my MC authority</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/sell-amazon-relay-account">Sell an Amazon Relay carrier</Link></li>
+              <li><Link className="text-white/70 hover:text-white" href="/llc-transfer">How the LLC transfer works</Link></li>
+              <li><Link className="text-white/70 hover:text-white" href="/insurance-status">Is my insurance active?</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/requirements">{t.nav.requirements}</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/case-studies">Closing stories</Link></li>
               <li><Link className="text-white/70 hover:text-white" href="/faq">{t.nav.faq}</Link></li>
