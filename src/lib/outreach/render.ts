@@ -78,24 +78,44 @@ export function renderOutreachEmail(input: {
   // built, so the text and HTML halves stay identical to each other.
   const bodyText = tagUrlsInText(input.bodyText, tags);
 
+  // Two answer pages, tagged. Search Console showed recipients googling the
+  // company name plus "can you transfer an llc" / "is my insurance active"
+  // before replying, and clicking nothing (56 impressions, 0 clicks, Sep 12–14).
+  // Putting the answers in the mail removes the detour through Google.
+  const transferUrl = tagUrl(`${SITE_ORIGIN}/llc-transfer`, tags);
+  const insuranceUrl = tagUrl(`${SITE_ORIGIN}/insurance-status`, tags);
+  const answersText =
+    `Two things people usually ask first:\n` +
+    `How the LLC transfer works: ${transferUrl}\n` +
+    `Is my insurance active: ${insuranceUrl}`;
+
   // The text/plain part is identical for both templates — it IS the personal
   // note, and text-only clients should always get the simplest form.
   const text =
     `${bodyText}\n\n` +
+    `${answersText}\n\n` +
     `—\n${SITE.legalName} · ${address}\n` +
     `${REASON} Not interested? Unsubscribe: ${unsubscribeUrl}`;
+
+  const answersHtml =
+    `<p style="margin:16px 0 0;font-family:${FONT};font-size:13px;line-height:1.6;color:#666666;">` +
+    `Two things people usually ask first: ` +
+    `<a href="${transferUrl}" style="color:#1a56db;">how the LLC transfer works</a> · ` +
+    `<a href="${insuranceUrl}" style="color:#1a56db;">is my insurance active</a>` +
+    `</p>`;
 
   if (input.template === "branded") {
     return {
       subject,
       text,
-      html: brandedHtml(bodyText, unsubscribeUrl, address, tags),
+      html: brandedHtml(bodyText, unsubscribeUrl, address, tags, answersHtml),
     };
   }
 
   const html =
     `<div style="font-family:${FONT};font-size:15px;line-height:1.6;color:#222222;max-width:560px;">` +
     bodyToHtml(bodyText) +
+    answersHtml +
     `<p style="margin:24px 0 0;padding-top:12px;border-top:1px solid #eeeeee;font-size:12px;line-height:1.5;color:#999999;">` +
     `${escapeHtml(SITE.legalName)} · ${escapeHtml(address)}<br/>` +
     `${escapeHtml(REASON)} ` +
@@ -115,6 +135,7 @@ function brandedHtml(
   unsubscribeUrl: string,
   address: string,
   tags: LinkTags,
+  answersHtml: string,
 ): string {
   // The three fixed links in the shell. The CTA button is the one carriers
   // actually click, and it shipped untagged from 2026-08-07 to 2026-09-13 —
@@ -145,6 +166,7 @@ function brandedHtml(
     `<tr><td style="background:#ff8a1a;border-radius:8px;">` +
     `<a href="${ctaUrl}" style="display:inline-block;padding:13px 26px;font-family:${FONT};font-size:15px;font-weight:700;color:#0a0a0b;text-decoration:none;">See what your company is worth</a>` +
     `</td></tr></table>` +
+    answersHtml +
     `</td></tr>` +
     // Footer — dark, site + phone links, CAN-SPAM block, unsubscribe.
     `<tr><td style="background:#0a0a0b;padding:24px 32px;border-radius:0 0 12px 12px;font-family:${FONT};font-size:12px;line-height:1.7;color:#8a8a8e;">` +

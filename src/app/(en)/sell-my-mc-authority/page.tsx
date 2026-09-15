@@ -22,10 +22,14 @@ import {
 // alone.
 
 export const metadata: Metadata = {
-  title: "Sell my MC authority — the legal way to sell an MC number",
+  // Retitled 2026-09-15 for the brand query "veritor group llc mc number for
+  // sale by owner" (18 GSC impressions, 0 clicks). The seller's phrasing leads;
+  // the legal framing follows. The root layout appends "· Veritor Group".
+  title: "MC number for sale by owner? How to sell your MC authority the legal way",
   description:
-    "You can't sell an MC number by itself — FMCSA prohibits it. You can sell the LLC that holds the authority, and the MC rides with it. What authority is worth, and how the sale works.",
+    "Selling your MC number by owner? FMCSA prohibits selling the number by itself — you sell the LLC that holds the authority, and the MC rides with it. What your authority is worth, and how the sale runs in 3–5 business days.",
   keywords: [
+    "mc number for sale by owner",
     "sell my mc authority",
     "sell my mc number",
     "can i sell my mc number",
@@ -57,6 +61,10 @@ export default function SellMyMcAuthorityPage() {
       />
       <FAQPageSchema
         items={[
+          {
+            q: "Can I list my MC number for sale by owner?",
+            a: "Not the number on its own — FMCSA prohibits selling, leasing or transferring an MC number as a standalone item, and a bare-number listing is the structure behind carrier-identity fraud. What you can sell by owner is the LLC that holds the authority: the company changes ownership in a documented sale and the MC stays registered to it. Enter your MC or DOT above for a written value range priced from your FMCSA record.",
+          },
           {
             q: "Can I sell my MC number?",
             a: "Not by itself. FMCSA prohibits selling, leasing, or transferring an MC or DOT number outside a legitimate sale of the underlying entity. What you can sell is the company — the LLC the authority was issued to. In a legitimate corporate transaction the LLC changes ownership and the operating authority stays with the entity, which is exactly the structure FMCSA's guidance describes.",
