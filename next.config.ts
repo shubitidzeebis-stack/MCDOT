@@ -85,6 +85,18 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  async redirects() {
+    return [
+      // Search Console (2026-09-15) shows this slug — the real one minus
+      // "when" — earning impressions at position 1, yet it never existed in
+      // the repo: an external or AI-hallucinated link. Send it to the post.
+      {
+        source: "/blog/what-transfers-selling-trucking-llc",
+        destination: "/blog/what-transfers-when-selling-trucking-llc",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
